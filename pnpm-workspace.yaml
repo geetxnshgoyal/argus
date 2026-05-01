@@ -1,0 +1,7 @@
+packages:
+  - backend
+  - web
+
+# pnpm blocks dependency install scripts by default; allow only the ones we need.
+allowBuilds:
+  esbuild: true
