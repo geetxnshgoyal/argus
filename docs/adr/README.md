@@ -21,5 +21,8 @@ the spec, the ADR wins. Status is `Accepted` unless marked otherwise.
 | [0013](0013-audit-chain-anchoring.md) | Audit chain serialization and daily head-hash export | M1 |
 | [0014](0014-runtime-risk-config.md) | Scorer weights and kill switches stored in the DB, editable by admins | M5 |
 | [0015](0015-openapi-spec-first.md) | OpenAPI spec-first with generated types and a route-sync test | M0 |
+| [0016](0016-sign-in-design.md) | Sign-in: Google OIDC, server sessions + CSRF, mobile code exchange bound to the device key, dev login | M1 |
+| [0017](0017-roster-import-minimization.md) | Roster import sends only five fields; the rest stays in the browser | M1 |
+| [0018](0018-ui-theme.md) | UI follows the Heimdall dark theme | M1 |
 
 New ADRs: copy the format of any existing one (Context / Decision / Consequences), keep it under a page.
