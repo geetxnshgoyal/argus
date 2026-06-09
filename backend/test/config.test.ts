@@ -3,6 +3,11 @@ import { ConfigError, loadConfig } from '../src/config.ts';
 
 const KEY = Buffer.alloc(32, 7).toString('base64');
 const base = { DATABASE_URL: 'postgres://argus:hunter2@db/argus' };
+const prod = {
+  ARGUS_PUBLIC_URL: 'https://argus.example.edu',
+  OIDC_CLIENT_ID: 'client',
+  OIDC_CLIENT_SECRET: 'oidc-secret-value',
+};
 
 function problemsOf(env: Record<string, string>): string[] {
   try {
@@ -20,7 +25,9 @@ describe('loadConfig', () => {
     expect(c.env).toBe('dev');
     expect(c.port).toBe(8080);
     expect(c.host).toBe('127.0.0.1');
-    expect(c.masterKey).toBeNull();
+    expect(c.masterKey).toHaveLength(32);
+    expect(c.masterKeyEphemeral).toBe(true);
+    expect(c.publicUrl).toBe('http://localhost:5173');
     expect(c.attestationBypass).toBe(false);
   });
 
@@ -45,7 +52,7 @@ describe('loadConfig', () => {
   });
 
   it('treats an explicit "false" bypass as off in production', () => {
-    const c = loadConfig({ ...base, ARGUS_ENV: 'production', ARGUS_MASTER_KEY: KEY, ARGUS_ATTESTATION_BYPASS: 'false' });
+    const c = loadConfig({ ...base, ...prod, ARGUS_ENV: 'production', ARGUS_MASTER_KEY: KEY, ARGUS_ATTESTATION_BYPASS: 'false' });
     expect(c.attestationBypass).toBe(false);
   });
 
@@ -65,8 +72,20 @@ describe('loadConfig', () => {
   });
 
   it('decodes a valid master key', () => {
-    const c = loadConfig({ ...base, ARGUS_ENV: 'production', ARGUS_MASTER_KEY: KEY });
-    expect(c.masterKey?.length).toBe(32);
+    const c = loadConfig({ ...base, ...prod, ARGUS_ENV: 'production', ARGUS_MASTER_KEY: KEY });
+    expect(c.masterKey.equals(Buffer.alloc(32, 7))).toBe(true);
+    expect(c.masterKeyEphemeral).toBe(false);
+  });
+
+  it('requires https public URL and OIDC client settings in production', () => {
+    const p = problemsOf({ ...base, ARGUS_ENV: 'production', ARGUS_MASTER_KEY: KEY, ARGUS_PUBLIC_URL: 'http://argus.example.edu' }).join();
+    expect(p).toMatch(/must use https/);
+    expect(p).toMatch(/OIDC_CLIENT_ID and OIDC_CLIENT_SECRET are required/);
+  });
+
+  it('never echoes the OIDC client secret', () => {
+    const p = problemsOf({ ...base, ARGUS_ENV: 'production', OIDC_CLIENT_SECRET: 'oidc-secret-value' }).join();
+    expect(p).not.toContain('oidc-secret-value');
   });
 
   it('never echoes secret values in error messages', () => {
