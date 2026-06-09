@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 
 /**
@@ -28,6 +29,13 @@ const envSchema = z.object({
   ARGUS_DEV_LOGIN: bool,
   ARGUS_TRUST_PROXY: bool,
   ARGUS_WEB_DIR: z.string().optional(),
+  ARGUS_PUBLIC_URL: z.string().url().optional(),
+  OIDC_ISSUER: z.string().url().default('https://accounts.google.com'),
+  OIDC_CLIENT_ID: z.string().optional(),
+  OIDC_CLIENT_SECRET: z.string().optional(),
+  // Google Workspace domain; sign-in is limited to accounts in it when set.
+  OIDC_HOSTED_DOMAIN: z.string().optional(),
+  ARGUS_MOBILE_REDIRECT_URI: z.string().default('app.argus.argus:/auth/callback'),
 });
 
 export interface Config {
@@ -36,12 +44,22 @@ export interface Config {
   host: string;
   port: number;
   logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
-  /** 32-byte key used to encrypt per-session secrets at rest. Null only in dev/test. */
-  masterKey: Buffer | null;
+  /** 32-byte root key (session-secret encryption, token signing). Random per process in dev/test if unset. */
+  masterKey: Buffer;
+  masterKeyEphemeral: boolean;
   attestationBypass: boolean;
   devLogin: boolean;
   trustProxy: boolean;
   webDir: string | undefined;
+  /** Origin users reach Argus at, e.g. https://argus.college.edu (no trailing slash). */
+  publicUrl: string;
+  oidc: {
+    issuer: string;
+    clientId: string | undefined;
+    clientSecret: string | undefined;
+    hostedDomain: string | undefined;
+  };
+  mobileRedirectUri: string;
 }
 
 export class ConfigError extends Error {
@@ -80,6 +98,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     problems.push('ARGUS_MASTER_KEY is required in staging and production');
   }
 
+  const strict = e.ARGUS_ENV === 'staging' || e.ARGUS_ENV === 'production';
+  if (strict) {
+    if (!e.ARGUS_PUBLIC_URL) problems.push('ARGUS_PUBLIC_URL is required in staging and production');
+    else if (!e.ARGUS_PUBLIC_URL.startsWith('https://')) problems.push('ARGUS_PUBLIC_URL must use https in staging and production');
+    if (!e.OIDC_CLIENT_ID || !e.OIDC_CLIENT_SECRET) {
+      problems.push('OIDC_CLIENT_ID and OIDC_CLIENT_SECRET are required in staging and production');
+    }
+  }
+
   if (problems.length > 0) throw new ConfigError(problems);
 
   return {
@@ -88,10 +115,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     host: e.ARGUS_HOST,
     port: e.ARGUS_PORT,
     logLevel: e.ARGUS_LOG_LEVEL,
-    masterKey,
+    masterKey: masterKey ?? randomBytes(32),
+    masterKeyEphemeral: masterKey === null,
     attestationBypass: e.ARGUS_ATTESTATION_BYPASS,
     devLogin: e.ARGUS_DEV_LOGIN,
     trustProxy: e.ARGUS_TRUST_PROXY,
     webDir: e.ARGUS_WEB_DIR,
+    publicUrl: (e.ARGUS_PUBLIC_URL ?? 'http://localhost:5173').replace(/\/+$/, ''),
+    oidc: {
+      issuer: e.OIDC_ISSUER,
+      clientId: e.OIDC_CLIENT_ID,
+      clientSecret: e.OIDC_CLIENT_SECRET,
+      hostedDomain: e.OIDC_HOSTED_DOMAIN?.toLowerCase(),
+    },
+    mobileRedirectUri: e.ARGUS_MOBILE_REDIRECT_URI,
   };
 }
