@@ -1,14 +1,16 @@
+import 'package:argus_security/argus_security.dart';
 import 'package:flutter/material.dart';
 
 import 'api_client.dart';
-import 'package:argus_security/argus_security.dart';
+import 'auth_controller.dart';
+import 'theme.dart';
 
-/// M0 shell: proves the app reaches the API and the native security module.
-/// Sign-in (M1), device binding (M3) and scanning (M4) replace this screen.
+/// Signed-in home. Today's classes (M2) and scanning (M4) replace the
+/// placeholders below as those milestones land.
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.api, required this.security});
+  const HomeScreen({super.key, required this.auth, required this.security});
 
-  final ApiClient api;
+  final AuthController auth;
   final SecurityBridge security;
 
   @override
@@ -17,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<Health> _health;
-  late Future<PlatformSecurityInfo> _security;
+  late Future<PlatformSecurityInfo> _device;
 
   @override
   void initState() {
@@ -27,79 +29,126 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _refresh() {
     setState(() {
-      _health = widget.api.health();
-      _security = widget.security.platformInfo();
+      _health = widget.auth.api.health();
+      _device = widget.security.platformInfo();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final me = widget.auth.me!;
     final text = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Argus')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text('Student app', style: text.headlineSmall),
-          const SizedBox(height: 4),
-          Text('Sign-in and attendance arrive in later milestones.', style: text.bodyMedium),
-          const SizedBox(height: 24),
-          FutureBuilder<Health>(
-            future: _health,
-            builder: (context, snap) {
-              if (snap.connectionState != ConnectionState.done) {
-                return const _StatusTile(icon: Icons.sync, label: 'Checking server…');
-              }
-              if (snap.hasError) {
-                return const _StatusTile(icon: Icons.cloud_off, label: 'Server unreachable', bad: true);
-              }
-              final h = snap.data!;
-              return _StatusTile(
-                icon: h.ok ? Icons.check_circle : Icons.error,
-                label: h.ok ? 'Server OK (v${h.version})' : 'Server database unavailable',
-                bad: !h.ok,
-              );
-            },
-          ),
-          FutureBuilder<PlatformSecurityInfo>(
-            future: _security,
-            builder: (context, snap) {
-              if (snap.connectionState != ConnectionState.done) {
-                return const _StatusTile(icon: Icons.sync, label: 'Checking device security…');
-              }
-              if (snap.hasError) {
-                return const _StatusTile(icon: Icons.error, label: 'Device security check failed', bad: true);
-              }
-              final s = snap.data!;
-              final store = s.platform == 'ios' ? 'Secure Enclave' : 'StrongBox';
-              return _StatusTile(
-                icon: Icons.phonelink_lock,
-                label: '${s.model} · ${s.platform} ${s.osVersion} · $store ${s.hardwareKeyStore ? 'available' : 'not available'}',
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(onPressed: _refresh, icon: const Icon(Icons.refresh), label: const Text('Check again')),
-        ],
+      appBar: AppBar(
+        title: const ArgusWordmark(size: 20),
+        actions: [IconButton(tooltip: 'Sign out', onPressed: widget.auth.signOut, icon: const Icon(Icons.logout))],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async => _refresh(),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          children: [
+            Text('Hi, ${me.name.split(' ').first}', style: text.headlineSmall),
+            const SizedBox(height: 4),
+            Text(me.email, style: text.bodyMedium),
+            const SizedBox(height: 20),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(children: [
+                  _Row(icon: Icons.badge_outlined, title: 'USN', value: me.usn ?? '—'),
+                  const _Gap(),
+                  _Row(icon: Icons.groups_outlined, title: 'Section', value: me.section ?? 'Not assigned'),
+                  const _Gap(),
+                  _Row(icon: Icons.science_outlined, title: 'Lab batch', value: me.batch ?? 'Not assigned'),
+                ]),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: _Row(
+                  icon: Icons.qr_code_scanner,
+                  title: 'Mark attendance',
+                  value: 'Scanning opens when your teacher starts attendance (coming soon).',
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(children: [
+                  FutureBuilder<Health>(
+                    future: _health,
+                    builder: (context, s) => _Row(
+                      icon: Icons.cloud_done_outlined,
+                      tone: s.hasError || (s.hasData && !s.data!.ok) ? TileTone.bad : TileTone.good,
+                      title: 'Server',
+                      value: s.connectionState != ConnectionState.done
+                          ? 'Checking…'
+                          : s.hasError
+                              ? 'Unreachable'
+                              : s.data!.ok
+                                  ? 'Connected (v${s.data!.version})'
+                                  : 'Database unavailable',
+                    ),
+                  ),
+                  const _Gap(),
+                  FutureBuilder<PlatformSecurityInfo>(
+                    future: _device,
+                    builder: (context, s) {
+                      final d = s.data;
+                      final store = d?.platform == 'ios' ? 'Secure Enclave' : 'StrongBox';
+                      return _Row(
+                        icon: Icons.phonelink_lock_outlined,
+                        tone: d != null && !d.hardwareKeyStore ? TileTone.warn : TileTone.good,
+                        title: 'This phone',
+                        value: d == null ? 'Checking…' : '${d.model} · $store ${d.hardwareKeyStore ? 'available' : 'not available'}',
+                      );
+                    },
+                  ),
+                ]),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _StatusTile extends StatelessWidget {
-  const _StatusTile({required this.icon, required this.label, this.bad = false});
+class _Row extends StatelessWidget {
+  const _Row({required this.icon, required this.title, required this.value, this.tone = TileTone.good});
 
   final IconData icon;
-  final String label;
-  final bool bad;
+  final String title;
+  final String value;
+  final TileTone tone;
 
   @override
   Widget build(BuildContext context) {
-    final color = bad ? Theme.of(context).colorScheme.error : null;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: color),
-      title: Text(label, style: TextStyle(color: color)),
+    final t = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        IconTile(icon, tone: tone, size: 40),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: t.titleMedium),
+            const SizedBox(height: 2),
+            Text(value, style: t.bodyMedium),
+          ]),
+        ),
+      ],
     );
   }
+}
+
+class _Gap extends StatelessWidget {
+  const _Gap();
+  @override
+  Widget build(BuildContext context) =>
+      const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Divider());
 }
