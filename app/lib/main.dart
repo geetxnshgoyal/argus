@@ -1,26 +1,41 @@
+import 'package:argus_security/argus_security.dart';
 import 'package:flutter/material.dart';
 
 import 'src/api_client.dart';
+import 'src/auth_controller.dart';
 import 'src/config.dart';
 import 'src/home_screen.dart';
-import 'package:argus_security/argus_security.dart';
+import 'src/screens/login_screen.dart';
+import 'src/screens/policy_screen.dart';
+import 'src/theme.dart';
 
 void main() {
-  runApp(ArgusApp(api: ApiClient(baseUrl: defaultApiBase()), security: SecurityBridge()));
+  final security = SecurityBridge();
+  final api = ApiClient(baseUrl: defaultApiBase(), security: security, store: SecureTokenStore());
+  runApp(ArgusApp(auth: AuthController(api)..start(), security: security));
 }
 
 class ArgusApp extends StatelessWidget {
-  const ArgusApp({super.key, required this.api, required this.security});
+  const ArgusApp({super.key, required this.auth, required this.security});
 
-  final ApiClient api;
+  final AuthController auth;
   final SecurityBridge security;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Argus',
-      theme: ThemeData(colorSchemeSeed: const Color(0xFF1F5FBF), useMaterial3: true),
-      home: HomeScreen(api: api, security: security),
+      debugShowCheckedModeBanner: false,
+      theme: argusTheme(),
+      home: ListenableBuilder(
+        listenable: auth,
+        builder: (context, _) => switch (auth.status) {
+          AuthStatus.loading => const Scaffold(body: Center(child: CircularProgressIndicator())),
+          AuthStatus.signedOut => LoginScreen(auth: auth),
+          AuthStatus.needsPolicy => PolicyScreen(auth: auth),
+          AuthStatus.signedIn => HomeScreen(auth: auth, security: security),
+        },
+      ),
     );
   }
 }
