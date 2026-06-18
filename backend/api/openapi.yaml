@@ -3,19 +3,26 @@ info:
   title: Argus API
   version: 0.1.0
   description: |
-    Argus attendance API. This file is the source of truth: server and web
-    types are generated from it (`pnpm gen:api`), and a backend test fails if
-    any /v1 route is missing here or vice versa.
+    Argus attendance API. This file is the source of truth: server and web types are generated
+    from it (`pnpm gen:api`), and a backend test fails if any /v1 route is missing here or vice versa.
 
     Errors always use the Error schema. Server time is authoritative.
+  license:
+    name: Proprietary
 servers:
-  - url: /
+- url: /
 tags:
-  - name: system
+- name: system
+- name: auth
+- name: me
+- name: admin
+- name: audit
+- name: dev
 paths:
   /v1/health:
     get:
-      tags: [system]
+      tags:
+      - system
       operationId: getHealth
       summary: Liveness and dependency health
       security: []
@@ -24,15 +31,18 @@ paths:
           description: Server and database are healthy
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Health' }
+              schema:
+                $ref: '#/components/schemas/Health'
         '503':
           description: A dependency (the database) is unavailable
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Health' }
+              schema:
+                $ref: '#/components/schemas/Health'
   /v1/time:
     get:
-      tags: [system]
+      tags:
+      - system
       operationId: getTime
       summary: Server time, used by clients to compute their clock offset
       security: []
@@ -41,29 +51,3498 @@ paths:
           description: Current server time
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ServerTime' }
+              schema:
+                $ref: '#/components/schemas/ServerTime'
+  /v1/admin/departments:
+    get:
+      tags:
+      - admin
+      operationId: listDepartments
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List departments
+    post:
+      tags:
+      - admin
+      operationId: createDepartment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create department
+  /v1/admin/departments/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getDepartment
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get department
+    patch:
+      tags:
+      - admin
+      operationId: updateDepartment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update department
+    delete:
+      tags:
+      - admin
+      operationId: deleteDepartment
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete department
+  /v1/admin/programs:
+    get:
+      tags:
+      - admin
+      operationId: listPrograms
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      - name: department_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List programs
+    post:
+      tags:
+      - admin
+      operationId: createProgram
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create program
+  /v1/admin/programs/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getProgram
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get program
+    patch:
+      tags:
+      - admin
+      operationId: updateProgram
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update program
+    delete:
+      tags:
+      - admin
+      operationId: deleteProgram
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete program
+  /v1/admin/terms:
+    get:
+      tags:
+      - admin
+      operationId: listTerms
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TermList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List terms
+    post:
+      tags:
+      - admin
+      operationId: createTerm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TermInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Term'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create term
+  /v1/admin/terms/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getTerm
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Term'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get term
+    patch:
+      tags:
+      - admin
+      operationId: updateTerm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TermPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Term'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update term
+    delete:
+      tags:
+      - admin
+      operationId: deleteTerm
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete term
+  /v1/admin/sections:
+    get:
+      tags:
+      - admin
+      operationId: listSections
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      - name: term_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: program_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List sections
+    post:
+      tags:
+      - admin
+      operationId: createSection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SectionInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Section'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create section
+  /v1/admin/sections/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getSection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Section'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get section
+    patch:
+      tags:
+      - admin
+      operationId: updateSection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SectionPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Section'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update section
+    delete:
+      tags:
+      - admin
+      operationId: deleteSection
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete section
+  /v1/admin/groups:
+    get:
+      tags:
+      - admin
+      operationId: listSectionGroups
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      - name: section_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionGroupList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List section groups
+    post:
+      tags:
+      - admin
+      operationId: createSectionGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SectionGroupInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionGroup'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create section group
+  /v1/admin/groups/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getSectionGroup
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionGroup'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get section group
+    patch:
+      tags:
+      - admin
+      operationId: updateSectionGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SectionGroupPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionGroup'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update section group
+    delete:
+      tags:
+      - admin
+      operationId: deleteSectionGroup
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete section group
+  /v1/admin/subjects:
+    get:
+      tags:
+      - admin
+      operationId: listSubjects
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubjectList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List subjects
+    post:
+      tags:
+      - admin
+      operationId: createSubject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubjectInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create subject
+  /v1/admin/subjects/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getSubject
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get subject
+    patch:
+      tags:
+      - admin
+      operationId: updateSubject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubjectPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update subject
+    delete:
+      tags:
+      - admin
+      operationId: deleteSubject
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete subject
+  /v1/admin/rooms:
+    get:
+      tags:
+      - admin
+      operationId: listRooms
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List rooms
+    post:
+      tags:
+      - admin
+      operationId: createRoom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create room
+  /v1/admin/rooms/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getRoom
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get room
+    patch:
+      tags:
+      - admin
+      operationId: updateRoom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update room
+    delete:
+      tags:
+      - admin
+      operationId: deleteRoom
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete room
+  /v1/admin/geofences:
+    get:
+      tags:
+      - admin
+      operationId: listGeofences
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeofenceList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List geofences
+    post:
+      tags:
+      - admin
+      operationId: createGeofence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeofenceInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Geofence'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create geofence
+  /v1/admin/geofences/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getGeofence
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Geofence'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get geofence
+    patch:
+      tags:
+      - admin
+      operationId: updateGeofence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeofencePatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Geofence'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update geofence
+    delete:
+      tags:
+      - admin
+      operationId: deleteGeofence
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete geofence
+  /v1/admin/campus-networks:
+    get:
+      tags:
+      - admin
+      operationId: listCampusNetworks
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampusNetworkList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List campus networks
+    post:
+      tags:
+      - admin
+      operationId: createCampusNetwork
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampusNetworkInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampusNetwork'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create campus network
+  /v1/admin/campus-networks/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getCampusNetwork
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampusNetwork'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get campus network
+    patch:
+      tags:
+      - admin
+      operationId: updateCampusNetwork
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampusNetworkPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampusNetwork'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update campus network
+    delete:
+      tags:
+      - admin
+      operationId: deleteCampusNetwork
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete campus network
+  /v1/admin/offerings:
+    get:
+      tags:
+      - admin
+      operationId: listOfferings
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      - name: term_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: section_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: subject_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferingList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List offerings
+    post:
+      tags:
+      - admin
+      operationId: createOffering
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfferingInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offering'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create offering
+  /v1/admin/offerings/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getOffering
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offering'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get offering
+    patch:
+      tags:
+      - admin
+      operationId: updateOffering
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfferingPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offering'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update offering
+    delete:
+      tags:
+      - admin
+      operationId: deleteOffering
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete offering
+  /v1/admin/enrollments:
+    get:
+      tags:
+      - admin
+      operationId: listEnrollments
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      - name: offering_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: student_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List enrollments
+    post:
+      tags:
+      - admin
+      operationId: createEnrollment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrollment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create enrollment
+  /v1/admin/enrollments/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getEnrollment
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrollment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get enrollment
+    patch:
+      tags:
+      - admin
+      operationId: updateEnrollment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enrollment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update enrollment
+    delete:
+      tags:
+      - admin
+      operationId: deleteEnrollment
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete enrollment
+  /v1/admin/teaching-assignments:
+    get:
+      tags:
+      - admin
+      operationId: listTeachingAssignments
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      - name: offering_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: teacher_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachingAssignmentList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List teaching assignments
+    post:
+      tags:
+      - admin
+      operationId: createTeachingAssignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeachingAssignmentInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachingAssignment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create teaching assignment
+  /v1/admin/teaching-assignments/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getTeachingAssignment
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachingAssignment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get teaching assignment
+    patch:
+      tags:
+      - admin
+      operationId: updateTeachingAssignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeachingAssignmentPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeachingAssignment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update teaching assignment
+    delete:
+      tags:
+      - admin
+      operationId: deleteTeachingAssignment
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Delete teaching assignment
+  /v1/auth/oidc/login:
+    get:
+      tags:
+      - auth
+      operationId: ssoLogin
+      security: []
+      summary: Start college SSO (redirects to Google)
+      parameters:
+      - name: client
+        in: query
+        schema:
+          type: string
+          enum:
+          - web
+          - mobile
+          default: web
+      - name: next
+        in: query
+        schema:
+          type: string
+        description: Same-site path to return to (web)
+      - name: app_challenge
+        in: query
+        schema:
+          type: string
+        description: 'Mobile: S256 PKCE challenge of the app verifier'
+      - name: reauth
+        in: query
+        schema:
+          type: string
+          enum:
+          - '1'
+          - 'true'
+        description: Force a fresh sign-in (sensitive actions)
+      responses:
+        '302':
+          description: Redirect
+        '503':
+          description: SSO not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /v1/auth/oidc/callback:
+    get:
+      tags:
+      - auth
+      operationId: ssoCallback
+      security: []
+      summary: 'IdP redirect target. Web: sets the session cookie; mobile: redirects to the app with a one-time
+        code'
+      parameters:
+      - name: code
+        in: query
+        schema:
+          type: string
+      - name: state
+        in: query
+        schema:
+          type: string
+      responses:
+        '302':
+          description: Redirect
+  /v1/auth/mobile/exchange:
+    post:
+      tags:
+      - auth
+      operationId: mobileExchange
+      security: []
+      summary: Redeem the one-time code; binds tokens to the device session key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - code_verifier
+              - session_public_key
+              - signature
+              properties:
+                code:
+                  type: string
+                code_verifier:
+                  type: string
+                session_public_key:
+                  type: string
+                  pattern: ^[A-Za-z0-9_-]+$
+                  description: P-256 SPKI DER, base64url
+                signature:
+                  type: string
+                  pattern: ^[A-Za-z0-9_-]+$
+                  description: ECDSA-SHA256 over "argus/v1/exchange|<code>"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+  /v1/auth/refresh:
+    post:
+      tags:
+      - auth
+      operationId: refreshTokens
+      security: []
+      summary: Rotate tokens; signed by the device session key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - refresh_token
+              - ts
+              - signature
+              properties:
+                refresh_token:
+                  type: string
+                ts:
+                  type: integer
+                  description: Device time, ms
+                signature:
+                  type: string
+                  pattern: ^[A-Za-z0-9_-]+$
+                  description: ECDSA-SHA256 over "argus/v1/refresh|<token>|<ts>"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+  /v1/auth/logout:
+    post:
+      tags:
+      - auth
+      operationId: logout
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ok'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: Logout
+  /v1/policy:
+    get:
+      tags:
+      - me
+      operationId: getPolicy
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+      summary: Get policy
+  /v1/me:
+    get:
+      tags:
+      - me
+      operationId: getMe
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        '401':
+          $ref: '#/components/responses/Error401'
+      summary: Get me
+  /v1/me/policy-acceptance:
+    post:
+      tags:
+      - me
+      operationId: acceptPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - version
+              properties:
+                version:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - ok
+                - version
+                properties:
+                  ok:
+                    type: boolean
+                  version:
+                    type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Accept policy
+  /v1/auth/dev/users:
+    get:
+      tags:
+      - dev
+      operationId: devUsers
+      security: []
+      summary: 'DEV ONLY (ARGUS_DEV_LOGIN): users for the login picker'
+      parameters:
+      - $ref: '#/components/parameters/Q'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - users
+                properties:
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                      - email
+                      - name
+                      - role
+                      properties:
+                        email:
+                          type: string
+                        name:
+                          type: string
+                        role:
+                          $ref: '#/components/schemas/Role'
+  /v1/auth/dev/login:
+    post:
+      tags:
+      - dev
+      operationId: devLogin
+      security: []
+      summary: 'DEV ONLY: web session without SSO'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - ok
+                - home
+                properties:
+                  ok:
+                    type: boolean
+                  home:
+                    type: string
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+  /v1/auth/dev/mobile-login:
+    post:
+      tags:
+      - dev
+      operationId: devMobileLogin
+      security: []
+      summary: 'DEV ONLY: student app tokens without SSO'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - session_public_key
+              - signature
+              properties:
+                email:
+                  type: string
+                  format: email
+                session_public_key:
+                  type: string
+                  pattern: ^[A-Za-z0-9_-]+$
+                signature:
+                  type: string
+                  pattern: ^[A-Za-z0-9_-]+$
+                  description: over "argus/v1/dev-login|<email>"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+  /v1/admin/users:
+    get:
+      tags:
+      - admin
+      operationId: listUsers
+      parameters:
+      - name: role
+        in: query
+        schema:
+          $ref: '#/components/schemas/Role'
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - active
+          - disabled
+      - name: section_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/Q'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List users
+    post:
+      tags:
+      - admin
+      operationId: createUser
+      description: Staff roles (acadops, verifier, admin) need the admin role and a sign-in within 15 minutes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Create user
+  /v1/admin/users/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - admin
+      operationId: getUser
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+      summary: Get user
+    patch:
+      tags:
+      - admin
+      operationId: updateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPatch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      summary: Update user
+  /v1/admin/students/import:
+    post:
+      tags:
+      - admin
+      operationId: importStudents
+      summary: Roster import with dry-run report. The browser sends only usn, name, email, batch, status.
+      parameters:
+      - $ref: '#/components/parameters/DryRun'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentImportRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentImportReport'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+  /v1/admin/audit:
+    get:
+      tags:
+      - audit
+      operationId: listAudit
+      parameters:
+      - name: entity_type
+        in: query
+        schema:
+          type: string
+      - name: entity_id
+        in: query
+        schema:
+          type: string
+      - name: actor_id
+        in: query
+        schema:
+          type: string
+      - name: action
+        in: query
+        schema:
+          type: string
+      - name: from
+        in: query
+        schema:
+          type: string
+      - name: to
+        in: query
+        schema:
+          type: string
+      - name: before_id
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          maximum: 500
+          default: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditPage'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      summary: List audit
+  /v1/admin/audit/verify:
+    post:
+      tags:
+      - audit
+      operationId: verifyAudit
+      summary: Walk the hash chain and checkpoints
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditVerifyResult'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
 components:
   schemas:
     Error:
       type: object
-      required: [code, message]
+      required:
+      - code
+      - message
       additionalProperties: false
       properties:
-        code: { type: string, description: Stable machine-readable error code }
-        message: { type: string, description: Human-readable, safe to display }
-        details: { type: object, additionalProperties: true }
+        code:
+          type: string
+          description: Stable machine-readable error code
+        message:
+          type: string
+          description: Human-readable; safe to display
+        details:
+          type: object
+          additionalProperties: true
     Health:
       type: object
-      required: [status, version, db]
+      required:
+      - status
+      - version
+      - db
       additionalProperties: false
       properties:
-        status: { type: string, enum: [ok, degraded] }
-        version: { type: string }
-        db: { type: string, enum: [ok, unavailable] }
+        status:
+          type: string
+          enum:
+          - ok
+          - degraded
+        version:
+          type: string
+        db:
+          type: string
+          enum:
+          - ok
+          - unavailable
     ServerTime:
       type: object
-      required: [server_time_ms, server_time]
+      required:
+      - server_time_ms
+      - server_time
       additionalProperties: false
       properties:
-        server_time_ms: { type: integer, format: int64, description: Unix epoch milliseconds }
-        server_time: { type: string, format: date-time }
+        server_time_ms:
+          type: integer
+          format: int64
+          description: Unix epoch milliseconds
+        server_time:
+          type: string
+          format: date-time
+    Department:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          code:
+            type: string
+          name:
+            type: string
+    DepartmentInput:
+      type: object
+      required:
+      - code
+      - name
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+    DepartmentPatch:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+    DepartmentList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Department'
+        total:
+          type: integer
+    Program:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          code:
+            type: string
+          name:
+            type: string
+          department_id:
+            type: string
+            format: uuid
+    ProgramInput:
+      type: object
+      required:
+      - code
+      - name
+      - department_id
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        department_id:
+          type: string
+          format: uuid
+    ProgramPatch:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        department_id:
+          type: string
+          format: uuid
+    ProgramList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Program'
+        total:
+          type: integer
+    Term:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          name:
+            type: string
+          start_date:
+            type: string
+            format: date
+          end_date:
+            type: string
+            format: date
+    TermInput:
+      type: object
+      required:
+      - name
+      - start_date
+      - end_date
+      properties:
+        name:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+    TermPatch:
+      type: object
+      properties:
+        name:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+    TermList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Term'
+        total:
+          type: integer
+    Section:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          program_id:
+            type: string
+            format: uuid
+          term_id:
+            type: string
+            format: uuid
+          name:
+            type: string
+    SectionInput:
+      type: object
+      required:
+      - program_id
+      - term_id
+      - name
+      properties:
+        program_id:
+          type: string
+          format: uuid
+        term_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    SectionPatch:
+      type: object
+      properties:
+        program_id:
+          type: string
+          format: uuid
+        term_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    SectionList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Section'
+        total:
+          type: integer
+    SectionGroup:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          section_id:
+            type: string
+            format: uuid
+          name:
+            type: string
+    SectionGroupInput:
+      type: object
+      required:
+      - section_id
+      - name
+      properties:
+        section_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    SectionGroupPatch:
+      type: object
+      properties:
+        section_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    SectionGroupList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SectionGroup'
+        total:
+          type: integer
+    Subject:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          code:
+            type: string
+          name:
+            type: string
+          kind:
+            type: string
+            enum:
+            - lecture
+            - lab
+            - tutorial
+    SubjectInput:
+      type: object
+      required:
+      - code
+      - name
+      - kind
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - lecture
+          - lab
+          - tutorial
+    SubjectPatch:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - lecture
+          - lab
+          - tutorial
+    SubjectList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subject'
+        total:
+          type: integer
+    Room:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          code:
+            type: string
+          building:
+            type: string
+          floor:
+            type:
+            - integer
+            - 'null'
+          capacity:
+            type:
+            - integer
+            - 'null'
+          geofence_id:
+            type:
+            - string
+            - 'null'
+            format: uuid
+          ble_rssi_threshold:
+            type:
+            - integer
+            - 'null'
+            description: Phase 2 hook
+    RoomInput:
+      type: object
+      required:
+      - code
+      properties:
+        code:
+          type: string
+        building:
+          type: string
+        floor:
+          type:
+          - integer
+          - 'null'
+        capacity:
+          type:
+          - integer
+          - 'null'
+        geofence_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        ble_rssi_threshold:
+          type:
+          - integer
+          - 'null'
+          description: Phase 2 hook
+    RoomPatch:
+      type: object
+      properties:
+        code:
+          type: string
+        building:
+          type: string
+        floor:
+          type:
+          - integer
+          - 'null'
+        capacity:
+          type:
+          - integer
+          - 'null'
+        geofence_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        ble_rssi_threshold:
+          type:
+          - integer
+          - 'null'
+          description: Phase 2 hook
+    RoomList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Room'
+        total:
+          type: integer
+    Geofence:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          name:
+            type: string
+          center_lat:
+            type: number
+          center_lon:
+            type: number
+          radius_m:
+            type: number
+          polygon:
+            type:
+            - array
+            - 'null'
+            items:
+              type: array
+              items:
+                type: number
+              minItems: 2
+              maxItems: 2
+            description: '[[lat, lon], ...] (optional; circle used if absent)'
+    GeofenceInput:
+      type: object
+      required:
+      - name
+      - center_lat
+      - center_lon
+      - radius_m
+      properties:
+        name:
+          type: string
+        center_lat:
+          type: number
+        center_lon:
+          type: number
+        radius_m:
+          type: number
+        polygon:
+          type:
+          - array
+          - 'null'
+          items:
+            type: array
+            items:
+              type: number
+            minItems: 2
+            maxItems: 2
+          description: '[[lat, lon], ...] (optional; circle used if absent)'
+    GeofencePatch:
+      type: object
+      properties:
+        name:
+          type: string
+        center_lat:
+          type: number
+        center_lon:
+          type: number
+        radius_m:
+          type: number
+        polygon:
+          type:
+          - array
+          - 'null'
+          items:
+            type: array
+            items:
+              type: number
+            minItems: 2
+            maxItems: 2
+          description: '[[lat, lon], ...] (optional; circle used if absent)'
+    GeofenceList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Geofence'
+        total:
+          type: integer
+    CampusNetwork:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          cidr:
+            type: string
+            example: 203.0.113.0/24
+          label:
+            type: string
+    CampusNetworkInput:
+      type: object
+      required:
+      - cidr
+      properties:
+        cidr:
+          type: string
+          example: 203.0.113.0/24
+        label:
+          type: string
+    CampusNetworkPatch:
+      type: object
+      properties:
+        cidr:
+          type: string
+          example: 203.0.113.0/24
+        label:
+          type: string
+    CampusNetworkList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CampusNetwork'
+        total:
+          type: integer
+    Offering:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          term_id:
+            type: string
+            format: uuid
+          subject_id:
+            type: string
+            format: uuid
+          section_id:
+            type: string
+            format: uuid
+    OfferingInput:
+      type: object
+      required:
+      - term_id
+      - subject_id
+      - section_id
+      properties:
+        term_id:
+          type: string
+          format: uuid
+        subject_id:
+          type: string
+          format: uuid
+        section_id:
+          type: string
+          format: uuid
+    OfferingPatch:
+      type: object
+      properties:
+        term_id:
+          type: string
+          format: uuid
+        subject_id:
+          type: string
+          format: uuid
+        section_id:
+          type: string
+          format: uuid
+    OfferingList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Offering'
+        total:
+          type: integer
+    Enrollment:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          student_id:
+            type: string
+            format: uuid
+          offering_id:
+            type: string
+            format: uuid
+          group_id:
+            type:
+            - string
+            - 'null'
+            format: uuid
+    EnrollmentInput:
+      type: object
+      required:
+      - student_id
+      - offering_id
+      properties:
+        student_id:
+          type: string
+          format: uuid
+        offering_id:
+          type: string
+          format: uuid
+        group_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+    EnrollmentPatch:
+      type: object
+      properties:
+        student_id:
+          type: string
+          format: uuid
+        offering_id:
+          type: string
+          format: uuid
+        group_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+    EnrollmentList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Enrollment'
+        total:
+          type: integer
+    TeachingAssignment:
+      allOf:
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+      - type: object
+        properties:
+          teacher_id:
+            type: string
+            format: uuid
+          offering_id:
+            type: string
+            format: uuid
+          group_id:
+            type:
+            - string
+            - 'null'
+            format: uuid
+          role:
+            type: string
+            enum:
+            - primary
+            - assistant
+    TeachingAssignmentInput:
+      type: object
+      required:
+      - teacher_id
+      - offering_id
+      properties:
+        teacher_id:
+          type: string
+          format: uuid
+        offering_id:
+          type: string
+          format: uuid
+        group_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        role:
+          type: string
+          enum:
+          - primary
+          - assistant
+    TeachingAssignmentPatch:
+      type: object
+      properties:
+        teacher_id:
+          type: string
+          format: uuid
+        offering_id:
+          type: string
+          format: uuid
+        group_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        role:
+          type: string
+          enum:
+          - primary
+          - assistant
+    TeachingAssignmentList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeachingAssignment'
+        total:
+          type: integer
+    TokenPair:
+      type: object
+      required:
+      - access_token
+      - refresh_token
+      - expires_in
+      - token_type
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+        token_type:
+          type: string
+          enum:
+          - Bearer
+    Ok:
+      type: object
+      required:
+      - ok
+      properties:
+        ok:
+          type: boolean
+    Policy:
+      type: object
+      required:
+      - version
+      - text
+      properties:
+        version:
+          type: string
+        text:
+          type: string
+          description: Markdown
+    Role:
+      type: string
+      enum:
+      - student
+      - teacher
+      - acadops
+      - verifier
+      - admin
+    Me:
+      type: object
+      required:
+      - user
+      - home
+      - csrf_token
+      - policy
+      - student
+      properties:
+        user:
+          type: object
+          required:
+          - id
+          - role
+          - name
+          - email
+          properties:
+            id:
+              type: string
+              format: uuid
+            role:
+              $ref: '#/components/schemas/Role'
+            name:
+              type: string
+            email:
+              type: string
+        home:
+          type: string
+          description: Role home path in the web app
+        csrf_token:
+          type:
+          - string
+          - 'null'
+          description: Send as x-argus-csrf on mutating cookie requests
+        policy:
+          type: object
+          required:
+          - version
+          - accepted
+          properties:
+            version:
+              type: string
+            accepted:
+              type: boolean
+        student:
+          oneOf:
+          - type: 'null'
+          - type: object
+            required:
+            - usn
+            - program
+            - section
+            - batch
+            properties:
+              usn:
+                type: string
+              program:
+                type: string
+              section:
+                type:
+                - string
+                - 'null'
+              batch:
+                type:
+                - string
+                - 'null'
+    StudentProfile:
+      type: object
+      required:
+      - usn
+      - program_id
+      - admission_year
+      properties:
+        usn:
+          type: string
+        program_id:
+          type: string
+          format: uuid
+        section_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        group_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        admission_year:
+          type: integer
+    TeacherProfile:
+      type: object
+      required:
+      - faculty_id
+      - department_id
+      properties:
+        faculty_id:
+          type: string
+        department_id:
+          type: string
+          format: uuid
+    User:
+      type: object
+      required:
+      - id
+      - role
+      - name
+      - email
+      - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/Role'
+        name:
+          type: string
+        email:
+          type: string
+        status:
+          type: string
+          enum:
+          - active
+          - disabled
+        sso_linked:
+          type: boolean
+        usn:
+          type:
+          - string
+          - 'null'
+        program_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        section_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        group_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        admission_year:
+          type:
+          - integer
+          - 'null'
+        faculty_id:
+          type:
+          - string
+          - 'null'
+        department_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+    UserInput:
+      type: object
+      required:
+      - role
+      - name
+      - email
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum:
+          - active
+          - disabled
+        student:
+          $ref: '#/components/schemas/StudentProfile'
+        teacher:
+          $ref: '#/components/schemas/TeacherProfile'
+    UserPatch:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum:
+          - active
+          - disabled
+        reset_sso:
+          type: boolean
+          enum:
+          - true
+          description: Unlink the SSO identity (e.g. wrong account linked)
+        student:
+          $ref: '#/components/schemas/StudentProfile'
+        teacher:
+          $ref: '#/components/schemas/TeacherProfile'
+    UserList:
+      type: object
+      required:
+      - items
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+    StudentImportRow:
+      type: object
+      properties:
+        usn:
+          type:
+          - string
+          - 'null'
+        name:
+          type:
+          - string
+          - 'null'
+        email:
+          type:
+          - string
+          - 'null'
+        batch:
+          type:
+          - string
+          - 'null'
+        status:
+          type:
+          - string
+          - 'null'
+    StudentImportRequest:
+      type: object
+      required:
+      - program_id
+      - section_id
+      - admission_year
+      - rows
+      properties:
+        program_id:
+          type: string
+          format: uuid
+        section_id:
+          type: string
+          format: uuid
+        admission_year:
+          type: integer
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentImportRow'
+          maxItems: 5000
+    StudentImportReport:
+      type: object
+      required:
+      - dry_run
+      - summary
+      - groups_to_create
+      - rows
+      properties:
+        dry_run:
+          type: boolean
+        summary:
+          type: object
+          required:
+          - create
+          - update
+          - unchanged
+          - error
+          - disabled
+          properties:
+            create:
+              type: integer
+            update:
+              type: integer
+            unchanged:
+              type: integer
+            error:
+              type: integer
+            disabled:
+              type: integer
+        groups_to_create:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: object
+            required:
+            - line
+            - usn
+            - name
+            - action
+            - status
+            properties:
+              line:
+                type: integer
+              usn:
+                type: string
+              name:
+                type: string
+              action:
+                type: string
+                enum:
+                - create
+                - update
+                - unchanged
+                - error
+              status:
+                type: string
+                enum:
+                - active
+                - disabled
+              changes:
+                type: array
+                items:
+                  type: string
+              errors:
+                type: array
+                items:
+                  type: string
+    AuditEntry:
+      type: object
+      required:
+      - id
+      - at
+      - action
+      - entity_type
+      - hash
+      properties:
+        id:
+          type: string
+        at:
+          type: string
+          format: date-time
+        actor_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        actor_name:
+          type:
+          - string
+          - 'null'
+        actor_role:
+          type:
+          - string
+          - 'null'
+        action:
+          type: string
+        entity_type:
+          type: string
+        entity_id:
+          type:
+          - string
+          - 'null'
+        before: {}
+        after: {}
+        ip:
+          type:
+          - string
+          - 'null'
+        hash:
+          type: string
+    AuditPage:
+      type: object
+      required:
+      - items
+      - next_before_id
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEntry'
+        next_before_id:
+          type:
+          - string
+          - 'null'
+    AuditVerifyResult:
+      type: object
+      required:
+      - ok
+      - checked
+      - lastId
+      - lastHash
+      properties:
+        ok:
+          type: boolean
+        checked:
+          type: integer
+        lastId:
+          type:
+          - string
+          - 'null'
+        lastHash:
+          type: string
+        problem:
+          type: object
+          required:
+          - id
+          - reason
+          properties:
+            id:
+              type: string
+            reason:
+              type: string
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Q:
+      name: q
+      in: query
+      schema:
+        type: string
+        maxLength: 100
+      description: Case-insensitive search
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 200
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    DryRun:
+      name: dry_run
+      in: query
+      schema:
+        type: string
+        enum:
+        - 'true'
+        - 'false'
+        default: 'true'
+      description: true (default) only reports what would change
+  responses:
+    Error400:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error401:
+      description: Not signed in
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error403:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error404:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error409:
+      description: Conflict (duplicate, in use, or overlapping)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: argus_sid
+      description: Staff web session (cookie is __Host-argus_sid over https). Mutating requests also need the x-argus-csrf
+        header.
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Student app access token (15 min).
+security:
+- session: []
+- bearer: []
