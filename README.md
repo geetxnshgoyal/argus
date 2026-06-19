@@ -31,6 +31,15 @@ pnpm install
 pnpm dev
 ```
 
+Then `pnpm seed:dev` (once) adds test accounts: `admin@`, `acadops@`, `verifier@`,
+`teacher@` and `student@svyasa-sas.edu.in`. Pass a roster export to load real
+students locally, e.g. `pnpm seed:dev /path/to/students.json`; only USN, name,
+college email, batch and status are read.
+
+In development, sign in with the **Developer sign-in** list on the login page
+(web) or the dev sign-in card (debug app builds). Real Google sign-in needs
+`OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` (see `deploy/argus.env.example`).
+
 `pnpm dev` starts a local Postgres in `.devdb/` (port 55432), the API on
 http://localhost:8080 (restarts on change) and the web app on
 http://localhost:5173 (the display is at `/display`). Ctrl-C stops the API and
