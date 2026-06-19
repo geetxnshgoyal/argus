@@ -38,6 +38,753 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List departments */
+        get: operations["listDepartments"];
+        put?: never;
+        /** Create department */
+        post: operations["createDepartment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/departments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get department */
+        get: operations["getDepartment"];
+        put?: never;
+        post?: never;
+        /** Delete department */
+        delete: operations["deleteDepartment"];
+        options?: never;
+        head?: never;
+        /** Update department */
+        patch: operations["updateDepartment"];
+        trace?: never;
+    };
+    "/v1/admin/programs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List programs */
+        get: operations["listPrograms"];
+        put?: never;
+        /** Create program */
+        post: operations["createProgram"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/programs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get program */
+        get: operations["getProgram"];
+        put?: never;
+        post?: never;
+        /** Delete program */
+        delete: operations["deleteProgram"];
+        options?: never;
+        head?: never;
+        /** Update program */
+        patch: operations["updateProgram"];
+        trace?: never;
+    };
+    "/v1/admin/terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List terms */
+        get: operations["listTerms"];
+        put?: never;
+        /** Create term */
+        post: operations["createTerm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/terms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get term */
+        get: operations["getTerm"];
+        put?: never;
+        post?: never;
+        /** Delete term */
+        delete: operations["deleteTerm"];
+        options?: never;
+        head?: never;
+        /** Update term */
+        patch: operations["updateTerm"];
+        trace?: never;
+    };
+    "/v1/admin/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List sections */
+        get: operations["listSections"];
+        put?: never;
+        /** Create section */
+        post: operations["createSection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/sections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get section */
+        get: operations["getSection"];
+        put?: never;
+        post?: never;
+        /** Delete section */
+        delete: operations["deleteSection"];
+        options?: never;
+        head?: never;
+        /** Update section */
+        patch: operations["updateSection"];
+        trace?: never;
+    };
+    "/v1/admin/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List section groups */
+        get: operations["listSectionGroups"];
+        put?: never;
+        /** Create section group */
+        post: operations["createSectionGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get section group */
+        get: operations["getSectionGroup"];
+        put?: never;
+        post?: never;
+        /** Delete section group */
+        delete: operations["deleteSectionGroup"];
+        options?: never;
+        head?: never;
+        /** Update section group */
+        patch: operations["updateSectionGroup"];
+        trace?: never;
+    };
+    "/v1/admin/subjects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List subjects */
+        get: operations["listSubjects"];
+        put?: never;
+        /** Create subject */
+        post: operations["createSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/subjects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get subject */
+        get: operations["getSubject"];
+        put?: never;
+        post?: never;
+        /** Delete subject */
+        delete: operations["deleteSubject"];
+        options?: never;
+        head?: never;
+        /** Update subject */
+        patch: operations["updateSubject"];
+        trace?: never;
+    };
+    "/v1/admin/rooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List rooms */
+        get: operations["listRooms"];
+        put?: never;
+        /** Create room */
+        post: operations["createRoom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/rooms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get room */
+        get: operations["getRoom"];
+        put?: never;
+        post?: never;
+        /** Delete room */
+        delete: operations["deleteRoom"];
+        options?: never;
+        head?: never;
+        /** Update room */
+        patch: operations["updateRoom"];
+        trace?: never;
+    };
+    "/v1/admin/geofences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List geofences */
+        get: operations["listGeofences"];
+        put?: never;
+        /** Create geofence */
+        post: operations["createGeofence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/geofences/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get geofence */
+        get: operations["getGeofence"];
+        put?: never;
+        post?: never;
+        /** Delete geofence */
+        delete: operations["deleteGeofence"];
+        options?: never;
+        head?: never;
+        /** Update geofence */
+        patch: operations["updateGeofence"];
+        trace?: never;
+    };
+    "/v1/admin/campus-networks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List campus networks */
+        get: operations["listCampusNetworks"];
+        put?: never;
+        /** Create campus network */
+        post: operations["createCampusNetwork"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/campus-networks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get campus network */
+        get: operations["getCampusNetwork"];
+        put?: never;
+        post?: never;
+        /** Delete campus network */
+        delete: operations["deleteCampusNetwork"];
+        options?: never;
+        head?: never;
+        /** Update campus network */
+        patch: operations["updateCampusNetwork"];
+        trace?: never;
+    };
+    "/v1/admin/offerings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List offerings */
+        get: operations["listOfferings"];
+        put?: never;
+        /** Create offering */
+        post: operations["createOffering"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/offerings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get offering */
+        get: operations["getOffering"];
+        put?: never;
+        post?: never;
+        /** Delete offering */
+        delete: operations["deleteOffering"];
+        options?: never;
+        head?: never;
+        /** Update offering */
+        patch: operations["updateOffering"];
+        trace?: never;
+    };
+    "/v1/admin/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List enrollments */
+        get: operations["listEnrollments"];
+        put?: never;
+        /** Create enrollment */
+        post: operations["createEnrollment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/enrollments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get enrollment */
+        get: operations["getEnrollment"];
+        put?: never;
+        post?: never;
+        /** Delete enrollment */
+        delete: operations["deleteEnrollment"];
+        options?: never;
+        head?: never;
+        /** Update enrollment */
+        patch: operations["updateEnrollment"];
+        trace?: never;
+    };
+    "/v1/admin/teaching-assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List teaching assignments */
+        get: operations["listTeachingAssignments"];
+        put?: never;
+        /** Create teaching assignment */
+        post: operations["createTeachingAssignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/teaching-assignments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get teaching assignment */
+        get: operations["getTeachingAssignment"];
+        put?: never;
+        post?: never;
+        /** Delete teaching assignment */
+        delete: operations["deleteTeachingAssignment"];
+        options?: never;
+        head?: never;
+        /** Update teaching assignment */
+        patch: operations["updateTeachingAssignment"];
+        trace?: never;
+    };
+    "/v1/auth/oidc/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Start college SSO (redirects to Google) */
+        get: operations["ssoLogin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/oidc/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** IdP redirect target. Web: sets the session cookie; mobile: redirects to the app with a one-time code */
+        get: operations["ssoCallback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/mobile/exchange": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Redeem the one-time code; binds tokens to the device session key */
+        post: operations["mobileExchange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate tokens; signed by the device session key */
+        post: operations["refreshTokens"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get policy */
+        get: operations["getPolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get me */
+        get: operations["getMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/policy-acceptance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept policy */
+        post: operations["acceptPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/dev/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** DEV ONLY (ARGUS_DEV_LOGIN): users for the login picker */
+        get: operations["devUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/dev/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** DEV ONLY: web session without SSO */
+        post: operations["devLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/dev/mobile-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** DEV ONLY: student app tokens without SSO */
+        post: operations["devMobileLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List users */
+        get: operations["listUsers"];
+        put?: never;
+        /**
+         * Create user
+         * @description Staff roles (acadops, verifier, admin) need the admin role and a sign-in within 15 minutes.
+         */
+        post: operations["createUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** Get user */
+        get: operations["getUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update user */
+        patch: operations["updateUser"];
+        trace?: never;
+    };
+    "/v1/admin/students/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Roster import with dry-run report. The browser sends only usn, name, email, batch, status. */
+        post: operations["importStudents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List audit */
+        get: operations["listAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/audit/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Walk the hash chain and checkpoints */
+        post: operations["verifyAudit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -45,7 +792,7 @@ export interface components {
         Error: {
             /** @description Stable machine-readable error code */
             code: string;
-            /** @description Human-readable */
+            /** @description Human-readable; safe to display */
             message: string;
             details?: {
                 [key: string]: unknown;
@@ -67,9 +814,619 @@ export interface components {
             /** Format: date-time */
             server_time: string;
         };
+        Department: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            code?: string;
+            name?: string;
+        };
+        DepartmentInput: {
+            code: string;
+            name: string;
+        };
+        DepartmentPatch: {
+            code?: string;
+            name?: string;
+        };
+        DepartmentList: {
+            items: components["schemas"]["Department"][];
+            total: number;
+        };
+        Program: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            code?: string;
+            name?: string;
+            /** Format: uuid */
+            department_id?: string;
+        };
+        ProgramInput: {
+            code: string;
+            name: string;
+            /** Format: uuid */
+            department_id: string;
+        };
+        ProgramPatch: {
+            code?: string;
+            name?: string;
+            /** Format: uuid */
+            department_id?: string;
+        };
+        ProgramList: {
+            items: components["schemas"]["Program"][];
+            total: number;
+        };
+        Term: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            name?: string;
+            /** Format: date */
+            start_date?: string;
+            /** Format: date */
+            end_date?: string;
+        };
+        TermInput: {
+            name: string;
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+        };
+        TermPatch: {
+            name?: string;
+            /** Format: date */
+            start_date?: string;
+            /** Format: date */
+            end_date?: string;
+        };
+        TermList: {
+            items: components["schemas"]["Term"][];
+            total: number;
+        };
+        Section: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            /** Format: uuid */
+            program_id?: string;
+            /** Format: uuid */
+            term_id?: string;
+            name?: string;
+        };
+        SectionInput: {
+            /** Format: uuid */
+            program_id: string;
+            /** Format: uuid */
+            term_id: string;
+            name: string;
+        };
+        SectionPatch: {
+            /** Format: uuid */
+            program_id?: string;
+            /** Format: uuid */
+            term_id?: string;
+            name?: string;
+        };
+        SectionList: {
+            items: components["schemas"]["Section"][];
+            total: number;
+        };
+        SectionGroup: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            /** Format: uuid */
+            section_id?: string;
+            name?: string;
+        };
+        SectionGroupInput: {
+            /** Format: uuid */
+            section_id: string;
+            name: string;
+        };
+        SectionGroupPatch: {
+            /** Format: uuid */
+            section_id?: string;
+            name?: string;
+        };
+        SectionGroupList: {
+            items: components["schemas"]["SectionGroup"][];
+            total: number;
+        };
+        Subject: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            code?: string;
+            name?: string;
+            /** @enum {string} */
+            kind?: "lecture" | "lab" | "tutorial";
+        };
+        SubjectInput: {
+            code: string;
+            name: string;
+            /** @enum {string} */
+            kind: "lecture" | "lab" | "tutorial";
+        };
+        SubjectPatch: {
+            code?: string;
+            name?: string;
+            /** @enum {string} */
+            kind?: "lecture" | "lab" | "tutorial";
+        };
+        SubjectList: {
+            items: components["schemas"]["Subject"][];
+            total: number;
+        };
+        Room: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            code?: string;
+            building?: string;
+            floor?: number | null;
+            capacity?: number | null;
+            /** Format: uuid */
+            geofence_id?: string | null;
+            /** @description Phase 2 hook */
+            ble_rssi_threshold?: number | null;
+        };
+        RoomInput: {
+            code: string;
+            building?: string;
+            floor?: number | null;
+            capacity?: number | null;
+            /** Format: uuid */
+            geofence_id?: string | null;
+            /** @description Phase 2 hook */
+            ble_rssi_threshold?: number | null;
+        };
+        RoomPatch: {
+            code?: string;
+            building?: string;
+            floor?: number | null;
+            capacity?: number | null;
+            /** Format: uuid */
+            geofence_id?: string | null;
+            /** @description Phase 2 hook */
+            ble_rssi_threshold?: number | null;
+        };
+        RoomList: {
+            items: components["schemas"]["Room"][];
+            total: number;
+        };
+        Geofence: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            name?: string;
+            center_lat?: number;
+            center_lon?: number;
+            radius_m?: number;
+            /** @description [[lat, lon], ...] (optional; circle used if absent) */
+            polygon?: number[][] | null;
+        };
+        GeofenceInput: {
+            name: string;
+            center_lat: number;
+            center_lon: number;
+            radius_m: number;
+            /** @description [[lat, lon], ...] (optional; circle used if absent) */
+            polygon?: number[][] | null;
+        };
+        GeofencePatch: {
+            name?: string;
+            center_lat?: number;
+            center_lon?: number;
+            radius_m?: number;
+            /** @description [[lat, lon], ...] (optional; circle used if absent) */
+            polygon?: number[][] | null;
+        };
+        GeofenceList: {
+            items: components["schemas"]["Geofence"][];
+            total: number;
+        };
+        CampusNetwork: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            /** @example 203.0.113.0/24 */
+            cidr?: string;
+            label?: string;
+        };
+        CampusNetworkInput: {
+            /** @example 203.0.113.0/24 */
+            cidr: string;
+            label?: string;
+        };
+        CampusNetworkPatch: {
+            /** @example 203.0.113.0/24 */
+            cidr?: string;
+            label?: string;
+        };
+        CampusNetworkList: {
+            items: components["schemas"]["CampusNetwork"][];
+            total: number;
+        };
+        Offering: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            /** Format: uuid */
+            term_id?: string;
+            /** Format: uuid */
+            subject_id?: string;
+            /** Format: uuid */
+            section_id?: string;
+        };
+        OfferingInput: {
+            /** Format: uuid */
+            term_id: string;
+            /** Format: uuid */
+            subject_id: string;
+            /** Format: uuid */
+            section_id: string;
+        };
+        OfferingPatch: {
+            /** Format: uuid */
+            term_id?: string;
+            /** Format: uuid */
+            subject_id?: string;
+            /** Format: uuid */
+            section_id?: string;
+        };
+        OfferingList: {
+            items: components["schemas"]["Offering"][];
+            total: number;
+        };
+        Enrollment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            /** Format: uuid */
+            student_id?: string;
+            /** Format: uuid */
+            offering_id?: string;
+            /** Format: uuid */
+            group_id?: string | null;
+        };
+        EnrollmentInput: {
+            /** Format: uuid */
+            student_id: string;
+            /** Format: uuid */
+            offering_id: string;
+            /** Format: uuid */
+            group_id?: string | null;
+        };
+        EnrollmentPatch: {
+            /** Format: uuid */
+            student_id?: string;
+            /** Format: uuid */
+            offering_id?: string;
+            /** Format: uuid */
+            group_id?: string | null;
+        };
+        EnrollmentList: {
+            items: components["schemas"]["Enrollment"][];
+            total: number;
+        };
+        TeachingAssignment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        } & {
+            /** Format: uuid */
+            teacher_id?: string;
+            /** Format: uuid */
+            offering_id?: string;
+            /** Format: uuid */
+            group_id?: string | null;
+            /** @enum {string} */
+            role?: "primary" | "assistant";
+        };
+        TeachingAssignmentInput: {
+            /** Format: uuid */
+            teacher_id: string;
+            /** Format: uuid */
+            offering_id: string;
+            /** Format: uuid */
+            group_id?: string | null;
+            /** @enum {string} */
+            role?: "primary" | "assistant";
+        };
+        TeachingAssignmentPatch: {
+            /** Format: uuid */
+            teacher_id?: string;
+            /** Format: uuid */
+            offering_id?: string;
+            /** Format: uuid */
+            group_id?: string | null;
+            /** @enum {string} */
+            role?: "primary" | "assistant";
+        };
+        TeachingAssignmentList: {
+            items: components["schemas"]["TeachingAssignment"][];
+            total: number;
+        };
+        TokenPair: {
+            access_token: string;
+            refresh_token: string;
+            expires_in: number;
+            /** @enum {string} */
+            token_type: "Bearer";
+        };
+        Ok: {
+            ok: boolean;
+        };
+        Policy: {
+            version: string;
+            /** @description Markdown */
+            text: string;
+        };
+        /** @enum {string} */
+        Role: "student" | "teacher" | "acadops" | "verifier" | "admin";
+        Me: {
+            user: {
+                /** Format: uuid */
+                id: string;
+                role: components["schemas"]["Role"];
+                name: string;
+                email: string;
+            };
+            /** @description Role home path in the web app */
+            home: string;
+            /** @description Send as x-argus-csrf on mutating cookie requests */
+            csrf_token: string | null;
+            policy: {
+                version: string;
+                accepted: boolean;
+            };
+            student: null | {
+                usn: string;
+                program: string;
+                section: string | null;
+                batch: string | null;
+            };
+        };
+        StudentProfile: {
+            usn: string;
+            /** Format: uuid */
+            program_id: string;
+            /** Format: uuid */
+            section_id?: string | null;
+            /** Format: uuid */
+            group_id?: string | null;
+            admission_year: number;
+        };
+        TeacherProfile: {
+            faculty_id: string;
+            /** Format: uuid */
+            department_id: string;
+        };
+        User: {
+            /** Format: uuid */
+            id: string;
+            role: components["schemas"]["Role"];
+            name: string;
+            email: string;
+            /** @enum {string} */
+            status: "active" | "disabled";
+            sso_linked?: boolean;
+            usn?: string | null;
+            /** Format: uuid */
+            program_id?: string | null;
+            /** Format: uuid */
+            section_id?: string | null;
+            /** Format: uuid */
+            group_id?: string | null;
+            admission_year?: number | null;
+            faculty_id?: string | null;
+            /** Format: uuid */
+            department_id?: string | null;
+        };
+        UserInput: {
+            role: components["schemas"]["Role"];
+            name: string;
+            /** Format: email */
+            email: string;
+            /** @enum {string} */
+            status?: "active" | "disabled";
+            student?: components["schemas"]["StudentProfile"];
+            teacher?: components["schemas"]["TeacherProfile"];
+        };
+        UserPatch: {
+            role?: components["schemas"]["Role"];
+            name?: string;
+            /** Format: email */
+            email?: string;
+            /** @enum {string} */
+            status?: "active" | "disabled";
+            /**
+             * @description Unlink the SSO identity (e.g. wrong account linked)
+             * @enum {boolean}
+             */
+            reset_sso?: true;
+            student?: components["schemas"]["StudentProfile"];
+            teacher?: components["schemas"]["TeacherProfile"];
+        };
+        UserList: {
+            items: components["schemas"]["User"][];
+            total: number;
+        };
+        StudentImportRow: {
+            usn?: string | null;
+            name?: string | null;
+            email?: string | null;
+            batch?: string | null;
+            status?: string | null;
+        };
+        StudentImportRequest: {
+            /** Format: uuid */
+            program_id: string;
+            /** Format: uuid */
+            section_id: string;
+            admission_year: number;
+            rows: components["schemas"]["StudentImportRow"][];
+        };
+        StudentImportReport: {
+            dry_run: boolean;
+            summary: {
+                create: number;
+                update: number;
+                unchanged: number;
+                error: number;
+                disabled: number;
+            };
+            groups_to_create: string[];
+            rows: {
+                line: number;
+                usn: string;
+                name: string;
+                /** @enum {string} */
+                action: "create" | "update" | "unchanged" | "error";
+                /** @enum {string} */
+                status: "active" | "disabled";
+                changes?: string[];
+                errors?: string[];
+            }[];
+        };
+        AuditEntry: {
+            id: string;
+            /** Format: date-time */
+            at: string;
+            /** Format: uuid */
+            actor_id?: string | null;
+            actor_name?: string | null;
+            actor_role?: string | null;
+            action: string;
+            entity_type: string;
+            entity_id?: string | null;
+            before?: unknown;
+            after?: unknown;
+            ip?: string | null;
+            hash: string;
+        };
+        AuditPage: {
+            items: components["schemas"]["AuditEntry"][];
+            next_before_id: string | null;
+        };
+        AuditVerifyResult: {
+            ok: boolean;
+            checked: number;
+            lastId: string | null;
+            lastHash: string;
+            problem?: {
+                id: string;
+                reason: string;
+            };
+        };
     };
-    responses: never;
-    parameters: never;
+    responses: {
+        /** @description Validation failed */
+        Error400: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Not signed in */
+        Error401: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Forbidden */
+        Error403: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Not found */
+        Error404: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Conflict (duplicate, in use, or overlapping) */
+        Error409: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+    };
+    parameters: {
+        Id: string;
+        /** @description Case-insensitive search */
+        Q: string;
+        Limit: number;
+        Offset: number;
+        /** @description true (default) only reports what would change */
+        DryRun: "true" | "false";
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -123,6 +1480,2189 @@ export interface operations {
                     "application/json": components["schemas"]["ServerTime"];
                 };
             };
+        };
+    };
+    listDepartments: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listPrograms: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+                department_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createProgram: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProgramInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Program"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getProgram: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Program"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteProgram: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateProgram: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProgramPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Program"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listTerms: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TermList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createTerm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TermInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Term"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getTerm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Term"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteTerm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateTerm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TermPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Term"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listSections: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+                term_id?: string;
+                program_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createSection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Section"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getSection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Section"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteSection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateSection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Section"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listSectionGroups: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+                section_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionGroupList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createSectionGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionGroupInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionGroup"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getSectionGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionGroup"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteSectionGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateSectionGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionGroupPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionGroup"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listSubjects: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubjectInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subject"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subject"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubjectPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Subject"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listRooms: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoomInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Room"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Room"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateRoom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoomPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Room"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listGeofences: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeofenceList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createGeofence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeofenceInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Geofence"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getGeofence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Geofence"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteGeofence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateGeofence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeofencePatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Geofence"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listCampusNetworks: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampusNetworkList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createCampusNetwork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampusNetworkInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampusNetwork"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getCampusNetwork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampusNetwork"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteCampusNetwork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateCampusNetwork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampusNetworkPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampusNetwork"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listOfferings: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+                term_id?: string;
+                section_id?: string;
+                subject_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfferingList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createOffering: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferingInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Offering"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getOffering: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Offering"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteOffering: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateOffering: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferingPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Offering"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listEnrollments: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+                offering_id?: string;
+                student_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createEnrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollmentInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Enrollment"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getEnrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Enrollment"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteEnrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateEnrollment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollmentPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Enrollment"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listTeachingAssignments: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+                offering_id?: string;
+                teacher_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeachingAssignmentList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createTeachingAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeachingAssignmentInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeachingAssignment"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getTeachingAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeachingAssignment"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    deleteTeachingAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    updateTeachingAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeachingAssignmentPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeachingAssignment"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    ssoLogin: {
+        parameters: {
+            query?: {
+                client?: "web" | "mobile";
+                /** @description Same-site path to return to (web) */
+                next?: string;
+                /** @description Mobile: S256 PKCE challenge of the app verifier */
+                app_challenge?: string;
+                /** @description Force a fresh sign-in (sensitive actions) */
+                reauth?: "1" | "true";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description SSO not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    ssoCallback: {
+        parameters: {
+            query?: {
+                code?: string;
+                state?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    mobileExchange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    code: string;
+                    code_verifier: string;
+                    /** @description P-256 SPKI DER, base64url */
+                    session_public_key: string;
+                    /** @description ECDSA-SHA256 over "argus/v1/exchange|<code>" */
+                    signature: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenPair"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    refreshTokens: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    refresh_token: string;
+                    /** @description Device time, ms */
+                    ts: number;
+                    /** @description ECDSA-SHA256 over "argus/v1/refresh|<token>|<ts>" */
+                    signature: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenPair"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    getPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Policy"];
+                };
+            };
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            401: components["responses"]["Error401"];
+        };
+    };
+    acceptPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    version: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        version: string;
+                    };
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    devUsers: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        users: {
+                            email: string;
+                            name: string;
+                            role: components["schemas"]["Role"];
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    devLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        home: string;
+                    };
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    devMobileLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    session_public_key: string;
+                    /** @description over "argus/v1/dev-login|<email>" */
+                    signature: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenPair"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    listUsers: {
+        parameters: {
+            query?: {
+                role?: components["schemas"]["Role"];
+                status?: "active" | "disabled";
+                section_id?: string;
+                /** @description Case-insensitive search */
+                q?: components["parameters"]["Q"];
+                limit?: components["parameters"]["Limit"];
+                offset?: components["parameters"]["Offset"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    updateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    importStudents: {
+        parameters: {
+            query?: {
+                /** @description true (default) only reports what would change */
+                dry_run?: components["parameters"]["DryRun"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentImportRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentImportReport"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    listAudit: {
+        parameters: {
+            query?: {
+                entity_type?: string;
+                entity_id?: string;
+                actor_id?: string;
+                action?: string;
+                from?: string;
+                to?: string;
+                before_id?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    verifyAudit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditVerifyResult"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
         };
     };
 }
