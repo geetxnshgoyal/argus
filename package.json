@@ -14,7 +14,8 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
     "build": "pnpm --filter web build && pnpm --filter backend build",
-    "gen:api": "openapi-typescript backend/api/openapi.yaml -o backend/src/generated/api.ts && openapi-typescript backend/api/openapi.yaml -o web/src/generated/api.ts"
+    "gen:api": "openapi-typescript backend/api/openapi.yaml -o backend/src/generated/api.ts && openapi-typescript backend/api/openapi.yaml -o web/src/generated/api.ts",
+    "seed:dev": "cd backend && ARGUS_ENV=dev node scripts/seed-dev.ts"
   },
   "devDependencies": {
     "openapi-typescript": "^7.13.0",
