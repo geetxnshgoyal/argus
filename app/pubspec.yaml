@@ -37,6 +37,9 @@ dependencies:
   http: ^1.6.0
   argus_security:
     path: packages/argus_security
+  flutter_secure_storage: ^11.2.0
+  flutter_web_auth_2: ^5.1.0
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:
