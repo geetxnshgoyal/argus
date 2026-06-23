@@ -17,6 +17,9 @@ const env = {
   ARGUS_ENV: 'dev',
   DATABASE_URL: process.env.DATABASE_URL ?? `postgres://argus@localhost:${DB_PORT}/argus`,
   ARGUS_PORT: '8080',
+  // Dev-only sign-in without Google (refused by the server outside ARGUS_ENV=dev).
+  ARGUS_DEV_LOGIN: process.env.ARGUS_DEV_LOGIN ?? 'true',
+  OIDC_HOSTED_DOMAIN: process.env.OIDC_HOSTED_DOMAIN ?? 'svyasa-sas.edu.in',
   // Let phones/emulators on this machine's network reach the API in dev.
   ARGUS_HOST: process.env.ARGUS_HOST ?? '0.0.0.0',
 };
