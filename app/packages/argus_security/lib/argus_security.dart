@@ -45,4 +45,22 @@ class SecurityBridge {
     if (result == null) throw PlatformException(code: 'no_result', message: 'platformInfo returned nothing');
     return PlatformSecurityInfo.fromMap(result);
   }
+
+  /// Public half of the device session key (P-256, SPKI DER, base64url).
+  /// The key is created in hardware on first use and never leaves the phone.
+  Future<String> sessionPublicKey() async {
+    final key = await _channel.invokeMethod<String>('sessionPublicKey');
+    if (key == null || key.isEmpty) throw PlatformException(code: 'no_result', message: 'no session key');
+    return key;
+  }
+
+  /// ECDSA-P256-SHA256 signature (DER, base64url) over [data] with the session key.
+  Future<String> signWithSessionKey(Uint8List data) async {
+    final sig = await _channel.invokeMethod<String>('signWithSessionKey', {'data': data});
+    if (sig == null || sig.isEmpty) throw PlatformException(code: 'no_result', message: 'signing failed');
+    return sig;
+  }
+
+  /// Deletes the session key (sign-out). A new one is created at next sign-in.
+  Future<void> resetSessionKey() => _channel.invokeMethod<void>('resetSessionKey');
 }
