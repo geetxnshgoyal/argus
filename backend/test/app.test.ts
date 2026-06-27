@@ -1,39 +1,20 @@
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Writable } from 'node:stream';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import { buildApp, type AppDeps } from '../src/app.ts';
-import { createLogger } from '../src/logger.ts';
+import type { AppOptions } from '../src/app.ts';
+import { makeApp } from './helpers/app.ts';
 
 const apps: FastifyInstance[] = [];
 afterEach(async () => {
   while (apps.length) await apps.pop()?.close();
 });
 
-function logSink() {
-  const lines: string[] = [];
-  const stream = new Writable({
-    write(chunk, _e, cb) {
-      lines.push(chunk.toString());
-      cb();
-    },
-  });
-  return { logger: createLogger('info', stream), text: () => lines.join('') };
-}
-
-async function make(overrides: Partial<AppDeps> = {}) {
-  const { logger, text } = logSink();
-  const built = await buildApp({
-    logger,
-    version: '9.9.9-test',
-    trustProxy: false,
-    checkDb: async () => {},
-    ...overrides,
-  });
-  apps.push(built.app);
-  return { ...built, logs: text };
+async function make(overrides: AppOptions & { now?: number } = {}) {
+  const t = await makeApp(overrides);
+  apps.push(t.app);
+  return { app: t.app, logs: t.logs };
 }
 
 describe('GET /v1/health', () => {
@@ -58,7 +39,7 @@ describe('GET /v1/health', () => {
 
 describe('GET /v1/time', () => {
   it('returns the server clock', async () => {
-    const { app } = await make({ now: () => 1_790_000_000_123 });
+    const { app } = await make({ now: 1_790_000_000_123 });
     const res = await app.inject('/v1/time');
     expect(res.json()).toEqual({ server_time_ms: 1_790_000_000_123, server_time: '2026-09-21T14:13:20.123Z' });
   });
