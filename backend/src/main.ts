@@ -3,7 +3,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildApp } from './app.ts';
 import { ConfigError, loadConfig } from './config.ts';
-import { createDb, pingDb } from './db/index.ts';
+import { createContext } from './context.ts';
+import { createDb } from './db/index.ts';
 import { migrateToLatest } from './db/migrate.ts';
 import { createLogger } from './logger.ts';
 
@@ -48,7 +49,7 @@ async function main(): Promise<void> {
   const logger = createLogger(config.logLevel);
   if (config.attestationBypass) logger.warn('ATTESTATION BYPASS ENABLED (dev only)');
   if (config.devLogin) logger.warn('DEV LOGIN ENABLED (dev only)');
-  if (!config.masterKey) logger.warn('no ARGUS_MASTER_KEY set; allowed only in dev/test');
+  if (config.masterKeyEphemeral) logger.warn('no ARGUS_MASTER_KEY set: using a random key for this run (dev/test only)');
 
   const db = createDb(config.databaseUrl);
 
@@ -64,13 +65,9 @@ async function main(): Promise<void> {
     return;
   }
 
-  const { app } = await buildApp({
-    logger,
-    version: version(),
-    trustProxy: config.trustProxy,
-    checkDb: () => pingDb(db),
-    webDir: config.webDir ?? defaultWebDir(),
-  });
+  const ctx = createContext({ config, db, logger, version: version() });
+  if (!ctx.oidc && !config.devLogin) logger.warn('SSO not configured (OIDC_CLIENT_ID/SECRET) and dev login off: nobody can sign in');
+  const { app } = await buildApp(ctx, { webDir: config.webDir ?? defaultWebDir() });
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'shutting down');
