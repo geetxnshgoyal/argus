@@ -6,7 +6,7 @@
 - Production is **one Node program (`server.mjs`) plus Postgres 16+**. It serves the API, both web bundles and the display page, and applies migrations at startup. Install = copy a folder + one settings file, run as a service (systemd unit in `deploy/`; Windows service instructions later).
 - **No Redis.** Its spec responsibilities move to Postgres or process memory:
   - nonces → table `used_nonces (device_id, nonce, expires_at)` with a primary key (`INSERT … ON CONFLICT DO NOTHING`), purged periodically;
-  - rate limits → Postgres counter table (single process can use memory; Postgres keeps it correct if we ever run two);
+  - rate limits → in process memory (`@fastify/rate-limit`), correct because Argus runs as one process; move to a Postgres store if a second process is ever added;
   - K_s hot cache → in-process LRU of decrypted keys (ciphertext stays only in the DB);
   - WebSocket fan-out → in-process; Postgres `LISTEN/NOTIFY` if a second process is ever added.
 - **No Docker for development.** `pnpm dev` starts a local Postgres folder (`scripts/dev-db.sh`), the API with auto-restart, and the web dev server.
