@@ -1,8 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import { buildApp } from '../src/app.ts';
-import { createLogger } from '../src/logger.ts';
+import { makeApp } from './helpers/app.ts';
 
 const METHODS = ['get', 'put', 'post', 'delete', 'patch'];
 
@@ -19,12 +18,8 @@ function specRoutes(): string[] {
 
 describe('OpenAPI spec', () => {
   it('lists exactly the /v1 routes the server registers', async () => {
-    const { app, apiRoutes } = await buildApp({
-      logger: createLogger('silent'),
-      version: 't',
-      trustProxy: false,
-      checkDb: async () => {},
-    });
+    // devLogin on so dev-only routes are registered and must be documented too.
+    const { app, apiRoutes } = await makeApp({ config: { devLogin: true } });
     await app.close();
     expect([...apiRoutes].sort()).toEqual(specRoutes());
   });
