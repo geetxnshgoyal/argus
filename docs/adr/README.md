@@ -24,5 +24,6 @@ the spec, the ADR wins. Status is `Accepted` unless marked otherwise.
 | [0016](0016-sign-in-design.md) | Sign-in: Google OIDC, server sessions + CSRF, mobile code exchange bound to the device key, dev login | M1 |
 | [0017](0017-roster-import-minimization.md) | Roster import sends only five fields; the rest stays in the browser | M1 |
 | [0018](0018-ui-theme.md) | UI follows the Heimdall dark theme | M1 |
+| [0019](0019-timetable-model-and-import.md) | Timetable resolution, DB-enforced double-booking, grid importer with exact dry run | M2 |
 
 New ADRs: copy the format of any existing one (Context / Decision / Consequences), keep it under a page.
