@@ -1,0 +1,15 @@
+# ADR-0019: Timetable model, materialization and the grid importer
+
+**Context.** Spec §8: weekly defaults, date-specific overrides that never mutate defaults, 14 days of materialized class sessions, DB-level double-booking protection, and an importer with a dry run. The college keeps its timetable as a colour-coded Google Sheet: one block per weekday, 30-minute columns, one row per lab batch, and merged cells for whole-class lectures. There are no teacher names in the sheet.
+
+**Decision.**
+- **Resolution order per date:** term calendar (holiday / exam / "follows weekday", ADR-0012) → weekly entries valid that date → one-day overrides (override wins). A `modify` override edits the same session as its entry (unique `(source_entry_id, date)`), and `cancel` keeps a visible cancelled session. Materialization only runs from today forward: history is never rewritten.
+- **Attendance protection:** sessions with attendance (`attendance_locked`) are never changed or removed. The one exception is an override Acad Ops explicitly confirmed (`applies_to_locked`, after a 409 `session_has_attendance`).
+- **Double-booking in the database:** GiST exclusion constraints on sessions for room and teacher, and on `class_session_audiences` for students. A whole-section class occupies the section *and* each of its batches, while a batch lab occupies only its batch. So parallel labs for different batches are allowed, but a whole-class lecture can't overlap a batch lab. The constraints are deferrable, so swaps inside one transaction work. On top of this, a plain-language pre-check names the clashing classes.
+- **Teachers:** an entry may name one. Otherwise the teacher comes from Teaching assignments: the batch's assignment first, then a section-wide one. A batch class never falls back to another batch's teacher.
+- **Importer:** reads the college grid directly from `.xlsx` (merged cells decide whole-class vs batch; `LUNCH` skipped; afternoon hours inferred from "1:30-2:00"). It also accepts normalized rows. Unknown subjects (lab subjects are separate, e.g. `ADA LAB`), rooms, batches and offerings are created, and the report lists them. The section's timetable is replaced from an effective date: changed entries are end-dated, not deleted. **The dry run executes the real import, including the database constraints, in a transaction and rolls back**, so the preview is exact. Multi-room cells (e.g. the Friday contest) keep the first room and warn.
+- **Enrollments:** students of a section are auto-enrolled in its offerings with their batch (`source='section'`). Sync never touches `manual` enrollments (electives).
+- **Jobs:** pg-boss runs the nightly materialization at 00:15 college time and once at startup, section by section, so one bad section doesn't block the others.
+- **Time zone:** timetable times are local to `ARGUS_TIMEZONE` (default Asia/Kolkata); sessions store absolute `tstzrange`.
+
+**Consequences.** Acad Ops uploads the sheet they already maintain. Double-booking is impossible at the database level. Teachers must be assigned (the import and the Timetable check page list what's missing) before attendance can start for a class.
