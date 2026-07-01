@@ -120,6 +120,7 @@ export interface EnrollmentsTable extends Timestamps {
   student_id: string;
   offering_id: string;
   group_id: string | null;
+  source: ColumnType<'section' | 'manual', 'section' | 'manual' | undefined, 'section' | 'manual'>;
 }
 
 export interface TeachingAssignmentsTable extends Timestamps {
@@ -201,6 +202,79 @@ export interface AuditCheckpointsTable {
   created_at: CreatedAt;
 }
 
+export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type TimeOfDay = string; // 'HH:MM:SS'
+
+export interface TimetableEntriesTable extends Timestamps {
+  id: string;
+  term_id: string;
+  offering_id: string;
+  group_id: string | null;
+  weekday: number;
+  start_time: TimeOfDay;
+  end_time: TimeOfDay;
+  room_id: string | null;
+  teacher_id: string | null;
+  valid_from: string | null;
+  valid_to: string | null;
+  version: ColumnType<number, number | undefined, number>;
+  note: string | null;
+}
+
+export interface TimetableOverridesTable {
+  id: string;
+  term_id: string;
+  date: DateOnly;
+  entry_id: string | null;
+  action: 'cancel' | 'modify' | 'add';
+  new_offering_id: string | null;
+  new_group_id: string | null;
+  new_room_id: string | null;
+  new_teacher_id: string | null;
+  new_start: TimeOfDay | null;
+  new_end: TimeOfDay | null;
+  reason: string;
+  applies_to_locked: ColumnType<boolean, boolean | undefined, boolean>;
+  created_by: string | null;
+  created_at: CreatedAt;
+  revoked_at: Timestamp | null;
+  revoked_by: string | null;
+}
+
+export interface TermCalendarDaysTable {
+  term_id: string;
+  date: DateOnly;
+  kind: 'holiday' | 'exam' | 'no_classes' | 'working';
+  follows_weekday: number | null;
+  note: ColumnType<string, string | undefined, string>;
+  created_at: CreatedAt;
+}
+
+export type ClassSessionStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface ClassSessionsTable extends Timestamps {
+  id: string;
+  term_id: string;
+  offering_id: string;
+  group_id: string | null;
+  date: DateOnly;
+  /** Postgres tstzrange literal, e.g. '["2026-09-21 04:00:00+00","2026-09-21 05:00:00+00")' */
+  time_range: string;
+  room_id: string | null;
+  teacher_id: string | null;
+  source_entry_id: string | null;
+  source_override_id: string | null;
+  status: ColumnType<ClassSessionStatus, ClassSessionStatus | undefined, ClassSessionStatus>;
+  attendance_locked: ColumnType<boolean, boolean | undefined, boolean>;
+}
+
+export interface ClassSessionAudiencesTable {
+  class_session_id: string;
+  audience_id: string;
+  time_range: string;
+  active: ColumnType<boolean, boolean | undefined, boolean>;
+}
+
 export interface Database {
   users: UsersTable;
   departments: DepartmentsTable;
@@ -224,4 +298,11 @@ export interface Database {
   policy_acceptances: PolicyAcceptancesTable;
   audit_log: AuditLogTable;
   audit_checkpoints: AuditCheckpointsTable;
+  timetable_entries: TimetableEntriesTable;
+  timetable_overrides: TimetableOverridesTable;
+  term_calendar_days: TermCalendarDaysTable;
+  class_sessions: ClassSessionsTable;
+  class_session_audiences: ClassSessionAudiencesTable;
+  course_offerings_labeled: CourseOfferingsTable & { subject_code: string; subject_name: string; subject_kind: string; section_name: string; term_name: string };
+  teaching_assignments_labeled: TeachingAssignmentsTable & { teacher_name: string; subject_code: string; subject_name: string; section_name: string; group_name: string | null };
 }
