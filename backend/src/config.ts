@@ -36,6 +36,18 @@ const envSchema = z.object({
   // Google Workspace domain; sign-in is limited to accounts in it when set.
   OIDC_HOSTED_DOMAIN: z.string().optional(),
   ARGUS_MOBILE_REDIRECT_URI: z.string().default('app.argus.argus:/auth/callback'),
+  // Time zone of the college: timetable times are local times in this zone.
+  ARGUS_TIMEZONE: z
+    .string()
+    .default('Asia/Kolkata')
+    .refine((tz) => {
+      try {
+        new Intl.DateTimeFormat('en', { timeZone: tz });
+        return true;
+      } catch {
+        return false;
+      }
+    }, 'Unknown time zone'),
 });
 
 export interface Config {
@@ -60,6 +72,7 @@ export interface Config {
     hostedDomain: string | undefined;
   };
   mobileRedirectUri: string;
+  timeZone: string;
 }
 
 export class ConfigError extends Error {
@@ -129,5 +142,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       hostedDomain: e.OIDC_HOSTED_DOMAIN?.toLowerCase(),
     },
     mobileRedirectUri: e.ARGUS_MOBILE_REDIRECT_URI,
+    timeZone: e.ARGUS_TIMEZONE,
   };
 }
