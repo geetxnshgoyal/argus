@@ -162,11 +162,13 @@ export const RESOURCES: ResourceDef[] = [
   {
     path: 'offerings',
     table: 'course_offerings',
+    readTable: 'course_offerings_labeled',
     entityType: 'offering',
     create: z.object({ term_id: uuid, subject_id: uuid, section_id: uuid }),
     update: z.object({ term_id: uuid, subject_id: uuid, section_id: uuid }).partial(),
     filters: { term_id: 'term_id', section_id: 'section_id', subject_id: 'subject_id' },
-    orderBy: ['created_at'],
+    search: ['subject_code', 'subject_name', 'section_name'],
+    orderBy: ['section_name', 'subject_code'],
     check: async (tx, row) => {
       const ok = await tx
         .selectFrom('sections')
@@ -190,6 +192,7 @@ export const RESOURCES: ResourceDef[] = [
   {
     path: 'teaching-assignments',
     table: 'teaching_assignments',
+    readTable: 'teaching_assignments_labeled',
     entityType: 'teaching_assignment',
     create: z.object({
       teacher_id: uuid,
@@ -199,7 +202,8 @@ export const RESOURCES: ResourceDef[] = [
     }),
     update: z.object({ group_id: uuid.nullable(), role: z.enum(['primary', 'assistant']) }).partial(),
     filters: { offering_id: 'offering_id', teacher_id: 'teacher_id' },
-    orderBy: ['created_at'],
+    search: ['teacher_name', 'subject_code', 'subject_name', 'section_name'],
+    orderBy: ['section_name', 'subject_code', 'group_name'],
     check: groupMatchesOffering,
   },
 ];

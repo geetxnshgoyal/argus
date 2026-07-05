@@ -17,6 +17,8 @@ export interface ResourceDef {
   /** URL segment under /v1/admin/ */
   path: string;
   table: string;
+  /** Optional view used for list/get (e.g. with human-readable labels); writes always use `table`. */
+  readTable?: string;
   entityType: string;
   create: ZodType<Record<string, unknown>>;
   update: ZodType<Record<string, unknown>>;
@@ -42,11 +44,12 @@ export function registerCrud(app: FastifyInstance, ctx: AppContext, def: Resourc
   const base = `/v1/admin/${def.path}`;
   const guard = { preHandler: needAuth('acadops', 'admin') };
   const toDb = def.toDb ?? ((r) => r);
+  const readTable = def.readTable ?? def.table;
 
   app.get(base, guard, async (req) => {
     const raw = req.query as Record<string, unknown>;
     const q = parse(listQuery, raw);
-    let query = db.selectFrom(def.table);
+    let query = db.selectFrom(readTable);
     for (const [param, column] of Object.entries(def.filters ?? {})) {
       const v = raw[param];
       if (typeof v === 'string' && v.length > 0) {
@@ -67,7 +70,7 @@ export function registerCrud(app: FastifyInstance, ctx: AppContext, def: Resourc
 
   app.get(`${base}/:id`, guard, async (req) => {
     const { id } = parse(idParams, req.params);
-    const row = await db.selectFrom(def.table).selectAll().where('id', '=', id).executeTakeFirst();
+    const row = await db.selectFrom(readTable).selectAll().where('id', '=', id).executeTakeFirst();
     if (!row) throw new ApiError(404, 'not_found', 'Not found');
     return row;
   });
