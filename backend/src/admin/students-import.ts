@@ -7,6 +7,7 @@ import type { AppContext } from '../context.ts';
 import type { Tx } from '../db/index.ts';
 import { ApiError } from '../errors.ts';
 import { uuidv7 } from '../platform/ids.ts';
+import { syncSectionEnrollments } from '../timetable/service.ts';
 import { parse, uuid } from '../validation.ts';
 
 /**
@@ -183,6 +184,8 @@ export function registerStudentImport(app: FastifyInstance, ctx: AppContext): vo
         }
       }
       await appendAudit(tx, { actorId: actor.id, action: 'students.import', entityType: 'section', entityId: b.section_id, after: { summary, groups_created: report.groups_to_create }, ip: req.ip }, at);
+      // Students join their section's subjects (with their lab batch) straight away.
+      await syncSectionEnrollments(tx, b.section_id);
     });
     for (const id of toRevoke) await revokeAllUserSessions(ctx.db, id);
     return report;
