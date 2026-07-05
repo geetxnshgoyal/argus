@@ -6,6 +6,7 @@ import { ConfigError, loadConfig } from './config.ts';
 import { createContext } from './context.ts';
 import { createDb } from './db/index.ts';
 import { migrateToLatest } from './db/migrate.ts';
+import { startJobs } from './jobs.ts';
 import { createLogger } from './logger.ts';
 
 /**
@@ -69,8 +70,11 @@ async function main(): Promise<void> {
   if (!ctx.oidc && !config.devLogin) logger.warn('SSO not configured (OIDC_CLIENT_ID/SECRET) and dev login off: nobody can sign in');
   const { app } = await buildApp(ctx, { webDir: config.webDir ?? defaultWebDir() });
 
+  const jobs = await startJobs(ctx);
+
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'shutting down');
+    await jobs.stop();
     await app.close();
     await db.destroy();
     process.exit(0);
