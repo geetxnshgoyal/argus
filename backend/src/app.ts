@@ -15,6 +15,7 @@ import type { AppContext } from './context.ts';
 import { pingDb } from './db/index.ts';
 import { ApiError, type ErrorBody } from './errors.ts';
 import { registerSystemRoutes } from './routes/system.ts';
+import { registerTimetableRoutes } from './timetable/routes.ts';
 
 export interface AppOptions {
   /** Resolves if the database answers, rejects otherwise. Defaults to a real ping. */
@@ -125,6 +126,7 @@ export async function buildApp(ctx: AppContext, opts: AppOptions = {}): Promise<
   registerUserRoutes(app, ctx);
   registerStudentImport(app, ctx);
   registerAuditRoutes(app, ctx);
+  registerTimetableRoutes(app, ctx);
 
   await app.ready();
   return { app, apiRoutes };
