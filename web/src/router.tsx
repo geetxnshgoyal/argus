@@ -8,6 +8,11 @@ import { AuditPage } from './routes/admin/AuditPage.tsx';
 import { RESOURCE_CONFIGS } from './routes/admin/configs.ts';
 import { StudentImportPage } from './routes/admin/StudentImportPage.tsx';
 import { UsersPage } from './routes/admin/UsersPage.tsx';
+import { CalendarPage } from './routes/admin/CalendarPage.tsx';
+import { ConflictsPage } from './routes/admin/ConflictsPage.tsx';
+import { TimetableImportPage } from './routes/admin/TimetableImportPage.tsx';
+import { TimetablePage } from './routes/admin/TimetablePage.tsx';
+import { TeacherHome } from './routes/teacher/TeacherHome.tsx';
 
 const rootRoute = createRootRoute({
   component: Outlet,
@@ -70,7 +75,7 @@ const teacherRoute = createRoute({
   path: '/teacher',
   component: () => (
     <RequireRole roles={['teacher']}>
-      <Placeholder title="Today's classes" text="Start attendance, watch live results, run rechecks and spot checks." />
+      <TeacherHome />
     </RequireRole>
   ),
 });
@@ -97,6 +102,12 @@ function AdminShell() {
           <SideNavLink to="/admin/students/import">Import students</SideNavLink>
           <SideNavLink to="/admin/teachers">Teachers</SideNavLink>
           <SideNavLink to="/admin/staff">Staff</SideNavLink>
+          <div className="section-label">Timetable</div>
+          <SideNavLink to="/admin/timetable">Timetable</SideNavLink>
+          <SideNavLink to="/admin/timetable/import">Import timetable</SideNavLink>
+          <SideNavLink to="/admin/teaching-assignments">Teaching assignments</SideNavLink>
+          <SideNavLink to="/admin/calendar">Holidays</SideNavLink>
+          <SideNavLink to="/admin/conflicts">Timetable check</SideNavLink>
           <div className="section-label">Academic</div>
           <SideNavLink to="/admin/terms">Terms</SideNavLink>
           <SideNavLink to="/admin/sections">Sections</SideNavLink>
@@ -159,6 +170,10 @@ const adminChildren = [
   createRoute({ getParentRoute: () => adminRoute, path: '/teachers', component: () => <UsersPage kind="teachers" /> }),
   createRoute({ getParentRoute: () => adminRoute, path: '/staff', component: () => <UsersPage kind="staff" /> }),
   createRoute({ getParentRoute: () => adminRoute, path: '/audit', component: AuditPage }),
+  createRoute({ getParentRoute: () => adminRoute, path: '/timetable', component: TimetablePage }),
+  createRoute({ getParentRoute: () => adminRoute, path: '/timetable/import', component: TimetableImportPage }),
+  createRoute({ getParentRoute: () => adminRoute, path: '/calendar', component: CalendarPage }),
+  createRoute({ getParentRoute: () => adminRoute, path: '/conflicts', component: ConflictsPage }),
   ...Object.entries(RESOURCE_CONFIGS).map(([path, config]) =>
     createRoute({ getParentRoute: () => adminRoute, path: `/${path}`, component: () => <ResourcePage key={path} config={config} /> }),
   ),
