@@ -152,3 +152,15 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.65); }
 .dev-users { display: grid; gap: 0.4rem; max-height: 18rem; overflow: auto; margin-top: 0.75rem; }
 .dev-users button { all: unset; cursor: pointer; display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--line); }
 .dev-users button:hover { background: var(--surface-2); }
+
+/* ── Timetable ──────────────────────────────────────────────────────────── */
+.toolbar .spacer { flex: 1; }
+.week-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); align-items: start; }
+.day-col { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.75rem; display: grid; gap: 0.5rem; }
+.day-col h3 { font-size: 0.9rem; color: var(--fg-2); margin: 0 0 0.25rem; }
+.class-card { all: unset; box-sizing: border-box; display: grid; gap: 0.15rem; padding: 0.6rem 0.7rem; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--line); cursor: pointer; font-size: 0.9rem; }
+.class-card:hover:not(:disabled) { border-color: var(--accent); }
+.class-card:focus-visible { outline: 2px solid var(--accent); }
+.class-card:disabled { cursor: default; }
+.issue-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+.issue-list li { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.6rem 0.75rem; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--line); }
