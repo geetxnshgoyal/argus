@@ -63,6 +63,54 @@ class Me {
   }
 }
 
+/// Mirrors the `ClassSession` schema (student timetable).
+class ClassSession {
+  const ClassSession({
+    required this.id,
+    required this.date,
+    required this.start,
+    required this.end,
+    required this.status,
+    required this.changed,
+    required this.subjectCode,
+    required this.subjectName,
+    this.batch,
+    this.room,
+    this.teacher,
+  });
+
+  final String id;
+  final String date;
+  final String start;
+  final String end;
+  final String status;
+  final bool changed;
+  final String subjectCode;
+  final String subjectName;
+  final String? batch;
+  final String? room;
+  final String? teacher;
+
+  bool get cancelled => status == 'cancelled';
+
+  factory ClassSession.fromJson(Map<String, dynamic> j) {
+    final subject = j['subject'] as Map<String, dynamic>;
+    return ClassSession(
+      id: j['id'] as String,
+      date: j['date'] as String,
+      start: j['start'] as String,
+      end: j['end'] as String,
+      status: j['status'] as String,
+      changed: j['changed'] as bool? ?? false,
+      subjectCode: subject['code'] as String,
+      subjectName: subject['name'] as String,
+      batch: j['batch'] as String?,
+      room: j['room'] as String?,
+      teacher: j['teacher'] as String?,
+    );
+  }
+}
+
 class Policy {
   const Policy(this.version, this.text);
   final String version;
@@ -140,6 +188,13 @@ class ApiClient {
   }
 
   Future<Me> me() async => Me.fromJson(await _send('GET', '/v1/me'));
+
+  /// My classes between two dates (inclusive, YYYY-MM-DD); server defaults to the next 7 days.
+  Future<List<ClassSession>> timetable({String? from, String? to}) async {
+    final q = [if (from != null) 'from=$from', if (to != null) 'to=$to'].join('&');
+    final j = await _send('GET', '/v1/me/timetable${q.isEmpty ? '' : '?$q'}');
+    return (j['items'] as List).map((e) => ClassSession.fromJson(e as Map<String, dynamic>)).toList();
+  }
 
   Future<void> acceptPolicy(String version) async {
     await _send('POST', '/v1/me/policy-acceptance', body: {'version': version});
