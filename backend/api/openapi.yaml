@@ -18,6 +18,9 @@ tags:
 - name: admin
 - name: audit
 - name: dev
+- name: timetable
+- name: teacher
+- name: student
 paths:
   /v1/health:
     get:
@@ -2091,6 +2094,554 @@ paths:
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
+  /v1/admin/timetable/entries:
+    get:
+      tags:
+      - timetable
+      operationId: listTimetableEntries
+      summary: Weekly timetable entries
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TimetableEntry'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      parameters:
+      - name: term_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: section_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: include_ended
+        in: query
+        schema:
+          type: string
+          enum:
+          - 'true'
+          - 'false'
+    post:
+      tags:
+      - timetable
+      operationId: createTimetableEntry
+      summary: Add a weekly class
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimetableEntry'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimetableEntryInput'
+      description: Scheduled immediately; double-booking returns 409 double_booking.
+  /v1/admin/timetable/entries/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    patch:
+      tags:
+      - timetable
+      operationId: updateTimetableEntry
+      summary: Change a weekly class (from now on)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimetableEntry'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimetableEntryPatch'
+    delete:
+      tags:
+      - timetable
+      operationId: endTimetableEntry
+      summary: End a weekly class from today (history kept)
+      responses:
+        '204':
+          description: Ended
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+  /v1/admin/timetable/overrides:
+    get:
+      tags:
+      - timetable
+      operationId: listTimetableOverrides
+      summary: One-day changes
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TimetableOverride'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      parameters:
+      - name: term_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: include_revoked
+        in: query
+        schema:
+          type: string
+          enum:
+          - 'true'
+          - 'false'
+    post:
+      tags:
+      - timetable
+      operationId: createTimetableOverride
+      summary: Change, cancel or add a class for one date
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimetableOverride'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimetableOverrideInput'
+      description: 409 session_has_attendance when the class already has attendance and confirm is not set.
+  /v1/admin/timetable/overrides/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    delete:
+      tags:
+      - timetable
+      operationId: revokeTimetableOverride
+      summary: Undo a one-day change
+      responses:
+        '204':
+          description: Undone
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+  /v1/admin/timetable/calendar:
+    get:
+      tags:
+      - timetable
+      operationId: listCalendarDays
+      summary: Holidays and day-order changes
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CalendarDay'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      parameters:
+      - name: term_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+        required: true
+  /v1/admin/timetable/calendar/{term_id}/{date}:
+    parameters:
+    - name: term_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: date
+      in: path
+      required: true
+      schema:
+        type: string
+        format: date
+    put:
+      tags:
+      - timetable
+      operationId: setCalendarDay
+      summary: Mark a holiday / exam day / "follows weekday"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarDay'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendarDayInput'
+    delete:
+      tags:
+      - timetable
+      operationId: removeCalendarDay
+      summary: Back to a normal day
+      responses:
+        '204':
+          description: Removed
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+  /v1/admin/timetable/import:
+    post:
+      tags:
+      - timetable
+      operationId: importTimetable
+      summary: Import a section timetable (dry run by default)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimetableImportReport'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      parameters:
+      - $ref: '#/components/parameters/DryRun'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimetableImportRequest'
+      description: Accepts the college timetable sheet (.xlsx grid with day blocks, batch rows and merged cells)
+        or normalized rows. The dry run executes every step, including double-booking checks, then rolls back.
+  /v1/admin/conflicts:
+    get:
+      tags:
+      - timetable
+      operationId: listConflicts
+      summary: Double-bookings and warnings (missing teachers/rooms, capacity, tight changeovers)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conflicts'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      parameters:
+      - name: term_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+        required: true
+  /v1/admin/class-sessions:
+    get:
+      tags:
+      - timetable
+      operationId: listClassSessions
+      summary: Scheduled classes (max 31 days)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassSessionList'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+        required: true
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+        required: true
+      - name: section_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: room_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: teacher_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+  /v1/admin/timetable/materialize:
+    post:
+      tags:
+      - timetable
+      operationId: materializeTimetable
+      summary: Regenerate the next 14 days of classes now
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaterializeResult'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+  /v1/admin/sections/{id}/sync-enrollments:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+      - timetable
+      operationId: syncEnrollments
+      summary: Enroll the section's students in its subjects
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResult'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+  /v1/teacher/sessions/today:
+    get:
+      tags:
+      - teacher
+      operationId: teacherToday
+      summary: Today's classes for the signed-in teacher
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherToday'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+  /v1/teacher/timetable:
+    get:
+      tags:
+      - teacher
+      operationId: teacherTimetable
+      summary: Teacher timetable
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassSessionRange'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+        description: 'Defaults: today .. today+6; max 31 days'
+  /v1/teacher/class-sessions/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+      - teacher
+      operationId: teacherClassSession
+      summary: One of my classes
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassSession'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+  /v1/me/timetable:
+    get:
+      tags:
+      - student
+      operationId: myTimetable
+      summary: My classes (student)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassSessionRange'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+        description: 'Defaults: today .. today+6; max 31 days'
 components:
   schemas:
     Error:
@@ -2799,6 +3350,16 @@ components:
           section_id:
             type: string
             format: uuid
+          subject_code:
+            type: string
+          subject_name:
+            type: string
+          subject_kind:
+            type: string
+          section_name:
+            type: string
+          term_name:
+            type: string
     OfferingInput:
       type: object
       required:
@@ -2947,6 +3508,18 @@ components:
             enum:
             - primary
             - assistant
+          teacher_name:
+            type: string
+          subject_code:
+            type: string
+          subject_name:
+            type: string
+          section_name:
+            type: string
+          group_name:
+            type:
+            - string
+            - 'null'
     TeachingAssignmentInput:
       type: object
       required:
@@ -3460,6 +4033,762 @@ components:
               type: string
             reason:
               type: string
+    TimetableEntry:
+      type: object
+      required:
+      - id
+      - term_id
+      - offering_id
+      - weekday
+      - start_time
+      - end_time
+      properties:
+        id:
+          type: string
+          format: uuid
+        term_id:
+          type: string
+          format: uuid
+        offering_id:
+          type: string
+          format: uuid
+        section_id:
+          type: string
+          format: uuid
+        group_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        weekday:
+          type: integer
+          minimum: 1
+          maximum: 7
+          description: 1 = Monday
+        start_time:
+          type: string
+          pattern: ^\d{1,2}:\d{2}$
+          example: 09:30
+        end_time:
+          type: string
+          pattern: ^\d{1,2}:\d{2}$
+          example: 09:30
+        room_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        teacher_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        valid_from:
+          type:
+          - string
+          - 'null'
+          format: date
+        valid_to:
+          type:
+          - string
+          - 'null'
+          format: date
+        note:
+          type:
+          - string
+          - 'null'
+        subject_code:
+          type: string
+        subject_name:
+          type: string
+        subject_kind:
+          type: string
+        group_name:
+          type:
+          - string
+          - 'null'
+        room:
+          type:
+          - string
+          - 'null'
+        teacher_name:
+          type:
+          - string
+          - 'null'
+    TimetableEntryInput:
+      type: object
+      required:
+      - offering_id
+      - weekday
+      - start_time
+      - end_time
+      properties:
+        offering_id:
+          type: string
+          format: uuid
+        group_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        weekday:
+          type: integer
+          minimum: 1
+          maximum: 7
+        start_time:
+          type: string
+          pattern: ^\d{1,2}:\d{2}$
+          example: 09:30
+        end_time:
+          type: string
+          pattern: ^\d{1,2}:\d{2}$
+          example: 09:30
+        room_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        teacher_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        valid_from:
+          type:
+          - string
+          - 'null'
+          format: date
+        valid_to:
+          type:
+          - string
+          - 'null'
+          format: date
+        note:
+          type:
+          - string
+          - 'null'
+    TimetableEntryPatch:
+      type: object
+      properties:
+        group_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        weekday:
+          type: integer
+          minimum: 1
+          maximum: 7
+        start_time:
+          type: string
+          pattern: ^\d{1,2}:\d{2}$
+          example: 09:30
+        end_time:
+          type: string
+          pattern: ^\d{1,2}:\d{2}$
+          example: 09:30
+        room_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        teacher_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        valid_from:
+          type:
+          - string
+          - 'null'
+          format: date
+        valid_to:
+          type:
+          - string
+          - 'null'
+          format: date
+        note:
+          type:
+          - string
+          - 'null'
+    TimetableOverride:
+      type: object
+      required:
+      - id
+      - date
+      - action
+      - reason
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        action:
+          type: string
+          enum:
+          - cancel
+          - modify
+          - add
+        entry_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        new_offering_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        new_group_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        new_room_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        new_teacher_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        new_start:
+          type:
+          - string
+          - 'null'
+        new_end:
+          type:
+          - string
+          - 'null'
+        reason:
+          type: string
+        applies_to_locked:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        revoked_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        subject_code:
+          type:
+          - string
+          - 'null'
+        section_name:
+          type:
+          - string
+          - 'null'
+        section_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        created_by_name:
+          type:
+          - string
+          - 'null'
+    TimetableOverrideInput:
+      type: object
+      required:
+      - date
+      - action
+      - reason
+      properties:
+        date:
+          type: string
+          format: date
+        action:
+          type: string
+          enum:
+          - cancel
+          - modify
+          - add
+        entry_id:
+          type: string
+          format: uuid
+        new_offering_id:
+          type: string
+          format: uuid
+        new_group_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        new_room_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        new_teacher_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        new_start:
+          type: string
+          pattern: ^\d{1,2}:\d{2}$
+          example: 09:30
+        new_end:
+          type: string
+          pattern: ^\d{1,2}:\d{2}$
+          example: 09:30
+        reason:
+          type: string
+          minLength: 3
+        confirm:
+          type: boolean
+          description: Required when the class already has attendance
+    CalendarDay:
+      type: object
+      required:
+      - term_id
+      - date
+      - kind
+      - note
+      properties:
+        term_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        kind:
+          type: string
+          enum:
+          - holiday
+          - exam
+          - no_classes
+          - working
+        follows_weekday:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+          maximum: 7
+        note:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    CalendarDayInput:
+      type: object
+      required:
+      - kind
+      properties:
+        kind:
+          type: string
+          enum:
+          - holiday
+          - exam
+          - no_classes
+          - working
+        follows_weekday:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+          maximum: 7
+        note:
+          type: string
+    TimetableImportRow:
+      type: object
+      required:
+      - day
+      - start
+      - end
+      - subject_code
+      properties:
+        ref:
+          type: string
+        day:
+          type: integer
+          minimum: 1
+          maximum: 7
+        start:
+          type: string
+          pattern: ^\d{1,2}:\d{2}$
+          example: 09:30
+        end:
+          type: string
+          pattern: ^\d{1,2}:\d{2}$
+          example: 09:30
+        subject_code:
+          type: string
+        subject_kind:
+          type: string
+          enum:
+          - lecture
+          - lab
+          - tutorial
+        batch:
+          type:
+          - string
+          - 'null'
+        room:
+          type:
+          - string
+          - 'null'
+        teacher_email:
+          type:
+          - string
+          - 'null'
+          format: email
+    TimetableImportRequest:
+      type: object
+      required:
+      - term_id
+      - section_id
+      properties:
+        term_id:
+          type: string
+          format: uuid
+        section_id:
+          type: string
+          format: uuid
+        effective_from:
+          type: string
+          format: date
+        xlsx_base64:
+          type: string
+          description: The timetable sheet downloaded as .xlsx, base64
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimetableImportRow'
+    TimetableImportReport:
+      type: object
+      required:
+      - dry_run
+      - effective_from
+      - summary
+      - create
+      - issues
+      - classes
+      - teacherless
+      properties:
+        dry_run:
+          type: boolean
+        effective_from:
+          type: string
+          format: date
+        summary:
+          type: object
+          required:
+          - classes
+          - new
+          - unchanged
+          - ended
+          - sessions_scheduled
+          - errors
+          - warnings
+          properties:
+            classes:
+              type: integer
+            new:
+              type: integer
+            unchanged:
+              type: integer
+            ended:
+              type: integer
+            sessions_scheduled:
+              type: integer
+            errors:
+              type: integer
+            warnings:
+              type: integer
+        create:
+          type: object
+          required:
+          - subjects
+          - rooms
+          - batches
+          - offerings
+          properties:
+            subjects:
+              type: array
+              items:
+                type: object
+                required:
+                - code
+                - kind
+                properties:
+                  code:
+                    type: string
+                  kind:
+                    type: string
+            rooms:
+              type: array
+              items:
+                type: string
+            batches:
+              type: array
+              items:
+                type: string
+            offerings:
+              type: array
+              items:
+                type: string
+        issues:
+          type: array
+          items:
+            type: object
+            required:
+            - ref
+            - level
+            - message
+            properties:
+              ref:
+                type: string
+              level:
+                type: string
+                enum:
+                - error
+                - warning
+              message:
+                type: string
+        classes:
+          type: array
+          items:
+            type: object
+            required:
+            - ref
+            - day
+            - start
+            - end
+            - subject
+            - batch
+            - room
+            - status
+            properties:
+              ref:
+                type: string
+              day:
+                type: string
+              start:
+                type: string
+              end:
+                type: string
+              subject:
+                type: string
+              batch:
+                type:
+                - string
+                - 'null'
+              room:
+                type:
+                - string
+                - 'null'
+              status:
+                type: string
+                enum:
+                - new
+                - unchanged
+        teacherless:
+          type: array
+          items:
+            type: string
+    Conflicts:
+      type: object
+      required:
+      - conflicts
+      - warnings
+      properties:
+        conflicts:
+          type: array
+          items:
+            type: object
+            required:
+            - kind
+            - message
+            properties:
+              kind:
+                type: string
+                enum:
+                - conflict
+              message:
+                type: string
+        warnings:
+          type: array
+          items:
+            type: object
+            required:
+            - kind
+            - message
+            properties:
+              kind:
+                type: string
+                enum:
+                - warning
+              message:
+                type: string
+    ClassSession:
+      type: object
+      required:
+      - id
+      - date
+      - start
+      - end
+      - starts_at
+      - ends_at
+      - status
+      - changed
+      - subject
+      - section
+      - batch
+      - room
+      - teacher
+      - entry_id
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        start:
+          type: string
+          example: 09:30
+        end:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+          - scheduled
+          - in_progress
+          - completed
+          - cancelled
+        changed:
+          type: boolean
+          description: Changed for this date by Acad Ops
+        subject:
+          type: object
+          required:
+          - code
+          - name
+          - kind
+          properties:
+            code:
+              type: string
+            name:
+              type: string
+            kind:
+              type: string
+        section:
+          type: object
+          required:
+          - id
+          - name
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        batch:
+          type:
+          - string
+          - 'null'
+        room:
+          type:
+          - string
+          - 'null'
+        teacher:
+          type:
+          - string
+          - 'null'
+        expected:
+          type: integer
+          description: Students expected (teacher views)
+        entry_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: Weekly entry this class comes from (null for one-off classes)
+    ClassSessionList:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClassSession'
+    ClassSessionRange:
+      type: object
+      required:
+      - from
+      - to
+      - items
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClassSession'
+    TeacherToday:
+      type: object
+      required:
+      - date
+      - items
+      properties:
+        date:
+          type: string
+          format: date
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClassSession'
+    SyncResult:
+      type: object
+      required:
+      - added
+      - removed
+      - updated
+      properties:
+        added:
+          type: integer
+        removed:
+          type: integer
+        updated:
+          type: integer
+    MaterializeResult:
+      type: object
+      required:
+      - sections
+      - failed
+      properties:
+        sections:
+          type: integer
+        failed:
+          type: array
+          items:
+            type: object
+            required:
+            - sectionId
+            - error
+            properties:
+              sectionId:
+                type: string
+              error:
+                type: string
   parameters:
     Id:
       name: id
