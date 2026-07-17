@@ -785,6 +785,285 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/timetable/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Weekly timetable entries */
+        get: operations["listTimetableEntries"];
+        put?: never;
+        /**
+         * Add a weekly class
+         * @description Scheduled immediately; double-booking returns 409 double_booking.
+         */
+        post: operations["createTimetableEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/timetable/entries/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** End a weekly class from today (history kept) */
+        delete: operations["endTimetableEntry"];
+        options?: never;
+        head?: never;
+        /** Change a weekly class (from now on) */
+        patch: operations["updateTimetableEntry"];
+        trace?: never;
+    };
+    "/v1/admin/timetable/overrides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One-day changes */
+        get: operations["listTimetableOverrides"];
+        put?: never;
+        /**
+         * Change, cancel or add a class for one date
+         * @description 409 session_has_attendance when the class already has attendance and confirm is not set.
+         */
+        post: operations["createTimetableOverride"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/timetable/overrides/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Undo a one-day change */
+        delete: operations["revokeTimetableOverride"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/timetable/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Holidays and day-order changes */
+        get: operations["listCalendarDays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/timetable/calendar/{term_id}/{date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                date: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Mark a holiday / exam day / "follows weekday" */
+        put: operations["setCalendarDay"];
+        post?: never;
+        /** Back to a normal day */
+        delete: operations["removeCalendarDay"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/timetable/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import a section timetable (dry run by default)
+         * @description Accepts the college timetable sheet (.xlsx grid with day blocks, batch rows and merged cells) or normalized rows. The dry run executes every step, including double-booking checks, then rolls back.
+         */
+        post: operations["importTimetable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Double-bookings and warnings (missing teachers/rooms, capacity, tight changeovers) */
+        get: operations["listConflicts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/class-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Scheduled classes (max 31 days) */
+        get: operations["listClassSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/timetable/materialize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Regenerate the next 14 days of classes now */
+        post: operations["materializeTimetable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/sections/{id}/sync-enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enroll the section's students in its subjects */
+        post: operations["syncEnrollments"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/sessions/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Today's classes for the signed-in teacher */
+        get: operations["teacherToday"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/timetable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Teacher timetable */
+        get: operations["teacherTimetable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/class-sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        /** One of my classes */
+        get: operations["teacherClassSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/timetable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My classes (student) */
+        get: operations["myTimetable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1101,6 +1380,11 @@ export interface components {
             subject_id?: string;
             /** Format: uuid */
             section_id?: string;
+            subject_code?: string;
+            subject_name?: string;
+            subject_kind?: string;
+            section_name?: string;
+            term_name?: string;
         };
         OfferingInput: {
             /** Format: uuid */
@@ -1173,6 +1457,11 @@ export interface components {
             group_id?: string | null;
             /** @enum {string} */
             role?: "primary" | "assistant";
+            teacher_name?: string;
+            subject_code?: string;
+            subject_name?: string;
+            section_name?: string;
+            group_name?: string | null;
         };
         TeachingAssignmentInput: {
             /** Format: uuid */
@@ -1369,6 +1658,292 @@ export interface components {
                 id: string;
                 reason: string;
             };
+        };
+        TimetableEntry: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            term_id: string;
+            /** Format: uuid */
+            offering_id: string;
+            /** Format: uuid */
+            section_id?: string;
+            /** Format: uuid */
+            group_id?: string | null;
+            /** @description 1 = Monday */
+            weekday: number;
+            /** @example 09:30 */
+            start_time: string;
+            /** @example 09:30 */
+            end_time: string;
+            /** Format: uuid */
+            room_id?: string | null;
+            /** Format: uuid */
+            teacher_id?: string | null;
+            /** Format: date */
+            valid_from?: string | null;
+            /** Format: date */
+            valid_to?: string | null;
+            note?: string | null;
+            subject_code?: string;
+            subject_name?: string;
+            subject_kind?: string;
+            group_name?: string | null;
+            room?: string | null;
+            teacher_name?: string | null;
+        };
+        TimetableEntryInput: {
+            /** Format: uuid */
+            offering_id: string;
+            /** Format: uuid */
+            group_id?: string | null;
+            weekday: number;
+            /** @example 09:30 */
+            start_time: string;
+            /** @example 09:30 */
+            end_time: string;
+            /** Format: uuid */
+            room_id?: string | null;
+            /** Format: uuid */
+            teacher_id?: string | null;
+            /** Format: date */
+            valid_from?: string | null;
+            /** Format: date */
+            valid_to?: string | null;
+            note?: string | null;
+        };
+        TimetableEntryPatch: {
+            /** Format: uuid */
+            group_id?: string | null;
+            weekday?: number;
+            /** @example 09:30 */
+            start_time?: string;
+            /** @example 09:30 */
+            end_time?: string;
+            /** Format: uuid */
+            room_id?: string | null;
+            /** Format: uuid */
+            teacher_id?: string | null;
+            /** Format: date */
+            valid_from?: string | null;
+            /** Format: date */
+            valid_to?: string | null;
+            note?: string | null;
+        };
+        TimetableOverride: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            date: string;
+            /** @enum {string} */
+            action: "cancel" | "modify" | "add";
+            /** Format: uuid */
+            entry_id?: string | null;
+            /** Format: uuid */
+            new_offering_id?: string | null;
+            /** Format: uuid */
+            new_group_id?: string | null;
+            /** Format: uuid */
+            new_room_id?: string | null;
+            /** Format: uuid */
+            new_teacher_id?: string | null;
+            new_start?: string | null;
+            new_end?: string | null;
+            reason: string;
+            applies_to_locked?: boolean;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            revoked_at?: string | null;
+            subject_code?: string | null;
+            section_name?: string | null;
+            /** Format: uuid */
+            section_id?: string | null;
+            created_by_name?: string | null;
+        };
+        TimetableOverrideInput: {
+            /** Format: date */
+            date: string;
+            /** @enum {string} */
+            action: "cancel" | "modify" | "add";
+            /** Format: uuid */
+            entry_id?: string;
+            /** Format: uuid */
+            new_offering_id?: string;
+            /** Format: uuid */
+            new_group_id?: string | null;
+            /** Format: uuid */
+            new_room_id?: string | null;
+            /** Format: uuid */
+            new_teacher_id?: string | null;
+            /** @example 09:30 */
+            new_start?: string;
+            /** @example 09:30 */
+            new_end?: string;
+            reason: string;
+            /** @description Required when the class already has attendance */
+            confirm?: boolean;
+        };
+        CalendarDay: {
+            /** Format: uuid */
+            term_id: string;
+            /** Format: date */
+            date: string;
+            /** @enum {string} */
+            kind: "holiday" | "exam" | "no_classes" | "working";
+            follows_weekday?: number | null;
+            note: string;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        CalendarDayInput: {
+            /** @enum {string} */
+            kind: "holiday" | "exam" | "no_classes" | "working";
+            follows_weekday?: number | null;
+            note?: string;
+        };
+        TimetableImportRow: {
+            ref?: string;
+            day: number;
+            /** @example 09:30 */
+            start: string;
+            /** @example 09:30 */
+            end: string;
+            subject_code: string;
+            /** @enum {string} */
+            subject_kind?: "lecture" | "lab" | "tutorial";
+            batch?: string | null;
+            room?: string | null;
+            /** Format: email */
+            teacher_email?: string | null;
+        };
+        TimetableImportRequest: {
+            /** Format: uuid */
+            term_id: string;
+            /** Format: uuid */
+            section_id: string;
+            /** Format: date */
+            effective_from?: string;
+            /** @description The timetable sheet downloaded as .xlsx, base64 */
+            xlsx_base64?: string;
+            rows?: components["schemas"]["TimetableImportRow"][];
+        };
+        TimetableImportReport: {
+            dry_run: boolean;
+            /** Format: date */
+            effective_from: string;
+            summary: {
+                classes: number;
+                new: number;
+                unchanged: number;
+                ended: number;
+                sessions_scheduled: number;
+                errors: number;
+                warnings: number;
+            };
+            create: {
+                subjects: {
+                    code: string;
+                    kind: string;
+                }[];
+                rooms: string[];
+                batches: string[];
+                offerings: string[];
+            };
+            issues: {
+                ref: string;
+                /** @enum {string} */
+                level: "error" | "warning";
+                message: string;
+            }[];
+            classes: {
+                ref: string;
+                day: string;
+                start: string;
+                end: string;
+                subject: string;
+                batch: string | null;
+                room: string | null;
+                /** @enum {string} */
+                status: "new" | "unchanged";
+            }[];
+            teacherless: string[];
+        };
+        Conflicts: {
+            conflicts: {
+                /** @enum {string} */
+                kind: "conflict";
+                message: string;
+            }[];
+            warnings: {
+                /** @enum {string} */
+                kind: "warning";
+                message: string;
+            }[];
+        };
+        ClassSession: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            date: string;
+            /** @example 09:30 */
+            start: string;
+            end: string;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            /** @enum {string} */
+            status: "scheduled" | "in_progress" | "completed" | "cancelled";
+            /** @description Changed for this date by Acad Ops */
+            changed: boolean;
+            subject: {
+                code: string;
+                name: string;
+                kind: string;
+            };
+            section: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            batch: string | null;
+            room: string | null;
+            teacher: string | null;
+            /** @description Students expected (teacher views) */
+            expected?: number;
+            /**
+             * Format: uuid
+             * @description Weekly entry this class comes from (null for one-off classes)
+             */
+            entry_id: string | null;
+        };
+        ClassSessionList: {
+            items: components["schemas"]["ClassSession"][];
+        };
+        ClassSessionRange: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            items: components["schemas"]["ClassSession"][];
+        };
+        TeacherToday: {
+            /** Format: date */
+            date: string;
+            items: components["schemas"]["ClassSession"][];
+        };
+        SyncResult: {
+            added: number;
+            removed: number;
+            updated: number;
+        };
+        MaterializeResult: {
+            sections: number;
+            failed: {
+                sectionId: string;
+                error: string;
+            }[];
         };
     };
     responses: {
@@ -3658,6 +4233,517 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditVerifyResult"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    listTimetableEntries: {
+        parameters: {
+            query: {
+                term_id: string;
+                section_id?: string;
+                include_ended?: "true" | "false";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["TimetableEntry"][];
+                    };
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createTimetableEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimetableEntryInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimetableEntry"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    endTimetableEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ended */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    updateTimetableEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimetableEntryPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimetableEntry"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    listTimetableOverrides: {
+        parameters: {
+            query: {
+                term_id: string;
+                from?: string;
+                to?: string;
+                include_revoked?: "true" | "false";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["TimetableOverride"][];
+                    };
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createTimetableOverride: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimetableOverrideInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimetableOverride"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    revokeTimetableOverride: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Undone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    listCalendarDays: {
+        parameters: {
+            query: {
+                term_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["CalendarDay"][];
+                    };
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    setCalendarDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CalendarDayInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarDay"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    removeCalendarDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    importTimetable: {
+        parameters: {
+            query?: {
+                /** @description true (default) only reports what would change */
+                dry_run?: components["parameters"]["DryRun"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimetableImportRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimetableImportReport"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    listConflicts: {
+        parameters: {
+            query: {
+                term_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conflicts"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    listClassSessions: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                section_id?: string;
+                room_id?: string;
+                teacher_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassSessionList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    materializeTimetable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaterializeResult"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    syncEnrollments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncResult"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    teacherToday: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeacherToday"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    teacherTimetable: {
+        parameters: {
+            query?: {
+                from?: string;
+                /** @description Defaults: today .. today+6; max 31 days */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassSessionRange"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    teacherClassSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassSession"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    myTimetable: {
+        parameters: {
+            query?: {
+                from?: string;
+                /** @description Defaults: today .. today+6; max 31 days */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassSessionRange"];
                 };
             };
             400: components["responses"]["Error400"];
