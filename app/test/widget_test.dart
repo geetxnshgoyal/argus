@@ -42,6 +42,25 @@ class FakeServer {
           case 'POST /v1/me/policy-acceptance':
             policyAccepted = true;
             return _json(200, {'ok': true, 'version': 'v1'});
+          case 'GET /v1/me/timetable':
+            final now = DateTime.now();
+            final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+            return _json(200, {
+              'from': today,
+              'to': today,
+              'items': [
+                {
+                  'id': 's1', 'date': today, 'start': '09:30', 'end': '11:00', 'starts_at': '', 'ends_at': '', 'status': 'scheduled', 'changed': false,
+                  'entry_id': 'e1', 'subject': {'code': 'ADA', 'name': 'Analysis and Design of Algorithms', 'kind': 'lecture'},
+                  'section': {'id': 'x', 'name': '2nd Year 3rd Sem'}, 'batch': null, 'room': 'Classroom 6', 'teacher': 'Teacher A',
+                },
+                {
+                  'id': 's2', 'date': today, 'start': '15:30', 'end': '17:00', 'starts_at': '', 'ends_at': '', 'status': 'cancelled', 'changed': true,
+                  'entry_id': 'e2', 'subject': {'code': 'ADA LAB', 'name': 'ADA LAB', 'kind': 'lab'},
+                  'section': {'id': 'x', 'name': '2nd Year 3rd Sem'}, 'batch': 'Batch 1', 'room': 'Concept Room', 'teacher': null,
+                },
+              ],
+            });
           case 'GET /v1/health':
             return _json(200, {'status': 'ok', 'version': '0.1.0', 'db': 'ok'});
           case 'POST /v1/auth/logout':
@@ -111,8 +130,12 @@ void main() {
     await tester.tap(find.text('Accept and continue'));
     await tester.pumpAndSettle();
     expect(find.text('Hi, Asha'), findsOneWidget);
-    expect(find.text('2102500001'), findsOneWidget);
-    expect(find.text('Batch 1'), findsOneWidget);
+    expect(find.textContaining('2102500001'), findsOneWidget);
+    expect(find.textContaining('Batch 1'), findsWidgets);
+    // Today's timetable, with the cancelled lab marked.
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('ADA · Analysis and Design of Algorithms'), findsOneWidget);
+    expect(find.text('Cancelled'), findsOneWidget);
   });
 
   testWidgets('explains SSO errors in plain language', (tester) async {
