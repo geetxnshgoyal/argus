@@ -87,7 +87,7 @@ export function Dialog(props: { open: boolean; title: string; onClose: () => voi
   );
 }
 
-export function PageHead({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
+export function PageHead({ title, subtitle, actions }: { title: string; subtitle?: string | undefined; actions?: ReactNode }) {
   return (
     <div className="page-head">
       <div>

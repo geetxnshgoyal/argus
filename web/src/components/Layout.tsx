@@ -53,7 +53,7 @@ export function AppFrame() {
 
 export function SideNavLink({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Link to={to} activeOptions={{ exact: to === '/admin' }} activeProps={{ className: 'active' }}>
+    <Link to={to} activeOptions={{ exact: true }} activeProps={{ className: 'active' }}>
       {children}
     </Link>
   );
