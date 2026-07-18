@@ -11,7 +11,7 @@ export default tseslint.config(
     rules: {
       // Secrets must never reach logs; use the pino logger (which redacts) instead.
       'no-console': ['error', { allow: ['error'] }],
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
   { files: ['build.mjs', 'scripts/**'], rules: { 'no-console': 'off' } },
