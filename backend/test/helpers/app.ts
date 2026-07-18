@@ -26,6 +26,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     publicUrl: 'http://localhost:5173',
     oidc: { issuer: 'http://idp.test', clientId: undefined, clientSecret: undefined, hostedDomain: 'college.test' },
     mobileRedirectUri: 'app.argus.argus:/auth/callback',
+    timeZone: 'Asia/Kolkata',
     ...overrides,
   };
 }
