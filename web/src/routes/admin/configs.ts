@@ -112,6 +112,25 @@ export const RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
       { key: 'radius_m', label: 'Radius in metres', type: 'number', required: true, hint: 'Large enough to cover the whole campus' },
     ],
   },
+  'teaching-assignments': {
+    path: 'teaching-assignments',
+    title: 'Teaching assignments',
+    subtitle: 'Who teaches each subject. For labs, pick the batch; a section-wide assignment covers every batch without its own.',
+    singular: 'Assignment',
+    columns: [
+      { key: 'subject_code', label: 'Subject', render: (r) => `${r.subject_code} · ${r.subject_name}` },
+      { key: 'section_name', label: 'Section' },
+      { key: 'group_name', label: 'Batch', render: (r) => r.group_name ?? 'All batches' },
+      { key: 'teacher_name', label: 'Teacher' },
+      { key: 'role', label: 'Role', render: (r) => (r.role === 'primary' ? 'Main teacher' : 'Assistant') },
+    ],
+    fields: [
+      { key: 'offering_id', label: 'Subject', type: 'ref', required: true, createOnly: true, ref: { path: 'offerings', label: (r) => `${r.subject_code} · ${r.subject_name} (${r.section_name})` } },
+      { key: 'group_id', label: 'Batch', type: 'ref', nullable: true, hint: 'Leave empty for the whole section', ref: { path: 'groups', label: byName } },
+      { key: 'teacher_id', label: 'Teacher', type: 'ref', required: true, createOnly: true, ref: { path: 'users', label: byName, filter: { role: 'teacher', status: 'active' } } },
+      { key: 'role', label: 'Role', type: 'select', options: [{ value: 'primary', label: 'Main teacher' }, { value: 'assistant', label: 'Assistant' }] },
+    ],
+  },
   'campus-networks': {
     path: 'campus-networks',
     title: 'Campus networks',
