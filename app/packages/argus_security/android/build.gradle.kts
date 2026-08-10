@@ -72,6 +72,11 @@ kotlin {
 }
 
 dependencies {
+    // Google's own libraries only (spec §2 forbids third-party Flutter plugins for keys/attestation).
+    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.core:core-ktx:1.17.0")
+    implementation("com.google.android.gms:play-services-location:21.4.0")
+    implementation("com.google.android.play:integrity:1.6.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.mockito:mockito-core:5.0.0")
 }
