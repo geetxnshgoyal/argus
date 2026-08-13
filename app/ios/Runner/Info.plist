@@ -2,12 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Allows plain HTTP only to local hosts (dev API on localhost). Internet traffic stays HTTPS-only. -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-	</dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -32,6 +26,22 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Argus uses the camera to scan the attendance QR code shown in your classroom.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Argus asks for Face ID or your passcode so only you can mark your attendance.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Argus checks your location once when you scan, to confirm you are on campus. It never tracks you in the background.</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>Attendance</key>
+		<string>Precise location is needed once per scan to confirm you are on campus.</string>
+	</dict>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
