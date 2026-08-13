@@ -19,7 +19,8 @@ export interface OidcSettings {
   issuer: string;
   clientId: string;
   clientSecret: string;
-  hostedDomain: string | undefined;
+  /** Allowed Workspace domains; empty = any account. */
+  hostedDomains: string[];
   redirectUri: string;
   /** Allow http:// issuers (tests and local dev only). */
   allowInsecure: boolean;
@@ -93,7 +94,9 @@ export class OidcService {
       prompt: opts.reauth ? 'login' : 'select_account',
     };
     if (opts.reauth) params.max_age = '0';
-    if (this.settings.hostedDomain) params.hd = this.settings.hostedDomain;
+    // Google's hd hint takes one domain, or "*" for "any Workspace account"; the real check is below.
+    const domains = this.settings.hostedDomains;
+    if (domains.length > 0) params.hd = domains.length === 1 ? (domains[0] as string) : '*';
     return oidc.buildAuthorizationUrl(config, params);
   }
 
@@ -127,9 +130,14 @@ export class OidcService {
 
     const email = typeof claims.email === 'string' ? claims.email.toLowerCase() : null;
     const emailVerified = claims.email_verified === true;
-    if (this.settings.hostedDomain) {
-      const domainOk = email?.endsWith(`@${this.settings.hostedDomain}`) && claims.hd === this.settings.hostedDomain;
-      if (!domainOk) throw new ApiError(403, 'wrong_domain', `Please sign in with your @${this.settings.hostedDomain} account.`);
+    const domains = this.settings.hostedDomains;
+    if (domains.length > 0) {
+      // Both the address and Google's hosted-domain claim must name the same allowed domain.
+      const emailDomain = email?.split('@')[1] ?? '';
+      const domainOk = domains.includes(emailDomain) && claims.hd === emailDomain;
+      if (!domainOk) {
+        throw new ApiError(403, 'wrong_domain', `Please sign in with your college account (${domains.map((d) => `@${d}`).join(' or ')}).`);
+      }
     }
 
     const user = await resolveUser(this.db, { issuer: config.serverMetadata().issuer, subject: claims.sub, email, emailVerified });
