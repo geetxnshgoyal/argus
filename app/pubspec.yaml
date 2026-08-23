@@ -40,6 +40,7 @@ dependencies:
   flutter_secure_storage: ^11.2.0
   flutter_web_auth_2: ^5.1.0
   crypto: ^3.0.7
+  mobile_scanner: ^7.4.2
 
 dev_dependencies:
   flutter_test:
