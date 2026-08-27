@@ -15,6 +15,10 @@ import type { AppContext } from './context.ts';
 import { pingDb } from './db/index.ts';
 import { ApiError, type ErrorBody } from './errors.ts';
 import { registerSystemRoutes } from './routes/system.ts';
+import { registerAttendanceRoutes } from './attendance/routes.ts';
+import { registerDeviceRoutes } from './devices/routes.ts';
+import { registerAdminAttendanceRoutes } from './admin/attendance-routes.ts';
+import { registerSupportRoutes } from './support/routes.ts';
 import { registerTimetableRoutes } from './timetable/routes.ts';
 
 export interface AppOptions {
@@ -46,6 +50,8 @@ export async function buildApp(ctx: AppContext, opts: AppOptions = {}): Promise<
     // We write our own access log line (below) that omits query strings.
     logController: new LogController({ disableRequestLogging: true }),
     bodyLimit: 256 * 1024,
+    // Long-lived streams (the teacher's live panel uses Server-Sent Events) must not block shutdown.
+    forceCloseConnections: true,
   });
 
   const apiRoutes: string[] = [];
@@ -127,6 +133,10 @@ export async function buildApp(ctx: AppContext, opts: AppOptions = {}): Promise<
   registerStudentImport(app, ctx);
   registerAuditRoutes(app, ctx);
   registerTimetableRoutes(app, ctx);
+  registerDeviceRoutes(app, ctx);
+  registerAttendanceRoutes(app, ctx);
+  registerSupportRoutes(app, ctx);
+  registerAdminAttendanceRoutes(app, ctx);
 
   await app.ready();
   return { app, apiRoutes };
