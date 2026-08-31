@@ -12,7 +12,10 @@ import { CalendarPage } from './routes/admin/CalendarPage.tsx';
 import { ConflictsPage } from './routes/admin/ConflictsPage.tsx';
 import { TimetableImportPage } from './routes/admin/TimetableImportPage.tsx';
 import { TimetablePage } from './routes/admin/TimetablePage.tsx';
+import { AttendancePage } from './routes/teacher/AttendancePage.tsx';
+import { PairPage } from './routes/teacher/PairPage.tsx';
 import { TeacherHome } from './routes/teacher/TeacherHome.tsx';
+import { VerifierPage } from './routes/verify/VerifierPage.tsx';
 
 const rootRoute = createRootRoute({
   component: Outlet,
@@ -80,12 +83,40 @@ const teacherRoute = createRoute({
   ),
 });
 
+const teacherSessionRoute = createRoute({
+  getParentRoute: () => frameRoute,
+  path: '/teacher/session/$sessionId',
+  component: function TeacherSession() {
+    const { sessionId } = teacherSessionRoute.useParams();
+    return (
+      <RequireRole roles={['teacher']}>
+        <AttendancePage key={sessionId} sessionId={sessionId} />
+      </RequireRole>
+    );
+  },
+});
+
+const teacherPairRoute = createRoute({
+  getParentRoute: () => frameRoute,
+  path: '/teacher/pair',
+  validateSearch: (s: Record<string, unknown>) => ({ code: typeof s.code === 'string' ? s.code.slice(0, 12) : '' }),
+  component: function TeacherPair() {
+    const { code } = teacherPairRoute.useSearch();
+    return (
+      <RequireRole roles={['teacher']}>
+        <PairPage code={code} />
+      </RequireRole>
+    );
+  },
+});
+
+
 const verifyRoute = createRoute({
   getParentRoute: () => frameRoute,
   path: '/verify',
   component: () => (
     <RequireRole roles={['verifier']}>
-      <Placeholder title="Support requests" text="Review attendance support requests with their evidence." />
+      <VerifierPage />
     </RequireRole>
   ),
 });
@@ -181,7 +212,7 @@ const adminChildren = [
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
-  frameRoute.addChildren([indexRoute, studentRoute, teacherRoute, verifyRoute, adminRoute.addChildren(adminChildren)]),
+  frameRoute.addChildren([indexRoute, studentRoute, teacherRoute, teacherSessionRoute, teacherPairRoute, verifyRoute, adminRoute.addChildren(adminChildren)]),
 ]);
 
 export const router = createRouter({ routeTree });
