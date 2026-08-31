@@ -1,11 +1,11 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../auth_controller.dart';
+import '../config.dart';
 import '../theme.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, required this.auth, this.showDevLogin = kDebugMode});
+  const LoginScreen({super.key, required this.auth, this.showDevLogin = devBuild});
 
   final AuthController auth;
 
