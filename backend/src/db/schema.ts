@@ -275,6 +275,252 @@ export interface ClassSessionAudiencesTable {
   active: ColumnType<boolean, boolean | undefined, boolean>;
 }
 
+// ── Devices (M3) ────────────────────────────────────────────────────────────
+
+export type DeviceState = 'active' | 'pending' | 'revoked';
+export type AttestationLevel = 'strongbox' | 'tee' | 'app_attest' | 'dev_bypass';
+
+export interface DevicesTable extends Timestamps {
+  id: string;
+  user_id: string;
+  state: DeviceState;
+  platform: 'android' | 'ios';
+  model: ColumnType<string, string | undefined, string>;
+  os_version: ColumnType<string, string | undefined, string>;
+  app_version: ColumnType<string, string | undefined, string>;
+  session_key_spki: string;
+  attempt_key_spki: string;
+  attestation_level: AttestationLevel;
+  hardware_id_hash: string | null;
+  app_attest_key_id: string | null;
+  app_attest_public_key: string | null;
+  app_attest_counter: ColumnType<string, number | string | undefined, number | string>;
+  devicecheck_marked: ColumnType<boolean, boolean | undefined, boolean>;
+  bound_at: Timestamp;
+  activated_at: Timestamp | null;
+  revoked_at: Timestamp | null;
+  revoke_reason: string | null;
+}
+
+export type RebindStatus = 'pending' | 'completed' | 'approved' | 'rejected' | 'cancelled';
+
+export interface DeviceRebindRequestsTable {
+  id: string;
+  user_id: string;
+  old_device_id: string | null;
+  new_device_id: string;
+  status: ColumnType<RebindStatus, RebindStatus | undefined, RebindStatus>;
+  eligible_at: Timestamp | null;
+  needs_approval: ColumnType<boolean, boolean | undefined, boolean>;
+  approval_reason: string | null;
+  decided_by: string | null;
+  decided_at: Timestamp | null;
+  decision_note: string | null;
+  created_at: CreatedAt;
+}
+
+export interface DeviceBindChallengesTable {
+  challenge_hash: string;
+  user_id: string;
+  expires_at: Timestamp;
+  used_at: Timestamp | null;
+}
+
+// ── Attendance (M4/M5) ──────────────────────────────────────────────────────
+
+export type AttendanceSessionStatus = 'active' | 'ended';
+
+export interface AttendanceSessionsTable extends Timestamps {
+  id: string;
+  class_session_id: string;
+  started_by: string;
+  status: ColumnType<AttendanceSessionStatus, AttendanceSessionStatus | undefined, AttendanceSessionStatus>;
+  /** bigint → string from pg; Number() it. */
+  t0_ms: ColumnType<string, number | string, number | string>;
+  epoch_ms: ColumnType<number, number | undefined, number>;
+  ks_ciphertext: Buffer | null;
+  key_wipe_at: Timestamp | null;
+  headcount: number | null;
+  started_at: Timestamp;
+  ended_at: Timestamp | null;
+  ended_by: string | null;
+}
+
+export type RoundMode = 'full' | 'targeted' | 'end';
+
+export interface AttendanceRoundsTable {
+  id: string;
+  session_id: string;
+  round_no: number;
+  mode: RoundMode;
+  opened_at: Timestamp;
+  closed_at: Timestamp | null;
+  opened_by: string | null;
+  target_student_ids: string[] | null;
+}
+
+export type AttemptDecision = 'verified' | 'flagged' | 'flagged_high' | 'rejected';
+
+export interface AttemptSignals {
+  location: 'inside' | 'outside' | 'unknown';
+  accuracy_m: number | null;
+  /** Distance outside the geofence, rounded to 50 m (0 = inside). */
+  distance_m: number | null;
+  is_mock: boolean;
+  campus_network: boolean | null;
+  attestation: 'ok' | 'unavailable' | 'missing' | 'bypass';
+  app_version: string;
+  extra?: Record<string, unknown>;
+}
+
+export interface AttendanceAttemptsTable {
+  id: string;
+  session_id: string;
+  round_id: string | null;
+  student_id: string;
+  device_id: string;
+  received_at: Timestamp;
+  device_time: Timestamp | null;
+  qr_round: number;
+  qr_epoch: ColumnType<string, number | string, number | string>;
+  nonce: string;
+  tag_valid: ColumnType<boolean, boolean | undefined, boolean>;
+  offline_queued: ColumnType<boolean, boolean | undefined, boolean>;
+  decision: AttemptDecision;
+  reason_codes: ColumnType<string[], string[] | undefined, string[]>;
+  risk_score: ColumnType<number, number | undefined, number>;
+  signals: Json<AttemptSignals | null>;
+  payload_sha256: string;
+  created_at: CreatedAt;
+}
+
+export type RecordStatus = 'present' | 'late' | 'absent' | 'excused' | 'pending';
+export type RecordBasis = 'system' | 'teacher' | 'verifier' | 'correction';
+
+export interface AttendanceRecordsTable extends Timestamps {
+  student_id: string;
+  class_session_id: string;
+  attendance_session_id: string | null;
+  status: RecordStatus;
+  basis: RecordBasis;
+  final_attempt_id: string | null;
+  updated_by: string | null;
+  note: string | null;
+}
+
+export interface UsedNoncesTable {
+  device_id: string;
+  nonce: string;
+  expires_at: Timestamp;
+}
+
+export interface DisplayPairingsTable {
+  id: string;
+  secret_hash: string;
+  code: string;
+  expires_at: Timestamp;
+  session_id: string | null;
+  linked_by: string | null;
+  linked_at: Timestamp | null;
+  created_at: CreatedAt;
+}
+
+export interface RiskSettingsTable {
+  key: string;
+  kind: 'scorer' | 'threshold' | 'setting';
+  value: number;
+  enabled: ColumnType<boolean, boolean | undefined, boolean>;
+  description: ColumnType<string, string | undefined, string>;
+  updated_by: ColumnType<string | null, string | null | undefined, string | null>;
+  updated_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
+export type FlagSeverity = 'low' | 'medium' | 'high';
+
+export interface RiskFlagsTable {
+  id: string;
+  student_id: string;
+  session_id: string | null;
+  attempt_id: string | null;
+  type: string;
+  severity: FlagSeverity;
+  details: Json;
+  created_at: CreatedAt;
+  resolved_by: string | null;
+  resolved_at: Timestamp | null;
+  resolution: string | null;
+}
+
+export type SpotCheckResult = 'confirmed' | 'absent' | 'no_response';
+
+export interface SpotChecksTable {
+  id: string;
+  session_id: string;
+  round_id: string | null;
+  student_id: string;
+  selected_reason: 'flagged_high' | 'flagged' | 'random' | 'teacher';
+  result: SpotCheckResult | null;
+  teacher_id: string;
+  suggested_at: Timestamp;
+  recorded_at: Timestamp | null;
+}
+
+export interface PresenceObservationsTable {
+  id: string;
+  session_id: string;
+  student_id: string;
+  source: string;
+  observed_at: Timestamp;
+  data: Json;
+}
+
+// ── Support and corrections (M6) ────────────────────────────────────────────
+
+export type SupportReason = 'cant_scan' | 'camera_broken' | 'phone_problem' | 'app_error' | 'other';
+export type SupportStatus = 'pending' | 'asked_teacher' | 'approved' | 'rejected' | 'expired';
+export type TeacherAnswer = 'present' | 'absent' | 'not_sure';
+
+export interface SupportRequestsTable {
+  id: string;
+  student_id: string;
+  class_session_id: string;
+  attendance_session_id: string;
+  device_id: string;
+  reason: SupportReason;
+  note: string | null;
+  evidence: Json<Record<string, unknown>>;
+  evidence_score: number;
+  valid_tag_seen: boolean;
+  status: ColumnType<SupportStatus, SupportStatus | undefined, SupportStatus>;
+  verifier_id: string | null;
+  teacher_id: string | null;
+  teacher_answer: TeacherAnswer | null;
+  teacher_answered_at: Timestamp | null;
+  decided_by: string | null;
+  decided_role: 'verifier' | 'teacher' | 'system' | null;
+  decision_reason: string | null;
+  second_approver_id: string | null;
+  created_at: CreatedAt;
+  decided_at: Timestamp | null;
+}
+
+export type CorrectionStatus = 'pending' | 'approved' | 'rejected';
+
+export interface AttendanceCorrectionsTable {
+  id: string;
+  student_id: string;
+  class_session_id: string;
+  old_status: string | null;
+  new_status: 'present' | 'late' | 'absent' | 'excused';
+  reason: string;
+  requested_by: string;
+  approved_by: string | null;
+  status: ColumnType<CorrectionStatus, CorrectionStatus | undefined, CorrectionStatus>;
+  decision_note: string | null;
+  created_at: CreatedAt;
+  decided_at: Timestamp | null;
+}
+
 export interface Database {
   users: UsersTable;
   departments: DepartmentsTable;
@@ -303,6 +549,21 @@ export interface Database {
   term_calendar_days: TermCalendarDaysTable;
   class_sessions: ClassSessionsTable;
   class_session_audiences: ClassSessionAudiencesTable;
+  devices: DevicesTable;
+  device_rebind_requests: DeviceRebindRequestsTable;
+  device_bind_challenges: DeviceBindChallengesTable;
+  attendance_sessions: AttendanceSessionsTable;
+  attendance_rounds: AttendanceRoundsTable;
+  attendance_attempts: AttendanceAttemptsTable;
+  attendance_records: AttendanceRecordsTable;
+  used_nonces: UsedNoncesTable;
+  display_pairings: DisplayPairingsTable;
+  risk_settings: RiskSettingsTable;
+  risk_flags: RiskFlagsTable;
+  spot_checks: SpotChecksTable;
+  presence_observations: PresenceObservationsTable;
+  support_requests: SupportRequestsTable;
+  attendance_corrections: AttendanceCorrectionsTable;
   course_offerings_labeled: CourseOfferingsTable & { subject_code: string; subject_name: string; subject_kind: string; section_name: string; term_name: string };
   teaching_assignments_labeled: TeachingAssignmentsTable & { teacher_name: string; subject_code: string; subject_name: string; section_name: string; group_name: string | null };
 }
