@@ -164,3 +164,19 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.65); }
 .class-card:disabled { cursor: default; }
 .issue-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
 .issue-list li { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.6rem 0.75rem; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--line); }
+
+/* ── Attendance (teacher live panel) ───────────────────────────────────── */
+.attendance .card { margin-bottom: 1rem; }
+.stat-row { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); margin-bottom: 1rem; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.1rem 1.25rem; display: grid; gap: 0.15rem; }
+.stat-main { border-color: rgba(52, 199, 123, 0.4); }
+.stat-value { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat-main .stat-value { color: var(--accent); }
+.stat-of { font-size: 1.2rem; color: var(--fg-2); font-weight: 600; }
+.stat-label { color: var(--fg-2); font-size: 0.9rem; }
+.student-list { list-style: none; padding: 0; margin: 0.75rem 0 0; display: grid; gap: 0.5rem; }
+.student-list li { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; padding: 0.6rem 0.75rem; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--line); }
+.student-name { display: grid; min-width: 12rem; }
+.student-note { flex: 1; min-width: 8rem; }
+.screen-options { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); margin-top: 0.75rem; align-items: end; }
+details.card > summary { cursor: pointer; list-style: revert; }
