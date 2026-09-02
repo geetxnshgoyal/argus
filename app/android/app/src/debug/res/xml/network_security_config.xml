@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Debug builds only: allow plain HTTP to the developer's machine
-     (10.0.2.2 is the host as seen from the Android emulator).
+<!-- Debug builds only: allow plain HTTP to a developer's machine, e.g. the
+     emulator host (10.0.2.2), localhost via `adb reverse`, or the dev Mac's
+     LAN address for test phones on the same Wi-Fi (build with the
+     dart-define ARGUS_API=http://LAN-IP:8080).
      Release builds keep Android's default: HTTPS only. -->
 <network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">10.0.2.2</domain>
-        <domain includeSubdomains="false">localhost</domain>
-    </domain-config>
+    <base-config cleartextTrafficPermitted="true" />
 </network-security-config>
