@@ -239,9 +239,9 @@ describe.skipIf(!hasDb)('auth (integration)', () => {
     });
     afterAll(() => idp.stop());
 
-    async function ssoApp() {
+    async function ssoApp(hostedDomains = ['college.test']) {
       const oidc = new OidcService(
-        { issuer: idp.issuer, clientId: idp.clientId, clientSecret: idp.clientSecret, hostedDomain: 'college.test', redirectUri: 'http://localhost:5173/v1/auth/oidc/callback', allowInsecure: true },
+        { issuer: idp.issuer, clientId: idp.clientId, clientSecret: idp.clientSecret, hostedDomains, redirectUri: 'http://localhost:5173/v1/auth/oidc/callback', allowInsecure: true },
         db,
       );
       return makeApp({ db, oidc, config: { devLogin: false }, now: Date.now() });
@@ -286,6 +286,20 @@ describe.skipIf(!hasDb)('auth (integration)', () => {
       const s = await ssoApp();
       const { callback } = await signIn(s.app, { sub: 'x', email: 'teacher@gmail.com' });
       expect(callback.headers.location).toBe('/login?error=wrong_domain');
+      await s.app.close();
+    });
+
+    it('accepts several Workspace domains (students on the college, teachers on a partner)', async () => {
+      await createUser(db, 'teacher', 'first.last@partner.test');
+      const s = await ssoApp(['college.test', 'partner.test']);
+      const start = await s.app.inject('/v1/auth/oidc/login');
+      expect(new URL(String(start.headers.location)).searchParams.get('hd')).toBe('*');
+      const ok = await signIn(s.app, { sub: 't1', email: 'first.last@partner.test', hd: 'partner.test' });
+      expect(ok.callback.headers.location).toBe('/teacher');
+      // The hd claim must match the address's own domain, not just any allowed one.
+      await createUser(db, 'teacher', 'other@partner.test');
+      const mixed = await signIn(s.app, { sub: 't2', email: 'other@partner.test', hd: 'college.test' });
+      expect(mixed.callback.headers.location).toBe('/login?error=wrong_domain');
       await s.app.close();
     });
 
