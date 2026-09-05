@@ -24,9 +24,14 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     trustProxy: false,
     webDir: undefined,
     publicUrl: 'http://localhost:5173',
-    oidc: { issuer: 'http://idp.test', clientId: undefined, clientSecret: undefined, hostedDomain: 'college.test' },
+    oidc: { issuer: 'http://idp.test', clientId: undefined, clientSecret: undefined, hostedDomains: ['college.test'] },
     mobileRedirectUri: 'app.argus.argus:/auth/callback',
     timeZone: 'Asia/Kolkata',
+    attestation: {
+      android: { packageName: 'app.argus.argus', signingCertDigests: [], playIntegrityCredentialsPath: undefined },
+      ios: { appId: undefined, environment: 'production', deviceCheckKeyId: undefined, deviceCheckKeyPath: undefined },
+    },
+    devices: { rebindCooldownMs: 48 * 3600_000, maxRebindsPerTerm: 2 },
     ...overrides,
   };
 }
