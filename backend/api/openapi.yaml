@@ -12,6 +12,10 @@ info:
 servers:
 - url: /
 tags:
+- name: support
+- name: verifier
+- name: devices
+- name: display
 - name: system
 - name: auth
 - name: me
@@ -2642,6 +2646,1483 @@ paths:
           type: string
           format: date
         description: 'Defaults: today .. today+6; max 31 days'
+  /v1/devices/bind/challenge:
+    post:
+      tags:
+      - devices
+      operationId: bindChallenge
+      summary: Single-use challenge for phone registration (5 min)
+      security: &a1
+        - bearer: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BindChallenge"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/devices/bind:
+    post:
+      tags:
+      - devices
+      operationId: bindDevice
+      summary: Register this phone (protocol §4)
+      description: "Body carries the exact JCS payload bytes signed by both device
+        keys, plus platform attestation. First phone: active at once. Another
+        phone: pending until the cooldown passes or Acad Ops approves (ADR-0007)."
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BindRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BindResult"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "409":
+          $ref: "#/components/responses/Error409"
+        "422":
+          $ref: "#/components/responses/Error422"
+        "503":
+          $ref: "#/components/responses/Error503"
+  /v1/devices/me:
+    get:
+      tags:
+      - devices
+      operationId: myDevices
+      summary: My registered phones and any pending phone change
+      security: *a1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyDevices"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/devices/rebind/cancel:
+    post:
+      tags:
+      - devices
+      operationId: cancelRebind
+      summary: "\"This wasn't me\": cancel a pending phone change from the current phone"
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignedRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+  /v1/devices/report-lost:
+    post:
+      tags:
+      - devices
+      operationId: reportLostDevice
+      summary: "From the new phone: the old phone is lost, revoke it now"
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignedRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/admin/rebind-requests:
+    get:
+      tags:
+      - admin
+      operationId: listRebindRequests
+      summary: Phone change requests
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - pending
+          - completed
+          - approved
+          - rejected
+          - cancelled
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RebindRequest"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/admin/rebind-requests/{id}/approve:
+    parameters: &a2
+      - &a4
+        $ref: "#/components/parameters/Id"
+    post:
+      tags:
+      - admin
+      operationId: approveRebind
+      summary: Activate the new phone now (after an ID check)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionNote"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/admin/rebind-requests/{id}/reject:
+    parameters: *a2
+    post:
+      tags:
+      - admin
+      operationId: rejectRebind
+      summary: Reject the new phone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionNote"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/admin/devices:
+    get:
+      tags:
+      - admin
+      operationId: listDevices
+      summary: A student's phones
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema: &a3
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Device"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/admin/devices/{id}/revoke:
+    parameters: *a2
+    post:
+      tags:
+      - admin
+      operationId: revokeDevice
+      summary: Revoke a phone (lost, stolen, misuse)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - reason
+              properties:
+                reason:
+                  type: string
+                  minLength: 3
+                  maxLength: 300
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+  /v1/teacher/class-sessions/{id}/attendance/start:
+    parameters: *a2
+    post:
+      tags:
+      - teacher
+      operationId: startAttendance
+      summary: Start attendance for my class (from 10 min before start until the end)
+      responses:
+        "201":
+          description: Started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceStarted"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/teacher/attendance/sessions:
+    get:
+      tags:
+      - teacher
+      operationId: myAttendanceSessions
+      summary: My attendance sessions on a day (default today)
+      parameters:
+      - name: date
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - date
+                - items
+                properties:
+                  date:
+                    type: string
+                    format: date
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AttendanceSessionSummary"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/attendance/sessions/{id}/live:
+    parameters: *a2
+    get:
+      tags:
+      - teacher
+      operationId: attendanceLive
+      summary: "Live panel: counts, students, flags, spot checks"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceLive"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+  /v1/attendance/sessions/{id}/events:
+    parameters: *a2
+    get:
+      tags:
+      - teacher
+      operationId: attendanceEvents
+      summary: 'Server-Sent Events: "changed" whenever the live panel should refresh;
+        "ended" at the end'
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema: &a5
+                type: string
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+  /v1/attendance/sessions/{id}/rounds:
+    parameters: *a2
+    post:
+      tags:
+      - teacher
+      operationId: startRound
+      summary: Start a recheck round (targeted by default)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: []
+              properties:
+                mode:
+                  type: string
+                  enum:
+                  - targeted
+                  - full
+                  - end
+                  default: targeted
+      responses:
+        "201":
+          description: Started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoundStarted"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/attendance/sessions/{id}/end:
+    parameters: *a2
+    post:
+      tags:
+      - teacher
+      operationId: endAttendance
+      summary: "End attendance: close the round, unmarked students become absent"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordCounts"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/attendance/sessions/{id}/display:
+    parameters: *a2
+    get:
+      tags:
+      - teacher
+      operationId: displayDirect
+      summary: Display state for the teacher's own browser acting as the classroom screen
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisplayState"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+    post:
+      tags:
+      - teacher
+      operationId: linkDisplay
+      summary: Connect a classroom screen by the code it shows (ADR-0004)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              properties:
+                code:
+                  type: string
+                  minLength: 4
+                  maxLength: 12
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/attendance/sessions/{id}/headcount:
+    parameters: *a2
+    post:
+      tags:
+      - teacher
+      operationId: setHeadcount
+      summary: Record an approximate headcount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - headcount
+              properties:
+                headcount:
+                  type: integer
+                  minimum: 0
+                  maximum: 1000
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceLive"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/attendance/sessions/{id}/spot-checks/suggest:
+    parameters: *a2
+    post:
+      tags:
+      - teacher
+      operationId: suggestSpotChecks
+      summary: Suggest students to check in the room (flagged first, plus random)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceLive"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/attendance/sessions/{id}/spot-checks:
+    parameters: *a2
+    post:
+      tags:
+      - teacher
+      operationId: recordSpotCheck
+      summary: Record a spot-check result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - spot_check_id
+              - result
+              properties:
+                spot_check_id: *a3
+                result:
+                  type: string
+                  enum:
+                  - confirmed
+                  - absent
+                  - no_response
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceLive"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/attendance/sessions/{id}/students/{student_id}/decision:
+    parameters:
+    - *a4
+    - name: student_id
+      in: path
+      required: true
+      schema: *a3
+    post:
+      tags:
+      - teacher
+      operationId: decideStudent
+      summary: Teacher confirms a student present or marks them absent (until class end)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                  - present
+                  - absent
+                note:
+                  type:
+                  - string
+                  - "null"
+                  maxLength: 300
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/display/pairings:
+    post:
+      tags:
+      - display
+      operationId: createPairing
+      summary: Classroom screen asks for a pairing code
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - secret_hash
+              properties:
+                secret_hash:
+                  type: string
+                  description: base64url SHA-256 of a 32-byte secret kept in the page memory
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - pairing_id
+                - code
+                - expires_at
+                properties:
+                  pairing_id: *a3
+                  code: *a5
+                  expires_at:
+                    type: string
+                    format: date-time
+        "400":
+          $ref: "#/components/responses/Error400"
+  /v1/display/pairings/{id}/state:
+    parameters: *a2
+    post:
+      tags:
+      - display
+      operationId: pairingState
+      summary: "Classroom screen polls with its secret: waiting, active (round key) or
+        ended"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - secret
+              properties:
+                secret: *a5
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisplayState"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/me/sessions/active:
+    get:
+      tags:
+      - student
+      operationId: myActiveAttendance
+      summary: Attendance running now for my classes, and what I need to do
+      security: *a1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ActiveAttendance"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/attendance/attempts:
+    post:
+      tags:
+      - student
+      operationId: submitAttempt
+      summary: Mark attendance with a signed scan (protocol §5.4–§5.6)
+      description: "Rejections use the Error schema with the reason as `code`:
+        device_not_active, bad_signature, replayed_nonce, session_closed,
+        round_closed, not_enrolled, not_targeted, epoch_expired, bad_tag,
+        already_marked, attestation_failed, off_campus."
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttemptRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttemptResult"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "409":
+          $ref: "#/components/responses/Error409"
+        "422":
+          $ref: "#/components/responses/Error422"
+        "429":
+          $ref: "#/components/responses/Error429"
+  /v1/me/attendance:
+    get:
+      tags:
+      - student
+      operationId: myAttendance
+      summary: My attendance per subject with percentages
+      security: *a1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceHistory"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/support-requests:
+    post:
+      tags:
+      - support
+      operationId: createSupportRequest
+      summary: Ask for attendance support during class (signed by the attempt key)
+      description: 'Only from the bound phone, only while the class is on. Payload
+        (JCS): {v, action: "support_request", attendance_session_id, device_id,
+        reason, note, nonce, device_time, location, app_version}.'
+      security: &a2
+        - bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignedAttestedRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - id
+                - status
+                - message
+                properties:
+                  id: &a4
+                    type: string
+                    format: uuid
+                  status: &a1
+                    type: string
+                  message: *a1
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+        "422":
+          $ref: "#/components/responses/Error422"
+        "429":
+          $ref: "#/components/responses/Error429"
+  /v1/me/support-requests:
+    get:
+      tags:
+      - support
+      operationId: mySupportRequests
+      summary: My recent support requests
+      security: *a2
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MySupportRequest"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/support-requests/{id}:
+    parameters: &a3
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags:
+      - support
+      operationId: getMySupportRequest
+      summary: One of my support requests
+      security: *a2
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MySupportRequest"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+  /v1/verifier/support-requests:
+    get:
+      tags:
+      - verifier
+      operationId: verifierQueue
+      summary: Support requests (open by default)
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - open
+          - all
+          - pending
+          - asked_teacher
+          - approved
+          - rejected
+          - expired
+          default: open
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/VerifierQueueItem"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/verifier/support-requests/{id}:
+    parameters: *a3
+    get:
+      tags:
+      - verifier
+      operationId: verifierDetail
+      summary: Evidence card (access is audited)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportDetail"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+  /v1/verifier/support-requests/{id}/decision:
+    parameters: *a3
+    post:
+      tags:
+      - verifier
+      operationId: verifierDecision
+      summary: Approve (only low score + valid QR, ADR-0006), ask the teacher, or reject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - action
+              properties:
+                action:
+                  type: string
+                  enum:
+                  - approve
+                  - ask_teacher
+                  - reject
+                reason:
+                  type:
+                  - string
+                  - "null"
+                  maxLength: 300
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportDetail"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/teacher/support-requests:
+    get:
+      tags:
+      - teacher
+      operationId: teacherQuestions
+      summary: '"Is this student in the room?" questions waiting for me'
+      parameters:
+      - name: attendance_session_id
+        in: query
+        schema: *a4
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TeacherQuestion"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/support-requests/{id}/teacher-confirmation:
+    parameters: *a3
+    post:
+      tags:
+      - teacher
+      operationId: teacherConfirmation
+      summary: Answer a verifier question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - answer
+              properties:
+                answer:
+                  type: string
+                  enum:
+                  - present
+                  - absent
+                  - not_sure
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/teacher/attendance/corrections:
+    post:
+      tags:
+      - teacher
+      operationId: teacherRequestCorrection
+      summary: Request a correction for my class after it ended (needs Acad Ops approval)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CorrectionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - id
+                - status
+                properties:
+                  id: *a4
+                  status: *a1
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/admin/attendance/corrections:
+    get:
+      tags:
+      - admin
+      operationId: listCorrections
+      summary: Attendance corrections
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+          - all
+          default: pending
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Correction"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+    post:
+      tags:
+      - admin
+      operationId: requestCorrection
+      summary: Request a correction (a different person must approve)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CorrectionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - id
+                - status
+                properties:
+                  id: *a4
+                  status: *a1
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/admin/attendance/corrections/{id}/approve:
+    parameters: *a3
+    post:
+      tags:
+      - admin
+      operationId: approveCorrection
+      summary: Approve (never by the requester)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: []
+              properties:
+                note:
+                  type:
+                  - string
+                  - "null"
+                  maxLength: 300
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/admin/attendance/corrections/{id}/reject:
+    parameters: *a3
+    post:
+      tags:
+      - admin
+      operationId: rejectCorrection
+      summary: Reject with a note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - note
+              properties:
+                note:
+                  type: string
+                  minLength: 3
+                  maxLength: 300
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/admin/attendance/sessions:
+    get:
+      tags:
+      - admin
+      operationId: adminAttendanceSessions
+      summary: Attendance sessions on a day
+      parameters:
+      - name: date
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - date
+                - items
+                properties:
+                  date:
+                    type: string
+                    format: date
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AdminAttendanceSession"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/admin/attendance/sessions/{id}:
+    parameters: *a3
+    get:
+      tags:
+      - admin
+      operationId: adminAttendanceSession
+      summary: "One attendance session: records, attempts, flags, support, corrections"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAttendanceDetail"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+  /v1/admin/risk/flags:
+    get:
+      tags:
+      - admin
+      operationId: riskFlags
+      summary: Risk flags report
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - open
+          - all
+          default: open
+      - name: days
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 180
+          default: 14
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RiskFlag"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/admin/risk/flags/{id}/resolve:
+    parameters: *a3
+    post:
+      tags:
+      - admin
+      operationId: resolveRiskFlag
+      summary: Resolve a flag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - resolution
+              properties:
+                resolution:
+                  type: string
+                  minLength: 3
+                  maxLength: 300
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ok"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/admin/risk-settings:
+    get:
+      tags:
+      - admin
+      operationId: riskSettings
+      summary: Scorer weights, kill switches and thresholds (ADR-0014)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RiskSetting"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/admin/risk-settings/{key}:
+    parameters:
+    - name: key
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^[a-z_]{3,60}$
+    patch:
+      tags:
+      - admin
+      operationId: updateRiskSetting
+      summary: Change a setting (admins only; audited)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: []
+              properties:
+                value:
+                  type: integer
+                  minimum: 0
+                  maximum: 1000
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskSetting"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
 components:
   schemas:
     Error:
@@ -4789,6 +6270,1299 @@ components:
                 type: string
               error:
                 type: string
+    BindChallenge:
+      type: object
+      required:
+      - challenge
+      - expires_at
+      properties:
+        challenge: &a1
+          type: string
+        expires_at: &a3
+          type: string
+          format: date-time
+    BindRequest:
+      type: object
+      required:
+      - payload
+      - session_signature
+      - attempt_signature
+      - evidence
+      properties:
+        payload:
+          type: string
+          description: base64url of the JCS bytes {v, challenge, session_pub, attempt_pub,
+            platform, model, os_version, app_version, android_id?}
+        session_signature: *a1
+        attempt_signature: *a1
+        evidence:
+          oneOf:
+          - type: object
+            required:
+            - kind
+            - attempt_key_chain
+            properties:
+              kind:
+                const: android
+              attempt_key_chain:
+                type: array
+                items: *a1
+              play_integrity_token: *a1
+          - type: object
+            required:
+            - kind
+            - app_attest_key_id
+            - attestation_object
+            properties:
+              kind:
+                const: ios
+              app_attest_key_id: *a1
+              attestation_object: *a1
+              devicecheck_token: *a1
+          - type: object
+            required:
+            - kind
+            properties:
+              kind:
+                const: dev_bypass
+    BindResult:
+      type: object
+      required:
+      - device_id
+      - state
+      - eligible_at
+      - needs_approval
+      - message
+      properties:
+        device_id: &a2
+          type: string
+          format: uuid
+        state:
+          type: string
+          enum:
+          - active
+          - pending
+        eligible_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        needs_approval: &a4
+          type: boolean
+        message: *a1
+    Device:
+      type: object
+      required:
+      - id
+      - state
+      - platform
+      - model
+      - os_version
+      - app_version
+      - attestation_level
+      - bound_at
+      - activated_at
+      - revoked_at
+      - revoke_reason
+      properties:
+        id: *a2
+        state:
+          type: string
+          enum:
+          - active
+          - pending
+          - revoked
+        platform:
+          type: string
+          enum:
+          - android
+          - ios
+        model: *a1
+        os_version: *a1
+        app_version: *a1
+        attestation_level:
+          type: string
+          enum:
+          - strongbox
+          - tee
+          - app_attest
+          - dev_bypass
+        bound_at: *a3
+        activated_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        revoked_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        revoke_reason:
+          type:
+          - string
+          - "null"
+    MyDevices:
+      type: object
+      required:
+      - this_device_id
+      - devices
+      - rebind
+      - rebinds_used
+      - max_rebinds
+      properties:
+        this_device_id:
+          type:
+          - string
+          - "null"
+          format: uuid
+        devices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Device"
+        rebind:
+          oneOf:
+          - type: "null"
+          - type: object
+            required:
+            - id
+            - old_device_id
+            - new_device_id
+            - eligible_at
+            - needs_approval
+            - approval_reason
+            - created_at
+            properties:
+              id: *a2
+              old_device_id:
+                type:
+                - string
+                - "null"
+                format: uuid
+              new_device_id: *a2
+              eligible_at:
+                type:
+                - string
+                - "null"
+                format: date-time
+              needs_approval: *a4
+              approval_reason:
+                type:
+                - string
+                - "null"
+              created_at: *a3
+        rebinds_used: &a5
+          type: integer
+        max_rebinds: *a5
+    SignedRequest:
+      type: object
+      required:
+      - payload
+      - signature
+      properties:
+        payload:
+          type: string
+          description: base64url JCS bytes
+        signature:
+          type: string
+          description: base64url DER ECDSA-P256-SHA256 by the attempt key
+    DecisionNote:
+      type: object
+      required:
+      - note
+      properties:
+        note:
+          type: string
+          minLength: 3
+          maxLength: 300
+    RebindRequest:
+      type: object
+      required:
+      - id
+      - status
+      - eligible_at
+      - needs_approval
+      - approval_reason
+      - created_at
+      - decided_at
+      - decision_note
+      - user_id
+      - student_name
+      - usn
+      - new_model
+      - new_platform
+      - old_model
+      - decided_by_name
+      properties:
+        id: *a2
+        status: *a1
+        eligible_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        needs_approval: *a4
+        approval_reason:
+          type:
+          - string
+          - "null"
+        created_at: *a3
+        decided_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        decision_note:
+          type:
+          - string
+          - "null"
+        user_id: *a2
+        student_name: *a1
+        usn:
+          type:
+          - string
+          - "null"
+        new_model: *a1
+        new_platform: *a1
+        old_model:
+          type:
+          - string
+          - "null"
+        decided_by_name:
+          type:
+          - string
+          - "null"
+    AttendanceStarted:
+      type: object
+      required:
+      - attendance_session_id
+      - round
+      - t0_ms
+      - epoch_ms
+      properties:
+        attendance_session_id: *a2
+        round: *a5
+        t0_ms: *a5
+        epoch_ms: *a5
+    AttendanceSessionSummary:
+      type: object
+      required:
+      - id
+      - class_session_id
+      - status
+      - started_at
+      - ended_at
+      properties:
+        id: *a2
+        class_session_id: *a2
+        status:
+          type: string
+          enum:
+          - active
+          - ended
+        started_at: *a3
+        ended_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+    RoundStarted:
+      type: object
+      required:
+      - round
+      - mode
+      - targeted
+      properties:
+        round: *a5
+        mode:
+          type: string
+          enum:
+          - full
+          - targeted
+          - end
+        targeted:
+          type:
+          - integer
+          - "null"
+    RecordCounts:
+      type: object
+      required:
+      - present
+      - late
+      - absent
+      - excused
+      - pending
+      properties:
+        present: *a5
+        late: *a5
+        absent: *a5
+        excused: *a5
+        pending: *a5
+    LiveStudent:
+      type: object
+      required:
+      - id
+      - name
+      - usn
+      - batch
+      - state
+      - record
+      - late
+      - score
+      - reasons
+      - last_rejection
+      - targeted
+      - scanned_this_round
+      properties:
+        id: *a2
+        name: *a1
+        usn:
+          type:
+          - string
+          - "null"
+        batch:
+          type:
+          - string
+          - "null"
+        state:
+          type: string
+          enum:
+          - verified
+          - flagged
+          - flagged_high
+          - pending
+          - confirmed
+          - unmarked
+          - absent
+          - late
+          - excused
+        record:
+          type:
+          - string
+          - "null"
+        late: *a4
+        score:
+          type:
+          - integer
+          - "null"
+        reasons:
+          type: array
+          items: *a1
+        last_rejection:
+          oneOf:
+          - type: "null"
+          - type: object
+            required:
+            - code
+            - at
+            properties:
+              code: *a1
+              at: *a3
+        targeted: *a4
+        scanned_this_round: *a4
+    AttendanceLive:
+      type: object
+      required:
+      - session
+      - round
+      - counts
+      - headcount_warning
+      - students
+      - spot_checks
+      properties:
+        session:
+          type: object
+          required:
+          - id
+          - status
+          - started_at
+          - ended_at
+          - headcount
+          - class
+          properties:
+            id: *a2
+            status:
+              type: string
+              enum:
+              - active
+              - ended
+            started_at: *a3
+            ended_at:
+              type:
+              - string
+              - "null"
+              format: date-time
+            headcount:
+              type:
+              - integer
+              - "null"
+            class: &a6
+              $ref: "#/components/schemas/ClassSession"
+        round:
+          oneOf:
+          - type: "null"
+          - type: object
+            required:
+            - no
+            - mode
+            - opened_at
+            - closed
+            - targets
+            properties:
+              no: *a5
+              mode:
+                type: string
+                enum:
+                - full
+                - targeted
+                - end
+              opened_at: *a3
+              closed: *a4
+              targets:
+                type:
+                - integer
+                - "null"
+        counts:
+          type: object
+          required:
+          - expected
+          - present
+          - flagged
+          - flagged_high
+          - pending
+          - unmarked
+          - absent
+          properties:
+            expected: *a5
+            present: *a5
+            flagged: *a5
+            flagged_high: *a5
+            pending: *a5
+            unmarked: *a5
+            absent: *a5
+        headcount_warning: *a4
+        students:
+          type: array
+          items:
+            $ref: "#/components/schemas/LiveStudent"
+        spot_checks:
+          type: array
+          items:
+            type: object
+            required:
+            - id
+            - student_id
+            - name
+            - reason
+            - result
+            properties:
+              id: *a2
+              student_id: *a2
+              name: *a1
+              reason: *a1
+              result:
+                type:
+                - string
+                - "null"
+    DisplayState:
+      type: object
+      required:
+      - status
+      description: "waiting: show the code; active: render QR with k_qr (current round
+        only, ADR-0004); ended/expired: wipe keys."
+      properties:
+        status:
+          type: string
+          enum:
+          - waiting
+          - active
+          - ended
+          - expired
+        code: *a1
+        expires_at: *a3
+        session_id: *a2
+        round: *a5
+        mode:
+          type: string
+          enum:
+          - full
+          - targeted
+          - end
+        t0_ms: *a5
+        epoch_ms: *a5
+        k_qr:
+          type: string
+          description: base64url K_qr,r
+        server_time_ms: *a5
+        label: *a1
+        ends_at: *a3
+    ActiveAttendance:
+      type: object
+      required:
+      - attendance_session_id
+      - class
+      - round
+      - mode
+      - action
+      - decision
+      properties:
+        attendance_session_id: *a2
+        class: *a6
+        round: *a5
+        mode:
+          type: string
+          enum:
+          - full
+          - targeted
+          - end
+        action:
+          type: string
+          enum:
+          - scan
+          - done
+          - nothing_to_do
+        decision:
+          type:
+          - string
+          - "null"
+    AttemptRequest:
+      type: object
+      required:
+      - payload
+      - signature
+      properties:
+        payload:
+          type: string
+          description: base64url of the JCS attempt payload bytes (protocol §5.4)
+        signature:
+          type: string
+          description: base64url DER ECDSA-P256-SHA256 by the attempt key
+        attestation:
+          oneOf:
+          - type: object
+            required:
+            - kind
+            - token
+            properties:
+              kind:
+                const: play_integrity
+              token: *a1
+          - type: object
+            required:
+            - kind
+            - assertion
+            properties:
+              kind:
+                const: app_attest
+              assertion: *a1
+          - type: object
+            required:
+            - kind
+            properties:
+              kind:
+                const: missing
+              error: *a1
+          - type: object
+            required:
+            - kind
+            properties:
+              kind:
+                const: none
+    AttemptResult:
+      type: object
+      required:
+      - attempt_id
+      - decision
+      - reason_codes
+      - record
+      - message
+      properties:
+        attempt_id: *a2
+        decision:
+          type: string
+          enum:
+          - verified
+          - flagged
+          - flagged_high
+        reason_codes:
+          type: array
+          items: *a1
+        record: *a1
+        message: *a1
+    AttendanceHistory:
+      type: object
+      required:
+      - subjects
+      - recent
+      properties:
+        subjects:
+          type: array
+          items:
+            type: object
+            required:
+            - offering_id
+            - code
+            - name
+            - total
+            - attended
+            - late
+            - absent
+            - percent
+            properties:
+              offering_id: *a2
+              code: *a1
+              name: *a1
+              total: *a5
+              attended: *a5
+              late: *a5
+              absent: *a5
+              percent:
+                type:
+                - number
+                - "null"
+        recent:
+          type: array
+          items:
+            type: object
+            required:
+            - date
+            - code
+            - status
+            - start
+            properties:
+              date:
+                type: string
+                format: date
+              code: *a1
+              status: *a1
+              start: *a1
+    SignedAttestedRequest:
+      type: object
+      required:
+      - payload
+      - signature
+      properties:
+        payload: &a1
+          type: string
+        signature: *a1
+        attestation:
+          type: object
+          description: Same shapes as AttemptRequest.attestation
+    MySupportRequest:
+      type: object
+      required:
+      - id
+      - status
+      - reason
+      - subject
+      - date
+      - class_session_id
+      - attendance_session_id
+      - created_at
+      - decided_at
+      - decided_by
+      - decision_reason
+      properties:
+        id: &a2
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - asked_teacher
+          - approved
+          - rejected
+          - expired
+        reason: *a1
+        subject:
+          type: object
+          required:
+          - code
+          - name
+          properties:
+            code: *a1
+            name: *a1
+        date:
+          type: string
+          format: date
+        class_session_id: *a2
+        attendance_session_id: *a2
+        created_at: &a4
+          type: string
+          format: date-time
+        decided_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        decided_by:
+          type:
+          - string
+          - "null"
+        decision_reason:
+          type:
+          - string
+          - "null"
+    VerifierQueueItem:
+      type: object
+      required:
+      - id
+      - status
+      - reason
+      - reason_text
+      - evidence_score
+      - valid_tag_seen
+      - teacher_answer
+      - can_approve
+      - created_at
+      - decided_at
+      - student_name
+      - usn
+      - subject_code
+      - room
+      - teacher_name
+      - date
+      - start
+      - end
+      properties:
+        id: *a2
+        status: *a1
+        reason: *a1
+        reason_text: *a1
+        evidence_score: &a5
+          type: integer
+        valid_tag_seen: &a3
+          type: boolean
+        teacher_answer:
+          type:
+          - string
+          - "null"
+        can_approve: *a3
+        created_at: *a4
+        decided_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        student_name: *a1
+        usn:
+          type:
+          - string
+          - "null"
+        subject_code: *a1
+        room:
+          type:
+          - string
+          - "null"
+        teacher_name:
+          type:
+          - string
+          - "null"
+        date:
+          type: string
+          format: date
+        start: *a1
+        end: *a1
+    SupportDetail:
+      type: object
+      required:
+      - id
+      - status
+      - reason
+      - reason_text
+      - note
+      - evidence
+      - evidence_score
+      - valid_tag_seen
+      - threshold
+      - can_approve
+      - approve_blocked_reason
+      - can_decide
+      - decision_deadline
+      - teacher
+      - decided_by
+      - decided_role
+      - decision_reason
+      - created_at
+      - decided_at
+      properties:
+        id: *a2
+        status: *a1
+        reason: *a1
+        reason_text: *a1
+        note:
+          type:
+          - string
+          - "null"
+        evidence:
+          type: object
+          additionalProperties: true
+          description: "Snapshot at request time: student, class, attempts (reasons, tag
+            validity, derived location/network results), device, request signals,
+            score factors, 30-day flags and history. Never coordinates."
+        evidence_score: *a5
+        valid_tag_seen: *a3
+        threshold: *a5
+        can_approve: *a3
+        approve_blocked_reason:
+          type:
+          - string
+          - "null"
+        can_decide: *a3
+        decision_deadline: *a4
+        teacher:
+          type: object
+          required:
+          - name
+          - answer
+          - answered_at
+          properties:
+            name:
+              type:
+              - string
+              - "null"
+            answer:
+              type:
+              - string
+              - "null"
+            answered_at:
+              type:
+              - string
+              - "null"
+              format: date-time
+        decided_by:
+          type:
+          - string
+          - "null"
+        decided_role:
+          type:
+          - string
+          - "null"
+        decision_reason:
+          type:
+          - string
+          - "null"
+        created_at: *a4
+        decided_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+    TeacherQuestion:
+      type: object
+      required:
+      - id
+      - attendance_session_id
+      - reason
+      - reason_text
+      - created_at
+      - name
+      - usn
+      - batch
+      - subject_code
+      properties:
+        id: *a2
+        attendance_session_id: *a2
+        reason: *a1
+        reason_text: *a1
+        created_at: *a4
+        name: *a1
+        usn:
+          type:
+          - string
+          - "null"
+        batch:
+          type:
+          - string
+          - "null"
+        subject_code: *a1
+    CorrectionInput:
+      type: object
+      required:
+      - student_id
+      - class_session_id
+      - new_status
+      - reason
+      properties:
+        student_id: *a2
+        class_session_id: *a2
+        new_status:
+          type: string
+          enum:
+          - present
+          - late
+          - absent
+          - excused
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 300
+    Correction:
+      type: object
+      required:
+      - id
+      - status
+      - old_status
+      - new_status
+      - reason
+      - decision_note
+      - created_at
+      - decided_at
+      - requested_by
+      - student_name
+      - usn
+      - requested_by_name
+      - requested_by_role
+      - approved_by_name
+      - subject_code
+      - date
+      - start
+      - mine
+      properties:
+        id: *a2
+        status: *a1
+        old_status:
+          type:
+          - string
+          - "null"
+        new_status: *a1
+        reason: *a1
+        decision_note:
+          type:
+          - string
+          - "null"
+        created_at: *a4
+        decided_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        requested_by: *a2
+        student_name: *a1
+        usn:
+          type:
+          - string
+          - "null"
+        requested_by_name: *a1
+        requested_by_role: *a1
+        approved_by_name:
+          type:
+          - string
+          - "null"
+        subject_code: *a1
+        date:
+          type: string
+          format: date
+        start: *a1
+        mine: *a3
+    AdminAttendanceSession:
+      type: object
+      required:
+      - id
+      - status
+      - started_at
+      - ended_at
+      - started_by
+      - class
+      - counts
+      properties:
+        id: *a2
+        status: *a1
+        started_at: *a4
+        ended_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        started_by:
+          type:
+          - string
+          - "null"
+        class:
+          $ref: "#/components/schemas/ClassSession"
+        counts:
+          type: object
+          required:
+          - present
+          - late
+          - absent
+          - excused
+          - pending
+          properties:
+            present: *a5
+            late: *a5
+            absent: *a5
+            excused: *a5
+            pending: *a5
+    AdminAttendanceDetail:
+      type: object
+      required:
+      - session
+      - rounds
+      - students
+      properties:
+        session:
+          type: object
+          required:
+          - id
+          - status
+          - started_at
+          - ended_at
+          - started_by
+          - ended_automatically
+          - headcount
+          - class
+          properties:
+            id: *a2
+            status: *a1
+            started_at: *a4
+            ended_at:
+              type:
+              - string
+              - "null"
+              format: date-time
+            started_by:
+              type:
+              - string
+              - "null"
+            ended_automatically: *a3
+            headcount:
+              type:
+              - integer
+              - "null"
+            class:
+              $ref: "#/components/schemas/ClassSession"
+        rounds:
+          type: array
+          items:
+            type: object
+            required:
+            - no
+            - mode
+            - opened_at
+            - closed_at
+            - targets
+            properties:
+              no: *a5
+              mode: *a1
+              opened_at: *a4
+              closed_at:
+                type:
+                - string
+                - "null"
+                format: date-time
+              targets:
+                type:
+                - integer
+                - "null"
+        students:
+          type: array
+          items:
+            type: object
+            required:
+            - id
+            - name
+            - usn
+            - batch
+            - record
+            - attempts
+            - last_attempt
+            - flags
+            - spot_checks
+            - support
+            - corrections
+            properties:
+              id: *a2
+              name: *a1
+              usn:
+                type:
+                - string
+                - "null"
+              batch:
+                type:
+                - string
+                - "null"
+              record:
+                oneOf:
+                - type: "null"
+                - type: object
+                  required:
+                  - status
+                  - basis
+                  - updated_by
+                  - note
+                  properties:
+                    status: *a1
+                    basis: *a1
+                    updated_by:
+                      type:
+                      - string
+                      - "null"
+                    note:
+                      type:
+                      - string
+                      - "null"
+              attempts: *a5
+              last_attempt:
+                oneOf:
+                - type: "null"
+                - type: object
+                  required:
+                  - decision
+                  - reasons
+                  - at
+                  - score
+                  properties:
+                    decision: *a1
+                    reasons:
+                      type: array
+                      items: *a1
+                    at: *a4
+                    score: *a5
+              flags:
+                type: array
+                items:
+                  type: object
+                  required:
+                  - type
+                  - text
+                  - severity
+                  - resolution
+                  properties:
+                    type: *a1
+                    text: *a1
+                    severity: *a1
+                    resolution:
+                      type:
+                      - string
+                      - "null"
+              spot_checks:
+                type: array
+                items:
+                  type: object
+                  required:
+                  - reason
+                  - result
+                  properties:
+                    reason: *a1
+                    result:
+                      type:
+                      - string
+                      - "null"
+              support:
+                type: array
+                items:
+                  type: object
+                  required:
+                  - id
+                  - status
+                  - decided_by
+                  properties:
+                    id: *a2
+                    status: *a1
+                    decided_by:
+                      type:
+                      - string
+                      - "null"
+              corrections:
+                type: array
+                items:
+                  type: object
+                  required:
+                  - id
+                  - status
+                  - new_status
+                  properties:
+                    id: *a2
+                    status: *a1
+                    new_status: *a1
+    RiskFlag:
+      type: object
+      required:
+      - id
+      - type
+      - text
+      - severity
+      - created_at
+      - resolved_at
+      - resolution
+      - session_id
+      - student_name
+      - usn
+      - subject_code
+      - date
+      - resolved_by_name
+      properties:
+        id: *a2
+        type: *a1
+        text: *a1
+        severity: *a1
+        created_at: *a4
+        resolved_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        resolution:
+          type:
+          - string
+          - "null"
+        session_id:
+          type:
+          - string
+          - "null"
+          format: uuid
+        student_name: *a1
+        usn:
+          type:
+          - string
+          - "null"
+        subject_code:
+          type:
+          - string
+          - "null"
+        date:
+          type:
+          - string
+          - "null"
+          format: date
+        resolved_by_name:
+          type:
+          - string
+          - "null"
+    RiskSetting:
+      type: object
+      required:
+      - key
+      - kind
+      - value
+      - enabled
+      - description
+      properties:
+        key: *a1
+        kind:
+          type: string
+          enum:
+          - scorer
+          - threshold
+          - setting
+        value: *a5
+        enabled: *a3
+        description: *a1
+        updated_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        updated_by_name:
+          type:
+          - string
+          - "null"
+        default_value:
+          type:
+          - integer
+          - "null"
   parameters:
     Id:
       name: id
@@ -4830,6 +7604,24 @@ components:
         default: 'true'
       description: true (default) only reports what would change
   responses:
+    Error422:
+      description: Rejected (reason in `code`)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Error429:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Error503:
+      description: A provider (e.g. Google/Apple attestation) is unavailable; try again
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     Error400:
       description: Validation failed
       content:
