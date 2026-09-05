@@ -1,5 +1,6 @@
 package app.argus.argus
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// FragmentActivity: the unlock prompt (BiometricPrompt) used by the attempt key needs it.
+class MainActivity : FlutterFragmentActivity()
