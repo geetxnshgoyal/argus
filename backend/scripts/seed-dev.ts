@@ -18,7 +18,10 @@ if (process.env.ARGUS_ENV !== 'dev') {
   process.exit(1);
 }
 const db = createDb(process.env.DATABASE_URL ?? 'postgres://argus@localhost:55432/argus');
-const DOMAIN = process.env.OIDC_HOSTED_DOMAIN ?? 'svyasa-sas.edu.in';
+// Students and staff use the college domain; teachers use Newton School's (firstname.lastname@).
+const DOMAINS = (process.env.OIDC_HOSTED_DOMAIN ?? 'svyasa-sas.edu.in,newtonschool.co').split(',').map((d) => d.trim());
+const DOMAIN = DOMAINS[0] ?? 'svyasa-sas.edu.in';
+const TEACHER_DOMAIN = DOMAINS.find((d) => d.includes('newtonschool')) ?? DOMAIN;
 
 async function one<T extends { id: string }>(table: string, where: Record<string, unknown>, values: Record<string, unknown>): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,7 +56,7 @@ for (const g of ['Batch 1', 'Batch 2']) groups[g.toLowerCase()] = await one('sec
 await user('admin', `admin@${DOMAIN}`, 'Dev Admin');
 await user('acadops', `acadops@${DOMAIN}`, 'Dev Acad Ops');
 await user('verifier', `verifier@${DOMAIN}`, 'Dev Verifier');
-const teacherId = await user('teacher', `teacher@${DOMAIN}`, 'Dev Teacher');
+const teacherId = await user('teacher', `dev.teacher@${TEACHER_DOMAIN}`, 'Dev Teacher');
 await db.insertInto('teachers').values({ user_id: teacherId, faculty_id: 'DEV-T1', department_id: dept }).onConflict((oc) => oc.doNothing()).execute();
 const testStudent = await user('student', `student@${DOMAIN}`, 'Dev Student');
 await db
@@ -82,5 +85,5 @@ if (file) {
   }
 }
 
-console.log(`Seeded dev data. Staff: admin@, acadops@, verifier@, teacher@, student@${DOMAIN}. Students imported: ${imported}.`);
+console.log(`Seeded dev data. Staff: admin@, acadops@, verifier@, student@${DOMAIN}; teacher: dev.teacher@${TEACHER_DOMAIN}. Students imported: ${imported}.`);
 await db.destroy();
