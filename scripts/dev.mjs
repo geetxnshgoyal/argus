@@ -19,7 +19,8 @@ const env = {
   ARGUS_PORT: '8080',
   // Dev-only sign-in without Google (refused by the server outside ARGUS_ENV=dev).
   ARGUS_DEV_LOGIN: process.env.ARGUS_DEV_LOGIN ?? 'true',
-  OIDC_HOSTED_DOMAIN: process.env.OIDC_HOSTED_DOMAIN ?? 'svyasa-sas.edu.in',
+  // Students on the college domain, teachers on Newton School's.
+  OIDC_HOSTED_DOMAIN: process.env.OIDC_HOSTED_DOMAIN ?? 'svyasa-sas.edu.in,newtonschool.co',
   // Let phones/emulators on this machine's network reach the API in dev.
   ARGUS_HOST: process.env.ARGUS_HOST ?? '0.0.0.0',
 };
