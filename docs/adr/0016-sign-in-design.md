@@ -10,4 +10,6 @@
 - **Dev login** (`ARGUS_DEV_LOGIN`, refused outside `ARGUS_ENV=dev`): email picker for the web and `POST /v1/auth/dev/mobile-login` for the app, so the system can be tried before Google credentials exist. It looks users up by email and never links SSO identities.
 - **Routine mobile API calls** use the 15-minute bearer token; proof-of-possession signatures are required on refresh (here) and on attempts, support requests and rebinds (M3–M6). This amends ADR-0008's "routine requests" wording.
 
+- **Two Workspace domains** (amended M3): students use `svyasa-sas.edu.in`, teachers use `firstname.lastname@newtonschool.co`. `OIDC_HOSTED_DOMAIN` is a comma-separated list; with more than one domain the `hd` hint is `*` (any Workspace account) and the server requires the email's domain to be on the list **and** equal to the `hd` claim. Provisioning and the roster import accept any listed domain.
+
 **Consequences.** No passwords in Argus. Stolen refresh tokens or intercepted codes don't work without the phone's hardware key. Requires a Google OAuth client (Web application type) with redirect URI `https://<host>/v1/auth/oidc/callback`.
