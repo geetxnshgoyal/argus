@@ -23,13 +23,13 @@ const studentProfile = z.object({
 const teacherProfile = z.object({ faculty_id: z.string().trim().min(1).max(30), department_id: uuid });
 
 function emailSchema(ctx: AppContext) {
-  const domain = ctx.config.oidc.hostedDomain;
+  const domains = ctx.config.oidc.hostedDomains;
   return z
     .string()
     .trim()
     .toLowerCase()
     .email()
-    .refine((e) => !domain || e.endsWith(`@${domain}`), `Must be an @${domain ?? ''} address`);
+    .refine((e) => domains.length === 0 || domains.includes(e.split('@')[1] ?? ''), `Must be an ${domains.map((d) => `@${d}`).join(' or ')} address`);
 }
 
 const listQuery = z.object({
