@@ -33,9 +33,25 @@ const envSchema = z.object({
   OIDC_ISSUER: z.string().url().default('https://accounts.google.com'),
   OIDC_CLIENT_ID: z.string().optional(),
   OIDC_CLIENT_SECRET: z.string().optional(),
-  // Google Workspace domain; sign-in is limited to accounts in it when set.
+  // Google Workspace domain(s), comma-separated; sign-in is limited to accounts in them when set.
+  // e.g. "svyasa-sas.edu.in,newtonschool.co" (students on the college domain, teachers on Newton's).
   OIDC_HOSTED_DOMAIN: z.string().optional(),
   ARGUS_MOBILE_REDIRECT_URI: z.string().default('app.argus.argus:/auth/callback'),
+  // ── Device attestation (M3). A platform that is not configured cannot bind phones outside dev/test.
+  ANDROID_PACKAGE_NAME: z.string().default('app.argus.argus'),
+  // SHA-256 of the app signing certificate(s), hex (colons allowed), comma-separated.
+  ANDROID_SIGNING_CERT_SHA256: z.string().optional(),
+  // Path to the Google Cloud service-account JSON allowed to decode Play Integrity tokens.
+  PLAY_INTEGRITY_CREDENTIALS: z.string().optional(),
+  // App Attest app ID: "<Apple team ID>.<bundle ID>".
+  IOS_APP_ID: z.string().regex(/^[A-Z0-9]{10}\.[A-Za-z0-9.-]+$/, 'Use TEAMID.bundle.id').optional(),
+  IOS_APP_ATTEST_ENV: z.enum(['production', 'development']).default('production'),
+  // DeviceCheck key (.p8 file) from the Apple developer account, and its key ID.
+  APPLE_DEVICECHECK_KEY_ID: z.string().optional(),
+  APPLE_DEVICECHECK_KEY: z.string().optional(),
+  // Rebind policy (ADR-0007).
+  ARGUS_REBIND_COOLDOWN_HOURS: z.coerce.number().min(0).max(24 * 30).default(48),
+  ARGUS_MAX_REBINDS_PER_TERM: z.coerce.number().int().min(0).max(50).default(2),
   // Time zone of the college: timetable times are local times in this zone.
   ARGUS_TIMEZONE: z
     .string()
@@ -69,10 +85,35 @@ export interface Config {
     issuer: string;
     clientId: string | undefined;
     clientSecret: string | undefined;
-    hostedDomain: string | undefined;
+    /** Allowed Google Workspace domains (lowercase). Empty = any account (dev/test only). */
+    hostedDomains: string[];
   };
   mobileRedirectUri: string;
   timeZone: string;
+  attestation: {
+    android: {
+      packageName: string;
+      /** Lowercase hex SHA-256 digests of accepted signing certificates. */
+      signingCertDigests: string[];
+      playIntegrityCredentialsPath: string | undefined;
+    };
+    ios: {
+      appId: string | undefined;
+      environment: 'production' | 'development';
+      deviceCheckKeyId: string | undefined;
+      deviceCheckKeyPath: string | undefined;
+    };
+  };
+  devices: {
+    rebindCooldownMs: number;
+    maxRebindsPerTerm: number;
+  };
+}
+
+/** Normalizes "AB:CD:…" or "abcd…" digests; returns null for anything that isn't 32 bytes of hex. */
+function parseDigest(d: string): string | null {
+  const hex = d.trim().replace(/:/g, '').toLowerCase();
+  return /^[0-9a-f]{64}$/.test(hex) ? hex : null;
 }
 
 export class ConfigError extends Error {
@@ -120,6 +161,24 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     }
   }
 
+  const signingCertDigests: string[] = [];
+  for (const d of (e.ANDROID_SIGNING_CERT_SHA256 ?? '').split(',').filter((x) => x.trim() !== '')) {
+    const hex = parseDigest(d);
+    if (hex) signingCertDigests.push(hex);
+    else problems.push('ANDROID_SIGNING_CERT_SHA256 must be comma-separated SHA-256 digests (64 hex characters each)');
+  }
+  const hostedDomains = (e.OIDC_HOSTED_DOMAIN ?? '')
+    .split(',')
+    .map((d) => d.trim().toLowerCase())
+    .filter((d) => d !== '');
+  for (const d of hostedDomains) {
+    if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d)) problems.push('OIDC_HOSTED_DOMAIN must be comma-separated domains like college.edu,partner.co');
+  }
+  if (Boolean(e.APPLE_DEVICECHECK_KEY_ID) !== Boolean(e.APPLE_DEVICECHECK_KEY)) {
+    problems.push('APPLE_DEVICECHECK_KEY_ID and APPLE_DEVICECHECK_KEY must be set together');
+  }
+  if (e.APPLE_DEVICECHECK_KEY_ID && !e.IOS_APP_ID) problems.push('APPLE_DEVICECHECK_KEY_ID needs IOS_APP_ID (for the team ID)');
+
   if (problems.length > 0) throw new ConfigError(problems);
 
   return {
@@ -139,9 +198,26 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       issuer: e.OIDC_ISSUER,
       clientId: e.OIDC_CLIENT_ID,
       clientSecret: e.OIDC_CLIENT_SECRET,
-      hostedDomain: e.OIDC_HOSTED_DOMAIN?.toLowerCase(),
+      hostedDomains,
     },
     mobileRedirectUri: e.ARGUS_MOBILE_REDIRECT_URI,
     timeZone: e.ARGUS_TIMEZONE,
+    attestation: {
+      android: {
+        packageName: e.ANDROID_PACKAGE_NAME,
+        signingCertDigests,
+        playIntegrityCredentialsPath: e.PLAY_INTEGRITY_CREDENTIALS,
+      },
+      ios: {
+        appId: e.IOS_APP_ID,
+        environment: e.IOS_APP_ATTEST_ENV,
+        deviceCheckKeyId: e.APPLE_DEVICECHECK_KEY_ID,
+        deviceCheckKeyPath: e.APPLE_DEVICECHECK_KEY,
+      },
+    },
+    devices: {
+      rebindCooldownMs: e.ARGUS_REBIND_COOLDOWN_HOURS * 3600_000,
+      maxRebindsPerTerm: e.ARGUS_MAX_REBINDS_PER_TERM,
+    },
   };
 }
