@@ -66,7 +66,7 @@ interface Planned {
 }
 
 export function registerStudentImport(app: FastifyInstance, ctx: AppContext): void {
-  const domain = ctx.config.oidc.hostedDomain;
+  const domains = ctx.config.oidc.hostedDomains;
 
   app.post('/v1/admin/students/import', { preHandler: needAuth('acadops', 'admin'), bodyLimit: 2 * 1024 * 1024 }, async (req) => {
     const actor = currentUser(req);
@@ -117,7 +117,7 @@ export function registerStudentImport(app: FastifyInstance, ctx: AppContext): vo
       if (!USN_RE.test(usn)) errors.push('USN is missing or has invalid characters');
       if (!name) errors.push('Name is missing');
       if (!z.string().email().safeParse(email).success) errors.push('College email is missing or invalid');
-      else if (domain && !email.endsWith(`@${domain}`)) errors.push(`Email must be an @${domain} address`);
+      else if (domains.length > 0 && !domains.includes(email.split('@')[1] ?? '')) errors.push(`Email must be an ${domains.map((d) => `@${d}`).join(' or ')} address`);
       if (usn && seenUsn.has(usn)) errors.push('USN appears more than once in the file');
       if (email && seenEmail.has(email)) errors.push('Email appears more than once in the file');
       seenUsn.add(usn);
