@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:argus_security/argus_security.dart';
 import 'package:flutter/material.dart';
 
 import 'api_client.dart';
 import 'auth_controller.dart';
+import 'device_controller.dart';
+import 'screens/history_screen.dart';
+import 'screens/scan_screen.dart';
 import 'theme.dart';
 
-/// Signed-in home: who I am, my classes for the coming week, and device status.
-/// Scanning (M4) plugs into the "Mark attendance" card.
+/// Signed-in home: attendance (register this phone, scan when a class is running),
+/// my classes for the coming week, and phone/server status.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.auth, required this.security, this.today});
 
@@ -20,15 +25,55 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late Future<Health> _health;
   late Future<PlatformSecurityInfo> _device;
   late Future<List<ClassSession>> _classes;
+  late final DeviceController _phone = DeviceController(widget.auth.api, widget.security);
+  late final AttemptSender _sender = AttemptSender(widget.auth.api, widget.security);
+  List<ActiveAttendance> _active = const [];
+  Timer? _poll;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refresh();
+    _startPolling();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _poll?.cancel();
+    _phone.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Poll only while the app is on screen.
+    if (state == AppLifecycleState.resumed) {
+      _startPolling();
+      unawaited(_loadActive());
+    } else if (state == AppLifecycleState.paused) {
+      _poll?.cancel();
+    }
+  }
+
+  void _startPolling() {
+    _poll?.cancel();
+    _poll = Timer.periodic(const Duration(seconds: 8), (_) => unawaited(_loadActive()));
+  }
+
+  Future<void> _loadActive() async {
+    if (_phone.state != PhoneState.active) return;
+    try {
+      final a = await widget.auth.api.activeAttendance();
+      if (mounted) setState(() => _active = a);
+    } catch (_) {
+      // Offline: keep showing the last state.
+    }
   }
 
   void _refresh() {
@@ -37,6 +82,14 @@ class _HomeScreenState extends State<HomeScreen> {
       _device = widget.security.platformInfo();
       _classes = widget.auth.api.timetable();
     });
+    unawaited(_phone.load().then((_) => _loadActive()));
+  }
+
+  Future<void> _scan(ActiveAttendance a) async {
+    await Navigator.of(context).push(MaterialPageRoute<bool>(
+      builder: (_) => ScanScreen(attendance: a, deviceId: _phone.deviceId!, sender: _sender, security: widget.security),
+    ));
+    unawaited(_loadActive());
   }
 
   @override
@@ -57,13 +110,18 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 4),
             Text('${me.usn ?? ''}${me.section != null ? ' · ${me.section}' : ''}${me.batch != null ? ' · ${me.batch}' : ''}', style: text.bodyMedium),
             const SizedBox(height: 20),
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: _Row(
-                  icon: Icons.qr_code_scanner,
-                  title: 'Mark attendance',
-                  value: 'Scanning opens when your teacher starts attendance (coming soon).',
+            ListenableBuilder(listenable: _phone, builder: (context, _) => _AttendanceCard(phone: _phone, active: _active, onScan: _scan)),
+            const SizedBox(height: 16),
+            Card(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => HistoryScreen(api: widget.auth.api))),
+                child: const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Row(children: [
+                    Expanded(child: _Row(icon: Icons.insights_outlined, title: 'My attendance', value: 'Percentage per subject')),
+                    Icon(Icons.chevron_right, color: ArgusColors.fg3),
+                  ]),
                 ),
               ),
             ),
@@ -252,4 +310,90 @@ class _Gap extends StatelessWidget {
   const _Gap();
   @override
   Widget build(BuildContext context) => const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Divider());
+}
+
+/// The main attendance card: register this phone, then "Scan now" whenever a teacher starts attendance.
+class _AttendanceCard extends StatelessWidget {
+  const _AttendanceCard({required this.phone, required this.active, required this.onScan});
+
+  final DeviceController phone;
+  final List<ActiveAttendance> active;
+  final Future<void> Function(ActiveAttendance) onScan;
+
+  String _when(DateTime? d) {
+    if (d == null) return 'soon';
+    final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
+    return '${d.day} ${_months[d.month - 1]}, $h:${d.minute.toString().padLeft(2, '0')} ${d.hour < 12 ? 'AM' : 'PM'}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    Widget body;
+    switch (phone.state) {
+      case PhoneState.loading:
+        body = const _Row(icon: Icons.qr_code_scanner, title: 'Mark attendance', value: 'Checking this phone…');
+      case PhoneState.error:
+        body = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _Row(icon: Icons.qr_code_scanner, tone: TileTone.bad, title: 'Mark attendance', value: phone.error ?? 'Could not check this phone.'),
+          const SizedBox(height: 12),
+          OutlinedButton(onPressed: phone.load, child: const Text('Try again')),
+        ]);
+      case PhoneState.unregistered:
+      case PhoneState.otherPhoneActive:
+        final other = phone.state == PhoneState.otherPhoneActive;
+        body = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _Row(
+            icon: Icons.phonelink_lock_outlined,
+            tone: TileTone.warn,
+            title: other ? 'Attendance is on another phone' : 'Register this phone',
+            value: other
+                ? 'Your attendance phone is ${phone.status?.activeDevice?['model'] ?? 'another phone'}. You can switch to this phone: it becomes active after a waiting period, and your old phone keeps working until then.'
+                : 'Attendance works only on your own registered phone. You\'ll confirm with your fingerprint, face or PIN.',
+          ),
+          if (phone.error != null) ...[const SizedBox(height: 10), Text(phone.error!, style: const TextStyle(color: ArgusColors.bad))],
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: phone.busy ? null : phone.register,
+            icon: phone.busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.verified_user_outlined),
+            label: Text(other ? 'Use this phone instead' : 'Register this phone'),
+          ),
+        ]);
+      case PhoneState.pending:
+        final s = phone.status;
+        body = _Row(
+          icon: Icons.hourglass_top,
+          tone: TileTone.warn,
+          title: 'This phone is waiting',
+          value: s?.rebindNeedsApproval == true
+              ? '${s?.rebindReason ?? ''} Visit Academic Operations with your ID card to activate it.'
+              : 'It becomes your attendance phone on ${_when(s?.rebindEligibleAt)}. Until then use your old phone, or visit Academic Operations to activate it sooner.',
+        );
+      case PhoneState.active:
+        final a = active.isEmpty ? null : active.first;
+        if (a == null) {
+          body = const _Row(icon: Icons.qr_code_scanner, title: 'Mark attendance', value: 'Nothing to scan right now. When your teacher starts attendance, a Scan button appears here.');
+        } else if (a.action == 'scan') {
+          body = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _Row(icon: Icons.qr_code_scanner, title: a.round > 1 ? 'Recheck: scan again' : 'Attendance is open', value: '${a.cls.subjectName} · ${a.cls.room ?? 'Room TBA'}'),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(onPressed: () => onScan(a), icon: const Icon(Icons.qr_code_scanner), label: const Text('Scan now')),
+            ),
+          ]);
+        } else if (a.action == 'done') {
+          final flagged = a.decision == 'flagged' || a.decision == 'flagged_high';
+          body = _Row(
+            icon: Icons.check_circle_outline,
+            tone: flagged ? TileTone.warn : TileTone.good,
+            title: flagged ? 'Marked, teacher may confirm' : 'You\'re marked present',
+            value: '${a.cls.subjectName}${a.round > 1 ? ' · round ${a.round}' : ''}',
+          );
+        } else {
+          body = _Row(icon: Icons.check_circle_outline, title: 'You\'re verified', value: 'Nothing to do in this recheck (${a.cls.subjectCode}).');
+        }
+    }
+    return Card(child: Padding(padding: const EdgeInsets.all(20), child: DefaultTextStyle.merge(style: t.bodyMedium, child: body)));
+  }
 }
