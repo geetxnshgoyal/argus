@@ -94,4 +94,10 @@ describe('loadConfig', () => {
     expect(p).not.toContain(secretKey);
     expect(p).not.toContain('hunter2');
   });
+
+  it('prefers a direct (unpooled) database connection when one is provided', () => {
+    const c = loadConfig({ ...base, ARGUS_ENV: 'dev', DATABASE_URL_UNPOOLED: 'postgres://direct/argus' });
+    expect(c.databaseUrl).toBe('postgres://direct/argus');
+    expect(loadConfig({ ...base, ARGUS_ENV: 'dev' }).databaseUrl).toBe(base.DATABASE_URL);
+  });
 });
