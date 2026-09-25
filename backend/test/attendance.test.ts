@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { housekeeping } from '../src/attendance/service.ts';
 import type { Db } from '../src/db/index.ts';
 import { uuidv7 } from '../src/platform/ids.ts';
-import { createUser, loginAs, makeApp, type TestApp } from './helpers/app.ts';
+import { createUser, deviceKey, loginAs, makeApp, type TestApp } from './helpers/app.ts';
 import { closeTestDb, hasDb, resetDb, testDb } from './helpers/db.ts';
 import { collegeFixture, type College } from './helpers/fixtures.ts';
 import { displayQr, Phone } from './helpers/phone.ts';
@@ -112,6 +112,27 @@ describe.skipIf(!hasDb)('attendance (integration, spec §16 adversarial suite)',
     expect(res.statusCode).toBe(403);
     expect(res.json().code).toBe('device_not_active');
     expect((await s1.scan(displayQr(d, t.clock.now))).statusCode).toBe(200);
+  });
+
+  it('re-registering the same phone (same hardware session key) replaces the binding at once', async () => {
+    const before = s1.deviceId;
+    Object.assign(s1, { attempt: deviceKey() }); // the app makes a fresh attempt key when registering
+    const again = await s1.bind({ androidId: 'different-or-missing' });
+    expect(again.json()).toMatchObject({ state: 'active' });
+    expect(s1.deviceId).not.toBe(before);
+    const old = await db.selectFrom('devices').select(['state', 'revoke_reason']).where('id', '=', before).executeTakeFirstOrThrow();
+    expect(old).toMatchObject({ state: 'revoked', revoke_reason: 'reinstalled' });
+  });
+
+  it('another account on the same app install is refused (same session key)', async () => {
+    await addStudent('s3@college.test', '2102500003', c.b1.id);
+    const shared = new Phone(t.app, 's3@college.test');
+    // Same hardware session key as s1's phone (signing in as s3 on s1's phone).
+    Object.assign(shared, { session: s1.session });
+    await shared.signIn();
+    const res = await shared.bind({ androidId: 'x' });
+    expect(res.statusCode).toBe(409);
+    expect(res.json().code).toBe('device_in_use');
   });
 
   it('one phone cannot be bound to two students (spec §16 #2, ADR-0009)', async () => {

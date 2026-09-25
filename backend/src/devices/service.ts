@@ -20,8 +20,8 @@ import { payloadBytes } from './signed.ts';
  *  - Another phone: a rebind request. The old phone stays active until the
  *    new one becomes eligible (48 h, configurable) or Acad Ops approves after
  *    an ID check. The old phone can cancel ("This wasn't me").
- *  - The same Android phone again (app reinstalled; same ANDROID_ID hash):
- *    replaces the old binding immediately, since it is the same hardware.
+ *  - The same phone again (same ANDROID_ID hash, or the same hardware session key, e.g.
+ *    re-registering after the attempt key was lost): replaces the old binding immediately.
  *  - A phone that is actively bound to another student cannot be bound.
  *  - At most N rebinds per term (default 2); cancelled or rejected ones don't count.
  */
@@ -201,6 +201,16 @@ export async function bindDevice(ctx: AppContext, user: { id: string; tokenFamil
     const pending = mine.find((d) => d.state === 'pending');
 
     let approvalReason: string | null = null;
+    // The session key never leaves the phone's secure hardware, so the same key means the same
+    // phone and app install. Another student's registration on it = two accounts on one phone.
+    const sameInstall = await tx
+      .selectFrom('devices')
+      .select('user_id')
+      .where('session_key_spki', '=', p.session_pub)
+      .where('state', '<>', 'revoked')
+      .where('user_id', '<>', user.id)
+      .executeTakeFirst();
+    if (sameInstall) throw new ApiError(409, 'device_in_use', 'This phone is already registered to another student. Each student needs their own phone.');
     if (hwHash) {
       const others = await tx
         .selectFrom('devices')
@@ -219,7 +229,7 @@ export async function bindDevice(ctx: AppContext, user: { id: string; tokenFamil
       approvalReason = 'This iPhone was registered to an Argus account before.';
     }
 
-    const samePhone = Boolean(hwHash && active && active.hardware_id_hash === hwHash);
+    const samePhone = Boolean(active && ((hwHash && active.hardware_id_hash === hwHash) || active.session_key_spki === p.session_pub));
     const isRebind = Boolean(active) && !samePhone;
     if (isRebind && (await rebindsUsed(tx, ctx, user.id)) >= ctx.config.devices.maxRebindsPerTerm) {
       throw new ApiError(409, 'rebind_limit', 'You have changed phones too many times this term. Please visit Academic Operations.');
