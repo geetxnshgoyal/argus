@@ -32,7 +32,7 @@ export interface BindResult {
   deviceCheckSeen?: boolean;
 }
 
-export type RequestAttestation = { result: 'ok' | 'unavailable' | 'missing' | 'bypass'; newCounter?: number };
+export type RequestAttestation = { result: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required'; newCounter?: number };
 
 export interface AttestationDeps {
   play?: PlayIntegrityDecoder | null;
@@ -101,7 +101,11 @@ export class AttestationService {
   platformReady(platform: 'android' | 'ios'): { ok: true } | { ok: false; reason: string } {
     const a = this.config.attestation;
     if (platform === 'android') {
-      if (this.strict && (a.android.signingCertDigests.length === 0 || !this.play)) {
+      // Key attestation always checks our signing certificate outside dev/test.
+      if (this.strict && a.android.signingCertDigests.length === 0) {
+        return { ok: false, reason: 'Android phones cannot be registered yet: the server is missing the app signing certificate (ANDROID_SIGNING_CERT_SHA256).' };
+      }
+      if (this.strict && a.android.playIntegrityMode === 'required' && !this.play) {
         return { ok: false, reason: 'Android phones cannot be registered yet: the server is missing its Play Integrity settings.' };
       }
       return { ok: true };
@@ -184,7 +188,11 @@ export class AttestationService {
     // Only possible in dev/test: staging and production refuse Android binds without Play Integrity
     // (platformReady), so there is nothing to check a token against. Don't flag every scan for it.
     const play = this.play;
-    if (device.platform === 'android' && !play) return { result: this.strict ? 'unavailable' : 'bypass' };
+    if (device.platform === 'android' && !play) {
+      // Pilot mode (ADR-0021) or dev/test: nothing to check a token against, so don't flag every scan.
+      if (this.config.attestation.android.playIntegrityMode === 'off') return { result: 'not_required' };
+      return { result: this.strict ? 'unavailable' : 'bypass' };
+    }
     if (evidence.kind === 'missing' || evidence.kind === 'none') return { result: 'missing' };
 
     if (device.platform === 'android' && play) {

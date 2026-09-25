@@ -28,10 +28,13 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     mobileRedirectUri: 'app.argus.argus:/auth/callback',
     timeZone: 'Asia/Kolkata',
     attestation: {
-      android: { packageName: 'app.argus.argus', signingCertDigests: [], playIntegrityCredentialsPath: undefined },
+      android: { packageName: 'app.argus.argus', signingCertDigests: [], playIntegrityCredentialsPath: undefined, playIntegrityMode: 'required' },
       ios: { appId: undefined, environment: 'production', deviceCheckKeyId: undefined, deviceCheckKeyPath: undefined },
     },
     devices: { rebindCooldownMs: 48 * 3600_000, maxRebindsPerTerm: 2 },
+    serverless: false,
+    cronSecret: undefined,
+    dbPoolMax: 20,
     ...overrides,
   };
 }

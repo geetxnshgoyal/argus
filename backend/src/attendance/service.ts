@@ -79,9 +79,13 @@ export async function isExpected(db: DbOrTx, classSessionId: string, studentId: 
 
 /** Decrypted K_s from the in-memory cache, or null once wiped (10 min after end). */
 export function sessionKey(ctx: AppContext, s: Pick<SessionRow, 'id' | 'ks_ciphertext'>): Buffer | null {
+  if (!s.ks_ciphertext) {
+    // Wiped (possibly by another process or instance): forget any cached copy too.
+    ctx.keys.wipe(s.id);
+    return null;
+  }
   const cached = ctx.keys.get(s.id);
   if (cached) return cached;
-  if (!s.ks_ciphertext) return null;
   const ks = decryptKs(ctx.config.masterKey, s.id, s.ks_ciphertext);
   ctx.keys.set(s.id, ks);
   return ks;

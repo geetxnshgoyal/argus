@@ -38,6 +38,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/internal/cron": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Run due background jobs (Vercel Cron; needs "Authorization Bearer CRON_SECRET")
+         * @description Refused with 404 unless CRON_SECRET is configured and presented. See ADR-0020.
+         */
+        get: operations["cron"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/departments": {
         parameters: {
             query?: never;
@@ -3442,6 +3462,29 @@ export interface operations {
                     "application/json": components["schemas"]["ServerTime"];
                 };
             };
+        };
+    };
+    cron: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jobs that ran */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ran: string[];
+                    };
+                };
+            };
+            404: components["responses"]["Error404"];
         };
     };
     listDepartments: {

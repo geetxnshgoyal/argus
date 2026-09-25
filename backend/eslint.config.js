@@ -14,5 +14,5 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
-  { files: ['build.mjs', 'scripts/**'], rules: { 'no-console': 'off' } },
+  { files: ['build.mjs', 'build-vercel.mjs', 'scripts/**'], rules: { 'no-console': 'off' } },
 );

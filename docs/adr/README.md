@@ -25,5 +25,8 @@ the spec, the ADR wins. Status is `Accepted` unless marked otherwise.
 | [0017](0017-roster-import-minimization.md) | Roster import sends only five fields; the rest stays in the browser | M1 |
 | [0018](0018-ui-theme.md) | UI follows the Heimdall dark theme | M1 |
 | [0019](0019-timetable-model-and-import.md) | Timetable resolution, DB-enforced double-booking, grid importer with exact dry run | M2 |
+| [0020](0020-vercel-hosting.md) | Hosting on Vercel: one function + static pages, Neon Postgres, jobs via `job_runs` (replaces pg-boss) | Hosting |
+| [0021](0021-android-pilot-mode.md) | Android pilot mode: key attestation and our signing key, without Play Integrity | Hosting |
+| [0022](0022-phone-registration-survives-sign-out.md) | Sign-out keeps the phone registration; the session key identifies the install | M3 fix |
 
 New ADRs: copy the format of any existing one (Context / Decision / Consequences), keep it under a page.

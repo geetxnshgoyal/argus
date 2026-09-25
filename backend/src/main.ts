@@ -52,7 +52,7 @@ async function main(): Promise<void> {
   if (config.devLogin) logger.warn('DEV LOGIN ENABLED (dev only)');
   if (config.masterKeyEphemeral) logger.warn('no ARGUS_MASTER_KEY set: using a random key for this run (dev/test only)');
 
-  const db = createDb(config.databaseUrl);
+  const db = createDb(config.databaseUrl, { max: config.dbPoolMax });
 
   const { results, error } = await migrateToLatest(db);
   for (const r of results ?? []) logger.info({ migration: r.migrationName, status: r.status }, 'migration');
