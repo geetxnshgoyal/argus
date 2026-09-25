@@ -1711,6 +1711,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/Policy'
       summary: Get policy
+  /v1/auth/methods:
+    get:
+      tags:
+      - auth
+      operationId: authMethods
+      summary: Sign-in methods this server offers (so sign-in pages only show what works)
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - sso
+                - dev_login
+                - domains
+                properties:
+                  sso:
+                    type: boolean
+                    description: College Google sign-in is configured
+                  dev_login:
+                    type: boolean
+                  domains:
+                    type: array
+                    items:
+                      type: string
   /v1/me:
     get:
       tags:

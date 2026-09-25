@@ -5,7 +5,8 @@ import { apiGet, apiSend } from '../lib/api.ts';
 import { loginUrl, ROLE_LABELS, type Role } from '../lib/auth.ts';
 
 const ERRORS: Record<string, string> = {
-  wrong_domain: 'Please sign in with your college Google account.',
+  wrong_domain: 'Please sign in with your college Google account (students: @svyasa-sas.edu.in, teachers: @newtonschool.co).',
+  sso_not_configured: 'College Google sign-in is not set up on this server yet. Academic Operations: see deploy/README.md.',
   not_provisioned: 'Your account is not set up in Argus yet. Please contact Academic Operations.',
   account_disabled: 'Your Argus account is disabled. Please contact Academic Operations.',
   login_expired: 'The sign-in took too long. Please try again.',
@@ -18,6 +19,8 @@ export function LoginPage() {
   const error = params.get('error');
   const next = params.get('next') ?? undefined;
   const [devError, setDevError] = useState<string | null>(null);
+  const methods = useQuery({ queryKey: ['auth-methods'], queryFn: () => apiGet<{ sso: boolean; dev_login: boolean; domains: string[] }>('/v1/auth/methods') });
+  const ssoOff = methods.data?.sso === false;
   // The dev picker appears only when the server has dev login enabled (never in production).
   const devUsers = useQuery({
     queryKey: ['dev-users'],
@@ -49,9 +52,16 @@ export function LoginPage() {
               <h2>Sign in</h2>
               <p className="muted">Teachers, Academic Operations and verifiers sign in with their college Google account.</p>
               {error && <Notice tone="bad">{ERRORS[error] ?? 'Sign-in failed. Please try again.'}</Notice>}
-              <a className="btn btn-primary btn-lg" style={{ width: '100%' }} href={loginUrl(next)}>
-                Sign in with college account
-              </a>
+              {ssoOff && !error && <Notice tone="warn">{ERRORS.sso_not_configured}</Notice>}
+              {ssoOff ? (
+                <button className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled>
+                  Sign in with college account
+                </button>
+              ) : (
+                <a className="btn btn-primary btn-lg" style={{ width: '100%' }} href={loginUrl(next)}>
+                  Sign in with college account
+                </a>
+              )}
               <p className="muted small" style={{ marginTop: '1rem' }}>
                 Students: mark attendance in the Argus app on your phone.
               </p>
