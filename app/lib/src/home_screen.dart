@@ -34,10 +34,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<ActiveAttendance> _active = const [];
   Timer? _poll;
 
+  PhoneState? _lastPhoneState;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // As soon as the phone becomes registered, check for running attendance (no 8 s wait).
+    _phone.addListener(() {
+      if (_phone.state == PhoneState.active && _lastPhoneState != PhoneState.active) unawaited(_loadActive());
+      _lastPhoneState = _phone.state;
+    });
     _refresh();
     _startPolling();
   }

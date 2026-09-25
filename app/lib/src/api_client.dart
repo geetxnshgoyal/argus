@@ -219,6 +219,8 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
+enum RestoreResult { signedIn, signedOut, offline }
+
 /// Where the refresh token lives between app launches. Production uses the
 /// platform keystore (Android Keystore / iOS Keychain); tests use memory.
 abstract class TokenStore {
@@ -331,17 +333,21 @@ class ApiClient {
     await _saveTokens(j);
   }
 
-  /// Restores a session from the stored refresh token. Returns false if the user must sign in.
-  Future<bool> restore() async {
-    if (await store.read() == null) return false;
+  /// Restores a session from the stored refresh token. A network problem is not a
+  /// reason to sign the student out: it returns [RestoreResult.offline] and keeps the token.
+  Future<RestoreResult> restore() async {
+    if (await store.read() == null) return RestoreResult.signedOut;
     try {
       await _refresh();
-      return true;
-    } on ApiException {
-      return false;
+      return RestoreResult.signedIn;
+    } on ApiException catch (e) {
+      return e.statusCode == 401 && await store.read() == null ? RestoreResult.signedOut : RestoreResult.offline;
     }
   }
 
+  /// Signs out of this sign-in (the server revokes its tokens). The phone's hardware keys
+  /// stay: they are this phone's attendance registration, so signing in again on the same
+  /// phone doesn't look like a new phone (which would start a 48-hour phone change).
   Future<void> logout() async {
     try {
       if (_access != null) await _send('POST', '/v1/auth/logout');
@@ -350,7 +356,6 @@ class ApiClient {
     }
     _access = null;
     await store.write(null);
-    await security.resetSessionKey();
   }
 
   Future<void> _saveTokens(Map<String, dynamic> j) async {
@@ -358,7 +363,19 @@ class ApiClient {
     await store.write(j['refresh_token'] as String);
   }
 
-  Future<void> _refresh() async {
+  Future<void>? _refreshing;
+
+  /// Called when the server has ended this sign-in (e.g. revoked), so the app can show sign-in.
+  void Function()? onSignedOut;
+
+  /// One refresh at a time. Refresh tokens rotate and a reused one revokes the whole
+  /// sign-in (ADR-0016), so parallel requests that all see a 401 must share one refresh.
+  Future<void> _refresh() => _refreshing ??= _doRefresh().whenComplete(() => _refreshing = null);
+
+  /// Only these mean the sign-in is really over; anything else (clock skew, server error) keeps it.
+  static const _fatalRefreshCodes = {'invalid_refresh_token', 'refresh_reuse', 'bad_device_proof', 'signed_out'};
+
+  Future<void> _doRefresh() async {
     final token = await store.read();
     if (token == null) throw ApiException(401, 'signed_out', 'Please sign in.');
     final ts = _now().millisecondsSinceEpoch;
@@ -367,9 +384,10 @@ class ApiClient {
       final j = await _send('POST', '/v1/auth/refresh', auth: false, body: {'refresh_token': token, 'ts': ts, 'signature': sig});
       await _saveTokens(j);
     } on ApiException catch (e) {
-      if (e.statusCode == 401) {
+      if (e.statusCode == 401 && _fatalRefreshCodes.contains(e.code)) {
         _access = null;
         await store.write(null);
+        onSignedOut?.call();
       }
       rethrow;
     }
@@ -377,7 +395,8 @@ class ApiClient {
 
   Future<Map<String, dynamic>> _send(String method, String path, {Object? body, bool auth = true, bool retried = false}) async {
     final headers = {'accept': 'application/json', if (body != null) 'content-type': 'application/json'};
-    if (auth && _access != null) headers['authorization'] = 'Bearer $_access';
+    final usedAccess = _access;
+    if (auth && usedAccess != null) headers['authorization'] = 'Bearer $usedAccess';
     final req = http.Request(method, _uri(path))..headers.addAll(headers);
     if (body != null) req.body = jsonEncode(body);
     final http.Response res;
@@ -388,7 +407,8 @@ class ApiClient {
       throw ApiException(0, 'network', 'Could not reach Argus. Check your internet connection.');
     }
     if (res.statusCode == 401 && auth && !retried && await store.read() != null) {
-      await _refresh();
+      // Another request may already have refreshed while this one was in flight.
+      if (_access == null || _access == usedAccess) await _refresh();
       return _send(method, path, body: body, auth: auth, retried: true);
     }
     if (res.statusCode >= 200 && res.statusCode < 300) {

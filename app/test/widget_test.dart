@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show SocketException;
 
 import 'package:argus/main.dart';
 import 'package:argus/src/api_client.dart';
@@ -76,10 +77,13 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel(SecurityBridge.channelName);
   late List<String> signed;
+  late List<String> calls;
 
   setUp(() {
     signed = [];
+    calls = [];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call.method);
       switch (call.method) {
         case 'platformInfo':
           return {'platform': 'android', 'osVersion': '15', 'model': 'Pixel Test', 'hardwareKeyStore': true};
@@ -169,7 +173,7 @@ void main() {
     expect(auth.status, AuthStatus.signedIn);
   });
 
-  test('sign-out clears the refresh token and the device session key', () async {
+  test('sign-out revokes the sign-in but keeps the phone keys (its attendance registration)', () async {
     final server = FakeServer();
     final store = MemoryTokenStore();
     final api = ApiClient(baseUrl: 'http://test', security: SecurityBridge(), store: store, client: server.client());
@@ -177,6 +181,28 @@ void main() {
     await api.logout();
     expect(store.value, isNull);
     expect(server.requests, contains('POST /v1/auth/logout'));
+    // Deleting the keys would make signing in again look like a new phone (48-hour wait).
+    expect(calls, isNot(contains('resetSessionKey')));
+    expect(calls, isNot(contains('resetAttemptKey')));
+  });
+
+  test('parallel requests that hit an expired token share ONE refresh (a reused refresh token revokes the sign-in)', () async {
+    final server = FakeServer()..expireAccess = true;
+    final store = MemoryTokenStore();
+    final api = ApiClient(baseUrl: 'http://test', security: SecurityBridge(), store: store, client: server.client());
+    await api.devLogin('asha@college.test');
+    await Future.wait([api.me(), api.me(), api.me(), api.me()]);
+    expect(server.refreshCalls, 1);
+    expect(store.value, 'r2');
+  });
+
+  test('restoring while the server is unreachable keeps the student signed in', () async {
+    final store = MemoryTokenStore()..value = 'r1';
+    final api = ApiClient(baseUrl: 'http://test', security: SecurityBridge(), store: store, client: MockClient((_) async => throw const SocketException('down')));
+    final auth = AuthController(api);
+    await auth.start();
+    expect(auth.status, AuthStatus.offline);
+    expect(store.value, 'r1');
   });
 
   test('ApiClient surfaces the standard error body', () async {
