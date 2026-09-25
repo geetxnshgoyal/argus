@@ -23,7 +23,9 @@ public class ArgusSecurityPlugin: NSObject, FlutterPlugin, CLLocationManagerDele
   private var locationManager: CLLocationManager?
   private var locationResult: FlutterResult?
   private var locationTimer: Timer?
+  private var goodEnoughTimer: Timer?
   private var locationRequestedAt = Date()
+  private var bestFix: CLLocation?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: channelName, binaryMessenger: registrar.messenger())
@@ -219,8 +221,18 @@ public class ArgusSecurityPlugin: NSObject, FlutterPlugin, CLLocationManagerDele
     manager.desiredAccuracy = kCLLocationAccuracyBest
     locationResult = result
     locationRequestedAt = Date()
+    bestFix = nil
+    // At the deadline, send the best fresh fix we have (if any).
     locationTimer = Timer.scheduledTimer(withTimeInterval: Double(timeoutMs) / 1000, repeats: false) { [weak self] _ in
-      self?.finishLocation(FlutterError(code: "timeout", message: "Could not get a location fix.", details: nil))
+      guard let self = self else { return }
+      if let best = self.bestFix { self.finishLocation(self.fixMap(best)) } else {
+        self.finishLocation(FlutterError(code: "timeout", message: "Could not get a location fix.", details: nil))
+      }
+    }
+    // After a few seconds, a fix within 100 m is good enough (spec §6 hard check uses 100 m).
+    goodEnoughTimer = Timer.scheduledTimer(withTimeInterval: 4, repeats: false) { [weak self] _ in
+      guard let self = self, let best = self.bestFix, best.horizontalAccuracy <= 100 else { return }
+      self.finishLocation(self.fixMap(best))
     }
     switch manager.authorizationStatus {
     case .notDetermined: manager.requestWhenInUseAuthorization()
@@ -229,17 +241,19 @@ public class ArgusSecurityPlugin: NSObject, FlutterPlugin, CLLocationManagerDele
     }
   }
 
+  /// Continuous updates rather than requestLocation(): requestLocation can deliver only a
+  /// cached fix, which we must ignore (spec §6), and then give up.
   private func requestPreciseFix(_ manager: CLLocationManager) {
     if manager.accuracyAuthorization == .reducedAccuracy {
       manager.requestTemporaryFullAccuracyAuthorization(withPurposeKey: "Attendance") { [weak self] _ in
         if manager.accuracyAuthorization == .reducedAccuracy {
           self?.finishLocation(FlutterError(code: "precise_required", message: "Turn on Precise Location for Argus.", details: nil))
         } else {
-          manager.requestLocation()
+          manager.startUpdatingLocation()
         }
       }
     } else {
-      manager.requestLocation()
+      manager.startUpdatingLocation()
     }
   }
 
@@ -253,26 +267,39 @@ public class ArgusSecurityPlugin: NSObject, FlutterPlugin, CLLocationManagerDele
   }
 
   public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-    // Only a fix taken after this request counts (spec §6: no cached fixes).
-    guard let loc = locations.last(where: { $0.timestamp >= self.locationRequestedAt.addingTimeInterval(-1) }) else { return }
+    guard locationResult != nil else { return }
+    // Only fixes taken after this request count (spec §6: no cached fixes); keep the most accurate.
+    for loc in locations where loc.horizontalAccuracy >= 0 && loc.timestamp >= locationRequestedAt.addingTimeInterval(-2) {
+      if bestFix == nil || loc.horizontalAccuracy < bestFix!.horizontalAccuracy { bestFix = loc }
+    }
+    if let best = bestFix, best.horizontalAccuracy <= 30 { finishLocation(fixMap(best)) }
+  }
+
+  private func fixMap(_ loc: CLLocation) -> [String: Any] {
     var mock = false
     if #available(iOS 15.0, *) { mock = loc.sourceInformation?.isSimulatedBySoftware ?? false }
-    finishLocation([
+    return [
       "lat": loc.coordinate.latitude,
       "lon": loc.coordinate.longitude,
       "accuracyM": loc.horizontalAccuracy,
       "fixAgeMs": Int(Date().timeIntervalSince(loc.timestamp) * 1000),
       "isMock": mock,
-    ])
+    ]
   }
 
   public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+    // kCLErrorLocationUnknown is transient: keep waiting for a fix until the deadline.
+    if (error as? CLError)?.code == .locationUnknown { return }
     finishLocation(FlutterError(code: "location_error", message: error.localizedDescription, details: nil))
   }
 
   private func finishLocation(_ value: Any) {
+    locationManager?.stopUpdatingLocation()
     locationTimer?.invalidate()
     locationTimer = nil
+    goodEnoughTimer?.invalidate()
+    goodEnoughTimer = nil
+    bestFix = nil
     let r = locationResult
     locationResult = nil
     r?(value)
