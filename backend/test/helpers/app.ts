@@ -34,6 +34,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     devices: { rebindCooldownMs: 48 * 3600_000, maxRebindsPerTerm: 2 },
     serverless: false,
     cronSecret: undefined,
+    bootstrapAdminEmails: [],
     dbPoolMax: 20,
     ...overrides,
   };

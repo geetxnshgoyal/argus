@@ -23,6 +23,7 @@ no other services. It runs either on **Vercel** (below) or on **your own server*
    | `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` | from Google (step 4) |
    | `OIDC_HOSTED_DOMAIN` | `svyasa-sas.edu.in,newtonschool.co` |
    | `CRON_SECRET` | any random string of 16+ characters |
+   | `ARGUS_BOOTSTRAP_ADMIN_EMAILS` | the first administrator's Google address (created at startup if missing) |
    | `PLAY_INTEGRITY_MODE` | `off` for the pilot APK (ADR-0021) |
    | `ANDROID_SIGNING_CERT_SHA256` | SHA-256 of the APK signing certificate (the GitHub release workflow prints it) |
    | `IOS_APP_ID`, `IOS_APP_ATTEST_ENV` | `<TEAMID>.<bundle id>`, `development` for Xcode-installed builds |
