@@ -5,6 +5,8 @@ import { IconTile, PageHead } from './components/ui.tsx';
 import { useMe } from './lib/auth.ts';
 import { LoginPage } from './routes/LoginPage.tsx';
 import { AuditPage } from './routes/admin/AuditPage.tsx';
+import { AttendanceBrowserPage, AttendanceDetailPage } from './routes/admin/AttendanceBrowserPage.tsx';
+import { PhonesPage } from './routes/admin/PhonesPage.tsx';
 import { RESOURCE_CONFIGS } from './routes/admin/configs.ts';
 import { StudentImportPage } from './routes/admin/StudentImportPage.tsx';
 import { UsersPage } from './routes/admin/UsersPage.tsx';
@@ -55,23 +57,6 @@ const studentRoute = createRoute({
     </div>
   ),
 });
-
-function Placeholder({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="content">
-      <PageHead title={title} subtitle={text} />
-      <div className="card">
-        <div className="card-row">
-          <IconTile name="clock" />
-          <div>
-            <h3>Coming soon</h3>
-            <p className="muted">This part of Argus is being built next.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 const teacherRoute = createRoute({
   getParentRoute: () => frameRoute,
@@ -150,6 +135,9 @@ function AdminShell() {
           <SideNavLink to="/admin/rooms">Rooms</SideNavLink>
           <SideNavLink to="/admin/geofences">Campus areas</SideNavLink>
           <SideNavLink to="/admin/campus-networks">Campus networks</SideNavLink>
+          <div className="section-label">Attendance</div>
+          <SideNavLink to="/admin/attendance">Attendance</SideNavLink>
+          <SideNavLink to="/admin/phones">Phones</SideNavLink>
           <div className="section-label">Records</div>
           <SideNavLink to="/admin/audit">Audit log</SideNavLink>
         </nav>
@@ -194,13 +182,25 @@ const adminIndex = createRoute({
   ),
 });
 
+const attendanceDetailRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/attendance/$sessionId',
+  component: function AdminAttendanceDetail() {
+    const { sessionId } = attendanceDetailRoute.useParams();
+    return <AttendanceDetailPage key={sessionId} sessionId={sessionId} />;
+  },
+});
+
 const adminChildren = [
+  attendanceDetailRoute,
   adminIndex,
   createRoute({ getParentRoute: () => adminRoute, path: '/students', component: () => <UsersPage kind="students" /> }),
   createRoute({ getParentRoute: () => adminRoute, path: '/students/import', component: StudentImportPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/teachers', component: () => <UsersPage kind="teachers" /> }),
   createRoute({ getParentRoute: () => adminRoute, path: '/staff', component: () => <UsersPage kind="staff" /> }),
   createRoute({ getParentRoute: () => adminRoute, path: '/audit', component: AuditPage }),
+  createRoute({ getParentRoute: () => adminRoute, path: '/attendance', component: AttendanceBrowserPage }),
+  createRoute({ getParentRoute: () => adminRoute, path: '/phones', component: PhonesPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/timetable', component: TimetablePage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/timetable/import', component: TimetableImportPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/calendar', component: CalendarPage }),
