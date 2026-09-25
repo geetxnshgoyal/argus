@@ -122,8 +122,12 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                     val data = call.argument<ByteArray>("data") ?: return result.error("bad_args", "data missing", null)
                     signWithAttempt(data, call.argument<String>("reason") ?: "Confirm it's you", result)
                 }
-                "unlockAttemptKey" -> unlock(call.argument<String>("reason") ?: "Confirm it's you") { ok, err ->
-                    if (ok) result.success(true) else result.error("auth_cancelled", err ?: "Unlock cancelled", null)
+                "unlockAttemptKey" -> {
+                    // Still unlocked from a moment ago (e.g. just registered)? Don't ask again.
+                    if (attemptKeyUsable()) return result.success(true)
+                    unlock(call.argument<String>("reason") ?: "Confirm it's you") { ok, err ->
+                        if (ok) result.success(true) else result.error("auth_cancelled", err ?: "Unlock cancelled", null)
+                    }
                 }
                 "resetAttemptKey" -> {
                     keyStore().deleteEntry(ATTEMPT_ALIAS)
@@ -215,6 +219,13 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
             // The key was invalidated (e.g. screen lock removed): the phone must be registered again.
             result.error("key_invalidated", "This phone's attendance key is no longer valid. Register the phone again.", null)
         }
+    }
+
+    private fun attemptKeyUsable(): Boolean = try {
+        sign(ATTEMPT_ALIAS, byteArrayOf(0))
+        true
+    } catch (e: Exception) {
+        false
     }
 
     private fun unlock(reason: String, done: (Boolean, String?) -> Unit) {
