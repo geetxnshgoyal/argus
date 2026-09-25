@@ -7,7 +7,7 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
 import 'api_client.dart';
 
-enum AuthStatus { loading, signedOut, needsPolicy, signedIn }
+enum AuthStatus { loading, signedOut, needsPolicy, signedIn, offline }
 
 /// Opens the college sign-in page in the system browser and returns the
 /// app callback URL. Injectable so tests don't need a browser.
@@ -18,7 +18,12 @@ Future<String> _systemBrowserAuth(String url, String callbackScheme) =>
 
 /// App-level sign-in state.
 class AuthController extends ChangeNotifier {
-  AuthController(this.api, {BrowserAuth? browserAuth}) : _browserAuth = browserAuth ?? _systemBrowserAuth;
+  AuthController(this.api, {BrowserAuth? browserAuth}) : _browserAuth = browserAuth ?? _systemBrowserAuth {
+    api.onSignedOut = () {
+      me = null;
+      if (status != AuthStatus.loading) _set(AuthStatus.signedOut);
+    };
+  }
 
   final ApiClient api;
   final BrowserAuth _browserAuth;
@@ -29,16 +34,24 @@ class AuthController extends ChangeNotifier {
   String? error;
   bool busy = false;
 
+  /// Restores the saved sign-in. Being offline (or the server being down) keeps the
+  /// student signed in and shows a retry screen; only a revoked or missing sign-in
+  /// goes back to the sign-in screen.
   Future<void> start() async {
     try {
-      if (await api.restore()) {
-        await _loadMe();
-        return;
+      switch (await api.restore()) {
+        case RestoreResult.signedOut:
+          _set(AuthStatus.signedOut);
+        case RestoreResult.offline:
+          _set(AuthStatus.offline);
+        case RestoreResult.signedIn:
+          await _loadMe();
       }
+    } on ApiException catch (e) {
+      _set(e.statusCode == 401 ? AuthStatus.signedOut : AuthStatus.offline);
     } catch (_) {
-      // Offline or server down: fall through to the sign-in screen, which explains.
+      _set(AuthStatus.offline);
     }
-    _set(AuthStatus.signedOut);
   }
 
   Future<void> signInWithCollege() => _run(() async {
@@ -107,6 +120,7 @@ class AuthController extends ChangeNotifier {
         'wrong_domain' => 'Please use your college Google account.',
         'not_provisioned' => 'Your account is not set up in Argus yet. Contact Academic Operations.',
         'account_disabled' => 'Your Argus account is disabled. Contact Academic Operations.',
+        'sso_not_configured' => 'College Google sign-in is not set up on this server yet.',
         _ => 'Sign-in failed. Please try again.',
       };
 }

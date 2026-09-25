@@ -6,6 +6,7 @@ import 'src/auth_controller.dart';
 import 'src/config.dart';
 import 'src/home_screen.dart';
 import 'src/screens/login_screen.dart';
+import 'src/screens/offline_screen.dart';
 import 'src/screens/policy_screen.dart';
 import 'src/theme.dart';
 
@@ -34,6 +35,7 @@ class ArgusApp extends StatelessWidget {
           AuthStatus.signedOut => LoginScreen(auth: auth),
           AuthStatus.needsPolicy => PolicyScreen(auth: auth),
           AuthStatus.signedIn => HomeScreen(auth: auth, security: security),
+          AuthStatus.offline => OfflineScreen(auth: auth),
         },
       ),
     );
