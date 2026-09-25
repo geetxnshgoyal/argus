@@ -173,6 +173,58 @@ class AttemptSender {
   }
 }
 
+/// Sends "I couldn't mark attendance" to a verifier (spec §7), signed by the attempt key
+/// like an attempt. Only works from the registered phone while the class is on.
+class SupportSender {
+  SupportSender(this.api, this.security);
+
+  final ApiClient api;
+  final SecurityBridge security;
+  final _random = Random.secure();
+
+  Future<String> send({required String attendanceSessionId, required String deviceId, required String reason, String? note}) async {
+    LocationFix? fix;
+    try {
+      fix = await security.locationFix(timeoutMs: 8000);
+    } on PlatformException {
+      fix = null; // the verifier sees "no location"; not a reason to refuse the request
+    }
+    final nonce = List<int>.generate(16, (_) => _random.nextInt(256));
+    final payload = Uint8List.fromList(canonicalBytes({
+      'v': 1,
+      'action': 'support_request',
+      'attendance_session_id': attendanceSessionId,
+      'device_id': deviceId,
+      'reason': reason,
+      'note': (note == null || note.trim().isEmpty) ? null : note.trim(),
+      'nonce': b64url(nonce),
+      'device_time': DateTime.now().toUtc().toIso8601String(),
+      'location': fix == null
+          ? null
+          : {
+              'lat': double.parse(fix.lat.toStringAsFixed(6)),
+              'lon': double.parse(fix.lon.toStringAsFixed(6)),
+              'accuracy_m': double.parse(fix.accuracyM.toStringAsFixed(1)),
+              'fix_age_ms': fix.fixAgeMs,
+              'is_mock': fix.isMock,
+            },
+      'app_version': appVersion,
+    }));
+    final signature = await security.signWithAttemptKey(payload, reason: 'Confirm it\'s you to ask for attendance help');
+    final hash = sha256.convert(payload).bytes;
+    Map<String, dynamic> attestation;
+    try {
+      attestation = Platform.isAndroid
+          ? (playCloudProjectNumber > 0 ? {'kind': 'play_integrity', 'token': await security.integrityToken(playCloudProjectNumber, b64url(hash))} : {'kind': 'none'})
+          : {'kind': 'app_attest', 'assertion': await security.appAttestAssertion(Uint8List.fromList(hash))};
+    } on PlatformException catch (e) {
+      attestation = {'kind': 'missing', 'error': e.code};
+    }
+    final r = await api.requestSupport({'payload': b64url(payload), 'signature': signature, 'attestation': attestation});
+    return r['message'] as String? ?? 'Support requested.';
+  }
+}
+
 /// A decoded classroom QR: argus://a/{session_id}/{round}/{epoch}/{tag} (protocol §5.3).
 class ScannedQr {
   const ScannedQr(this.sessionId, this.round, this.epoch, this.tag, this.seenAt);

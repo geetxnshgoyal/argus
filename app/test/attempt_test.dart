@@ -89,4 +89,38 @@ void main() {
     expect(p2['nonce'], isNot(p['nonce']));
     expect(bodies[0]['attestation'], containsPair('kind', anyOf('none', 'missing', 'app_attest')));
   });
+
+  test('SupportSender signs a support_request with the attempt key and survives a missing location', () async {
+    const channel = MethodChannel('argus/security');
+    final signed = <List<int>>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'signWithAttemptKey') {
+        signed.add((call.arguments as Map)['data'] as List<int>);
+        return 'SIG';
+      }
+      if (call.method == 'locationFix') throw PlatformException(code: 'permission_denied');
+      return null;
+    });
+    Map<String, dynamic>? body;
+    final api = ApiClient(
+      baseUrl: 'http://test',
+      security: SecurityBridge(),
+      store: MemoryTokenStore(),
+      client: MockClient((req) async {
+        body = jsonDecode(req.body) as Map<String, dynamic>;
+        return http.Response(jsonEncode({'id': 'r1', 'status': 'pending', 'message': 'Support requested.'}), 201, headers: {'content-type': 'application/json'});
+      }),
+    );
+    final msg = await SupportSender(api, SecurityBridge()).send(attendanceSessionId: 's1', deviceId: 'dev-1', reason: 'camera_broken', note: '  ');
+    expect(msg, 'Support requested.');
+    final bytes = b64urlDecode(body!['payload'] as String);
+    expect(bytes, signed.single);
+    final p = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
+    expect(p, containsPair('action', 'support_request'));
+    expect(p, containsPair('reason', 'camera_broken'));
+    expect(p['note'], isNull);
+    expect(p['location'], isNull);
+    expect(utf8.decode(bytes), canonicalize(p));
+  });
 }
+

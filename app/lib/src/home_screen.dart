@@ -8,6 +8,7 @@ import 'auth_controller.dart';
 import 'device_controller.dart';
 import 'screens/history_screen.dart';
 import 'screens/scan_screen.dart';
+import 'screens/support_sheet.dart';
 import 'theme.dart';
 
 /// Signed-in home: attendance (register this phone, scan when a class is running),
@@ -31,7 +32,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late Future<List<ClassSession>> _classes;
   late final DeviceController _phone = DeviceController(widget.auth.api, widget.security);
   late final AttemptSender _sender = AttemptSender(widget.auth.api, widget.security);
+  late final SupportSender _support = SupportSender(widget.auth.api, widget.security);
   List<ActiveAttendance> _active = const [];
+  Map<String, dynamic>? _supportStatus;
   Timer? _poll;
 
   PhoneState? _lastPhoneState;
@@ -77,7 +80,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (_phone.state != PhoneState.active) return;
     try {
       final a = await widget.auth.api.activeAttendance();
-      if (mounted) setState(() => _active = a);
+      Map<String, dynamic>? support;
+      if (a.isNotEmpty) {
+        final mine = await widget.auth.api.mySupportRequests();
+        support = mine.where((r) => r['attendance_session_id'] == a.first.sessionId).firstOrNull;
+      }
+      if (mounted) {
+        setState(() {
+          _active = a;
+          _supportStatus = support;
+        });
+      }
     } catch (_) {
       // Offline: keep showing the last state.
     }
@@ -94,8 +107,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _scan(ActiveAttendance a) async {
     await Navigator.of(context).push(MaterialPageRoute<bool>(
-      builder: (_) => ScanScreen(attendance: a, deviceId: _phone.deviceId!, sender: _sender, security: widget.security),
+      builder: (_) => ScanScreen(attendance: a, deviceId: _phone.deviceId!, sender: _sender, security: widget.security, onAskHelp: (ctx) => _askHelp(ctx, a)),
     ));
+    unawaited(_loadActive());
+  }
+
+  Future<void> _askHelp(BuildContext ctx, ActiveAttendance a) async {
+    await showSupportSheet(ctx, sender: _support, attendanceSessionId: a.sessionId, deviceId: _phone.deviceId!);
     unawaited(_loadActive());
   }
 
@@ -117,7 +135,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const SizedBox(height: 4),
             Text('${me.usn ?? ''}${me.section != null ? ' · ${me.section}' : ''}${me.batch != null ? ' · ${me.batch}' : ''}', style: text.bodyMedium),
             const SizedBox(height: 20),
-            ListenableBuilder(listenable: _phone, builder: (context, _) => _AttendanceCard(phone: _phone, active: _active, onScan: _scan)),
+            ListenableBuilder(
+              listenable: _phone,
+              builder: (context, _) => _AttendanceCard(phone: _phone, active: _active, support: _supportStatus, onScan: _scan, onAskHelp: (a) => _askHelp(context, a)),
+            ),
             const SizedBox(height: 16),
             Card(
               child: InkWell(
@@ -321,11 +342,21 @@ class _Gap extends StatelessWidget {
 
 /// The main attendance card: register this phone, then "Scan now" whenever a teacher starts attendance.
 class _AttendanceCard extends StatelessWidget {
-  const _AttendanceCard({required this.phone, required this.active, required this.onScan});
+  const _AttendanceCard({required this.phone, required this.active, required this.onScan, required this.onAskHelp, this.support});
 
   final DeviceController phone;
   final List<ActiveAttendance> active;
+  final Map<String, dynamic>? support;
   final Future<void> Function(ActiveAttendance) onScan;
+  final Future<void> Function(ActiveAttendance) onAskHelp;
+
+  static String _supportText(Map<String, dynamic> r) => switch (r['status']) {
+        'pending' => 'Help requested: a verifier is checking.',
+        'asked_teacher' => 'Help requested: your teacher is being asked to confirm you are here.',
+        'approved' => 'Your help request was approved: you are marked present.',
+        'rejected' => 'Help request not approved${r['decision_reason'] != null ? ': ${r['decision_reason']}' : '.'}',
+        _ => 'Help request closed.',
+      };
 
   String _when(DateTime? d) {
     if (d == null) return 'soon';
@@ -388,6 +419,11 @@ class _AttendanceCard extends StatelessWidget {
               width: double.infinity,
               child: FilledButton.icon(onPressed: () => onScan(a), icon: const Icon(Icons.qr_code_scanner), label: const Text('Scan now')),
             ),
+            if (support != null) ...[
+              const SizedBox(height: 10),
+              Text(_supportText(support!), style: TextStyle(color: support!['status'] == 'rejected' ? ArgusColors.bad : ArgusColors.warn)),
+            ] else
+              TextButton(onPressed: () => onAskHelp(a), child: const Text("Can't scan? Ask for help")),
           ]);
         } else if (a.action == 'done') {
           final flagged = a.decision == 'flagged' || a.decision == 'flagged_high';

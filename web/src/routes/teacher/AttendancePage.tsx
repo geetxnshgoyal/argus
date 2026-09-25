@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { CorrectionDialog } from '../../components/CorrectionDialog.tsx';
 import { Dialog, ErrorNotice, Field, IconTile, Notice } from '../../components/ui.tsx';
 import { apiGet, apiSend, type Schemas } from '../../lib/api.ts';
 
@@ -28,22 +29,41 @@ const STATE_LABEL: Record<Student['state'], string> = {
   excused: 'Excused',
 };
 
-function useLiveEvents(sessionId: string, onChange: () => void) {
+/**
+ * Instant updates over Server-Sent Events where the server supports them (a long-running
+ * server says "ready"). On Vercel there is no push (ADR-0020), so the page polls every 3 s.
+ */
+function useLiveEvents(sessionId: string, onChange: () => void): boolean {
+  const [pushing, setPushing] = useState(false);
   useEffect(() => {
     if (typeof EventSource === 'undefined') return;
     const es = new EventSource(`/v1/attendance/sessions/${sessionId}/events`);
+    es.addEventListener('ready', () => setPushing(true));
     es.addEventListener('changed', onChange);
     es.addEventListener('ended', onChange);
+    es.addEventListener('error', () => {
+      if (es.readyState === EventSource.CLOSED) setPushing(false);
+    });
     return () => es.close();
   }, [sessionId, onChange]);
+  return pushing;
 }
 
 export function AttendancePage({ sessionId }: { sessionId: string }) {
   const qc = useQueryClient();
   const key = ['attendance', sessionId, 'live'];
-  const live = useQuery({ queryKey: key, queryFn: () => apiGet<Live>(`/v1/attendance/sessions/${sessionId}/live`), refetchInterval: 15_000 });
-  const [refresh] = useState(() => () => void qc.invalidateQueries({ queryKey: key }));
-  useLiveEvents(sessionId, refresh);
+  const [refresh] = useState(() => () => {
+    void qc.invalidateQueries({ queryKey: key });
+    void qc.invalidateQueries({ queryKey: ['teacher', 'questions', sessionId] });
+  });
+  const pushing = useLiveEvents(sessionId, refresh);
+  const live = useQuery({ queryKey: key, queryFn: () => apiGet<Live>(`/v1/attendance/sessions/${sessionId}/live`), refetchInterval: pushing ? 15_000 : 3_000 });
+  const questions = useQuery({
+    queryKey: ['teacher', 'questions', sessionId],
+    queryFn: () => apiGet<{ items: Schemas['TeacherQuestion'][] }>(`/v1/teacher/support-requests?attendance_session_id=${sessionId}`),
+    refetchInterval: pushing ? 15_000 : 4_000,
+  });
+  const [correcting, setCorrecting] = useState<{ id: string; name: string; status: string | null } | null>(null);
   const setLive = (v: Live) => qc.setQueryData(key, v);
 
   const round = useMutation({
@@ -155,6 +175,18 @@ export function AttendancePage({ sessionId }: { sessionId: string }) {
         </>
       )}
 
+      {(questions.data?.items ?? []).length > 0 && (
+        <div className="card card-attention">
+          <h3>A verifier is asking you</h3>
+          <p className="muted small">These students asked for help marking attendance. Only you can see who is in the room.</p>
+          <ul className="student-list">
+            {questions.data!.items.map((q) => (
+              <QuestionRow key={q.id} q={q} onDone={refresh} />
+            ))}
+          </ul>
+        </div>
+      )}
+
       {openSpots.length > 0 && (
         <div className="card">
           <h3>Spot check: call these students</h3>
@@ -191,6 +223,30 @@ export function AttendancePage({ sessionId }: { sessionId: string }) {
         </div>
       )}
 
+      {!active && (
+        <div className="card">
+          <h3>Need to change a record?</h3>
+          <p className="muted small">
+            Until the class ends you can confirm or mark students absent above. After that, use <strong>Correct</strong> next to a student; Academic Operations approves it.
+          </p>
+          <ul className="student-list">
+            {v.students.map((s) => (
+              <li key={s.id}>
+                <span className="student-name">
+                  <strong>{s.name}</strong>
+                  <span className="muted small">{s.usn}</span>
+                </span>
+                <span className="student-note muted small">{s.record ?? 'not recorded'}</span>
+                <button className="btn btn-ghost" onClick={() => setCorrecting({ id: s.id, name: s.name, status: s.record })}>
+                  Correct
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <CorrectionDialog open={correcting !== null} onClose={() => setCorrecting(null)} onDone={refresh} as="teacher" student={correcting} classSessionId={cls.id} />
+
       <details className="card">
         <summary>
           <h3 style={{ display: 'inline' }}>Present ({present.length})</h3>
@@ -224,6 +280,36 @@ export function AttendancePage({ sessionId }: { sessionId: string }) {
         <ErrorNotice error={end.error} />
       </Dialog>
     </div>
+  );
+}
+
+function QuestionRow({ q, onDone }: { q: Schemas['TeacherQuestion']; onDone: () => void }) {
+  const answer = useMutation({
+    mutationFn: (a: 'present' | 'absent' | 'not_sure') => apiSend('POST', `/v1/support-requests/${q.id}/teacher-confirmation`, { answer: a }),
+    onSuccess: onDone,
+  });
+  return (
+    <li>
+      <span className="student-name">
+        <strong>Is {q.name} in the room?</strong>
+        <span className="muted small">
+          {q.usn}
+          {q.batch ? ` · ${q.batch}` : ''} · {q.reason_text}
+        </span>
+      </span>
+      <span className="btn-row">
+        <button className="btn btn-primary" disabled={answer.isPending} onClick={() => answer.mutate('present')}>
+          Yes, here
+        </button>
+        <button className="btn btn-danger" disabled={answer.isPending} onClick={() => answer.mutate('absent')}>
+          No
+        </button>
+        <button className="btn btn-ghost" disabled={answer.isPending} onClick={() => answer.mutate('not_sure')}>
+          Not sure
+        </button>
+      </span>
+      <ErrorNotice error={answer.error} />
+    </li>
   );
 }
 

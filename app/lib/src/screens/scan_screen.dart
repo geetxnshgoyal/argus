@@ -19,12 +19,15 @@ enum _Phase { unlocking, scanning, sending, done, failed }
 ///    keeping the code as fresh as possible for the 3-second window.
 /// Codes are read only from this camera; argus:// links are never opened from elsewhere (ADR-0011).
 class ScanScreen extends StatefulWidget {
-  const ScanScreen({super.key, required this.attendance, required this.deviceId, required this.sender, required this.security});
+  const ScanScreen({super.key, required this.attendance, required this.deviceId, required this.sender, required this.security, this.onAskHelp});
 
   final ActiveAttendance attendance;
   final String deviceId;
   final AttemptSender sender;
   final SecurityBridge security;
+
+  /// Opens the support request sheet (spec §7) after a failed scan.
+  final Future<void> Function(BuildContext context)? onAskHelp;
 
   @override
   State<ScanScreen> createState() => _ScanScreenState();
@@ -164,10 +167,15 @@ class _ScanScreenState extends State<ScanScreen> {
       appBar: AppBar(title: Text(a.round > 1 ? 'Recheck · ${a.cls.subjectCode}' : 'Scan · ${a.cls.subjectCode}')),
       body: switch (_phase) {
         _Phase.done => _ResultView(result: _result!, onClose: () => Navigator.of(context).pop(true)),
-        _Phase.failed => _ErrorView(code: _errorCode, message: _error ?? 'Attendance could not be marked.', onRetry: () {
-            _retries = 0;
-            unawaited(_start());
-          }),
+        _Phase.failed => _ErrorView(
+            code: _errorCode,
+            message: _error ?? 'Attendance could not be marked.',
+            onRetry: () {
+              _retries = 0;
+              unawaited(_start());
+            },
+            onAskHelp: widget.onAskHelp == null ? null : () => widget.onAskHelp!(context),
+          ),
         _ => _scanner(context),
       },
     );
@@ -248,10 +256,11 @@ class _ResultView extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.code, required this.message, required this.onRetry});
+  const _ErrorView({required this.code, required this.message, required this.onRetry, this.onAskHelp});
   final String? code;
   final String message;
   final VoidCallback onRetry;
+  final VoidCallback? onAskHelp;
 
   @override
   Widget build(BuildContext context) {
@@ -270,6 +279,7 @@ class _ErrorView extends StatelessWidget {
           Text(message, textAlign: TextAlign.center, style: t.bodyLarge),
           const SizedBox(height: 32),
           if (!final_) FilledButton(onPressed: onRetry, child: const Text('Try again')),
+          if (!final_ && onAskHelp != null) OutlinedButton(onPressed: onAskHelp, child: const Text('Still not working? Ask for help')),
           const SizedBox(height: 8),
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Back')),
         ],
