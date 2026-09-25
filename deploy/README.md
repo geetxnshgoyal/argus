@@ -9,9 +9,9 @@ no other services. It runs either on **Vercel** (below) or on **your own server*
 1. **Project.** Import the GitHub repository in Vercel. `vercel.json` sets the
    build (`pnpm build:vercel`); leave the framework as "Other".
 2. **Database.** In the project, go to Storage, then Connect Database, and pick
-   **Neon** in the **Singapore** region (next to the Argus function). Argus reads
-   `DATABASE_URL`: set it to Neon's **unpooled** connection string (Neon also
-   adds `DATABASE_URL_UNPOOLED`; copy that value into `DATABASE_URL`).
+   **Neon** in the **Singapore** region (next to the Argus function). The
+   integration adds `DATABASE_URL` and `DATABASE_URL_UNPOOLED`; Argus uses the
+   unpooled (direct) one automatically.
 3. **Settings** (Settings, then Environment Variables, for Production):
 
    | Variable | Value |

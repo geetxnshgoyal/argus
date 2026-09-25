@@ -1,0 +1,9 @@
+# Upload only what `pnpm build:vercel` needs (backend + web + root config).
+.devdb
+app
+**/node_modules
+**/dist
+.vercel
+.claude
+coverage
+*.log

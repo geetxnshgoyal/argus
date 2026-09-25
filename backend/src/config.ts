@@ -21,6 +21,9 @@ const bool = z
 const envSchema = z.object({
   ARGUS_ENV: z.enum(ENVIRONMENTS),
   DATABASE_URL: z.string().min(1),
+  // Neon (Vercel Marketplace) also provides a direct connection; prefer it over the
+  // transaction pooler, which rejects Argus's per-session settings (ADR-0020).
+  DATABASE_URL_UNPOOLED: z.string().min(1).optional(),
   ARGUS_HOST: z.string().default('127.0.0.1'),
   ARGUS_PORT: z.coerce.number().int().min(1).max(65535).default(8080),
   ARGUS_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
@@ -197,7 +200,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
 
   return {
     env: e.ARGUS_ENV,
-    databaseUrl: e.DATABASE_URL,
+    databaseUrl: e.DATABASE_URL_UNPOOLED ?? e.DATABASE_URL,
     host: e.ARGUS_HOST,
     port: e.ARGUS_PORT,
     logLevel: e.ARGUS_LOG_LEVEL,
