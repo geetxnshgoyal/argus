@@ -72,6 +72,9 @@ export function registerAttendanceRoutes(app: FastifyInstance, ctx: AppContext):
     const { id } = parse(idParams, req.params);
     const s = await ctx.db.selectFrom('attendance_sessions').select(['started_by']).where('id', '=', id).executeTakeFirst();
     if (!s || s.started_by !== currentUser(req).id) throw new ApiError(404, 'not_found', 'Attendance session not found.');
+    // Serverless (ADR-0020): no instance lives long enough, and events don't cross instances.
+    // 204 tells EventSource to stop; the page polls instead.
+    if (ctx.config.serverless) return reply.status(204).send();
     reply.hijack();
     const res = reply.raw;
     res.writeHead(200, {
@@ -81,7 +84,7 @@ export function registerAttendanceRoutes(app: FastifyInstance, ctx: AppContext):
       'x-accel-buffering': 'no',
       'x-content-type-options': 'nosniff',
     });
-    res.write('retry: 3000\n\n');
+    res.write('retry: 3000\n\nevent: ready\ndata: {}\n\n');
     streams.add(res);
     let pending: NodeJS.Timeout | null = null;
     const unsubscribe = ctx.events.subscribe(id, (e) => {

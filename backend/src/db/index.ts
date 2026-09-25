@@ -8,15 +8,16 @@ export type Db = Kysely<Database>;
 // shift them across time zones. (OID 1082 = date.)
 pg.types.setTypeParser(1082, (v: string) => v);
 
-export function createDb(databaseUrl: string): Db {
+export function createDb(databaseUrl: string, opts: { max?: number; onPool?: (pool: pg.Pool) => void } = {}): Db {
   const pool = new pg.Pool({
     connectionString: databaseUrl,
-    max: 20,
+    max: opts.max ?? 20,
     // Fail fast instead of hanging requests when the database is unreachable.
     connectionTimeoutMillis: 5_000,
     // Server time is authoritative; keep every session in UTC.
     options: '-c timezone=UTC',
   });
+  opts.onPool?.(pool);
   return new Kysely<Database>({ dialect: new PostgresDialect({ pool }) });
 }
 

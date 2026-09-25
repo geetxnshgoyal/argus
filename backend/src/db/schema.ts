@@ -368,7 +368,8 @@ export interface AttemptSignals {
   distance_m: number | null;
   is_mock: boolean;
   campus_network: boolean | null;
-  attestation: 'ok' | 'unavailable' | 'missing' | 'bypass';
+  /** bypass: dev build; not_required: pilot mode without Play Integrity (ADR-0021). */
+  attestation: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required';
   app_version: string;
   extra?: Record<string, unknown>;
 }
@@ -521,6 +522,14 @@ export interface AttendanceCorrectionsTable {
   decided_at: Timestamp | null;
 }
 
+export interface JobRunsTable {
+  name: string;
+  last_run_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  last_finished_at: Timestamp | null;
+  last_result: Json;
+  last_error: string | null;
+}
+
 export interface Database {
   users: UsersTable;
   departments: DepartmentsTable;
@@ -564,6 +573,7 @@ export interface Database {
   presence_observations: PresenceObservationsTable;
   support_requests: SupportRequestsTable;
   attendance_corrections: AttendanceCorrectionsTable;
+  job_runs: JobRunsTable;
   course_offerings_labeled: CourseOfferingsTable & { subject_code: string; subject_name: string; subject_kind: string; section_name: string; term_name: string };
   teaching_assignments_labeled: TeachingAssignmentsTable & { teacher_name: string; subject_code: string; subject_name: string; section_name: string; group_name: string | null };
 }

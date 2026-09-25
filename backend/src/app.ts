@@ -15,6 +15,7 @@ import type { AppContext } from './context.ts';
 import { pingDb } from './db/index.ts';
 import { ApiError, type ErrorBody } from './errors.ts';
 import { registerSystemRoutes } from './routes/system.ts';
+import { registerCronRoute } from './routes/cron.ts';
 import { registerAttendanceRoutes } from './attendance/routes.ts';
 import { registerDeviceRoutes } from './devices/routes.ts';
 import { registerAdminAttendanceRoutes } from './admin/attendance-routes.ts';
@@ -136,6 +137,7 @@ export async function buildApp(ctx: AppContext, opts: AppOptions = {}): Promise<
   registerDeviceRoutes(app, ctx);
   registerAttendanceRoutes(app, ctx);
   registerSupportRoutes(app, ctx);
+  registerCronRoute(app, ctx);
   registerAdminAttendanceRoutes(app, ctx);
 
   await app.ready();

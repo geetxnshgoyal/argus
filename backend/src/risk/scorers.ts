@@ -16,7 +16,7 @@ export interface AttemptFacts {
   campusNetwork: boolean | null;
   lateInWindow: boolean;
   deviceActivatedAt: Date | null;
-  attestation: 'ok' | 'unavailable' | 'missing' | 'bypass';
+  attestation: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required';
   /** Unresolved risk flags for this student in the last 14 days. */
   recentFlags: number;
   now: Date;

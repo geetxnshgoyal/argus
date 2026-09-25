@@ -60,6 +60,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ServerTime'
+  /v1/internal/cron:
+    get:
+      tags:
+      - system
+      operationId: cron
+      summary: Run due background jobs (Vercel Cron; needs "Authorization Bearer CRON_SECRET")
+      description: Refused with 404 unless CRON_SECRET is configured and presented. See ADR-0020.
+      security: []
+      responses:
+        '200':
+          description: Jobs that ran
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - ran
+                properties:
+                  ran:
+                    type: array
+                    items:
+                      type: string
+        '404':
+          $ref: '#/components/responses/Error404'
   /v1/admin/departments:
     get:
       tags:

@@ -50,6 +50,15 @@ const envSchema = z.object({
   APPLE_DEVICECHECK_KEY_ID: z.string().optional(),
   APPLE_DEVICECHECK_KEY: z.string().optional(),
   // Rebind policy (ADR-0007).
+  // Android pilot mode (ADR-0021): 'off' accepts phones without Play Integrity (e.g. an APK
+  // installed outside Google Play) while still requiring hardware key attestation and our signing key.
+  PLAY_INTEGRITY_MODE: z.enum(['required', 'off']).default('required'),
+  // Vercel Cron sends "Authorization: Bearer <CRON_SECRET>" (ADR-0020).
+  CRON_SECRET: z.string().min(16).optional(),
+  // Connections per process; serverless instances use a few each.
+  DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).optional(),
+  // Set by Vercel on its build and runtime.
+  VERCEL: z.string().optional(),
   ARGUS_REBIND_COOLDOWN_HOURS: z.coerce.number().min(0).max(24 * 30).default(48),
   ARGUS_MAX_REBINDS_PER_TERM: z.coerce.number().int().min(0).max(50).default(2),
   // Time zone of the college: timetable times are local times in this zone.
@@ -96,6 +105,7 @@ export interface Config {
       /** Lowercase hex SHA-256 digests of accepted signing certificates. */
       signingCertDigests: string[];
       playIntegrityCredentialsPath: string | undefined;
+      playIntegrityMode: 'required' | 'off';
     };
     ios: {
       appId: string | undefined;
@@ -108,6 +118,10 @@ export interface Config {
     rebindCooldownMs: number;
     maxRebindsPerTerm: number;
   };
+  /** Running as Vercel Functions: no long-lived process (ADR-0020). */
+  serverless: boolean;
+  cronSecret: string | undefined;
+  dbPoolMax: number;
 }
 
 /** Normalizes "AB:CD:…" or "abcd…" digests; returns null for anything that isn't 32 bytes of hex. */
@@ -207,6 +221,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         packageName: e.ANDROID_PACKAGE_NAME,
         signingCertDigests,
         playIntegrityCredentialsPath: e.PLAY_INTEGRITY_CREDENTIALS,
+        playIntegrityMode: e.PLAY_INTEGRITY_MODE,
       },
       ios: {
         appId: e.IOS_APP_ID,
@@ -219,5 +234,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       rebindCooldownMs: e.ARGUS_REBIND_COOLDOWN_HOURS * 3600_000,
       maxRebindsPerTerm: e.ARGUS_MAX_REBINDS_PER_TERM,
     },
+    serverless: e.VERCEL === '1',
+    cronSecret: e.CRON_SECRET,
+    dbPoolMax: e.DATABASE_POOL_MAX ?? (e.VERCEL === '1' ? 5 : 20),
   };
 }
