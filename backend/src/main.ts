@@ -7,6 +7,7 @@ import { createContext } from './context.ts';
 import { createDb } from './db/index.ts';
 import { migrateToLatest } from './db/migrate.ts';
 import { startJobs } from './jobs.ts';
+import { bootstrapAdmins } from './admin/bootstrap.ts';
 import { createLogger } from './logger.ts';
 
 /**
@@ -67,6 +68,7 @@ async function main(): Promise<void> {
   }
 
   const ctx = createContext({ config, db, logger, version: version() });
+  await bootstrapAdmins(ctx);
   if (!ctx.oidc && !config.devLogin) logger.warn('SSO not configured (OIDC_CLIENT_ID/SECRET) and dev login off: nobody can sign in');
   const { app } = await buildApp(ctx, { webDir: config.webDir ?? defaultWebDir() });
 

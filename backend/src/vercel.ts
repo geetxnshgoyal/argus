@@ -7,6 +7,7 @@ import { createContext, type AppContext } from './context.ts';
 import { createDb } from './db/index.ts';
 import { migrateToLatest } from './db/migrate.ts';
 import { runDueJobs } from './jobs.ts';
+import { bootstrapAdmins } from './admin/bootstrap.ts';
 import { createLogger } from './logger.ts';
 
 /**
@@ -37,6 +38,7 @@ async function boot(): Promise<Booted> {
   if (migrated.error) throw migrated.error;
   const version = typeof __ARGUS_VERSION__ !== 'undefined' ? __ARGUS_VERSION__ : 'dev';
   const ctx = createContext({ config, db, logger, version });
+  await bootstrapAdmins(ctx);
   const { app } = await buildApp(ctx, { webDir: undefined });
   logger.info({ env: config.env, version }, 'argus function started');
   return { app, ctx, lastJobCheck: 0 };

@@ -223,3 +223,22 @@ describe.skipIf(!hasDb)('admin (integration)', () => {
     });
   });
 });
+
+describe.skipIf(!hasDb)('bootstrap administrators', () => {
+  it('creates missing admins once, never changes existing users, skips other domains', async () => {
+    const { bootstrapAdmins } = await import('../src/admin/bootstrap.ts');
+    const db = await testDb();
+    await resetDb(db);
+    await createUser(db, 'teacher', 'existing@college.test');
+    const t = await makeApp({ db, config: { bootstrapAdminEmails: ['first.admin@college.test', 'existing@college.test', 'x@gmail.com'] } });
+    expect(await bootstrapAdmins(t.ctx)).toEqual(['first.admin@college.test']);
+    expect(await bootstrapAdmins(t.ctx)).toEqual([]);
+    const roles = await db.selectFrom('users').select(['email', 'role']).orderBy('email').execute();
+    expect(roles).toEqual([
+      { email: 'existing@college.test', role: 'teacher' },
+      { email: 'first.admin@college.test', role: 'admin' },
+    ]);
+    await t.app.close();
+  });
+});
+
