@@ -18,6 +18,11 @@ export function TeacherHome() {
     queryFn: () => apiGet<{ date: string; items: AttendanceSummary[] }>('/v1/teacher/attendance/sessions'),
     refetchInterval: 60_000,
   });
+  const questions = useQuery({
+    queryKey: ['teacher', 'questions', 'all'],
+    queryFn: () => apiGet<{ items: Schemas['TeacherQuestion'][] }>('/v1/teacher/support-requests'),
+    refetchInterval: 15_000,
+  });
   const items = today.data?.items ?? [];
   const now = useNow();
   const byClass = new Map((attendance.data?.items ?? []).map((a) => [a.class_session_id, a]));
@@ -32,6 +37,12 @@ export function TeacherHome() {
     <div className="content">
       <PageHead title="Today's classes" subtitle={today.data ? formatDate(today.data.date) : undefined} />
       <ErrorNotice error={today.error ?? week.error} />
+      {(questions.data?.items ?? []).length > 0 && (
+        <Notice tone="warn">
+          A verifier is asking whether {questions.data!.items.length === 1 ? `${questions.data!.items[0]!.name} is` : `${questions.data!.items.length} students are`} in your class.{' '}
+          <a href={`/teacher/session/${questions.data!.items[0]!.attendance_session_id}`}>Answer now</a>
+        </Notice>
+      )}
       {today.isSuccess && items.length === 0 && <Notice>No classes today.</Notice>}
       {focus && <CurrentClass session={focus} attendance={byClass.get(focus.id)} canStart={focus === current || focus === running} now={now} />}
       {items.length > 0 && (

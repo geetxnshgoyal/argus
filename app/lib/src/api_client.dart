@@ -303,6 +303,12 @@ class ApiClient {
 
   Future<AttemptResult> submitAttempt(Map<String, dynamic> body) async => AttemptResult.fromJson(await _send('POST', '/v1/attendance/attempts', body: body));
 
+  /// Support request (spec §7): a signed request sent while the class is on.
+  Future<Map<String, dynamic>> requestSupport(Map<String, dynamic> body) => _send('POST', '/v1/support-requests', body: body);
+
+  /// My recent support requests (latest first).
+  Future<List<Map<String, dynamic>>> mySupportRequests() async => ((await _send('GET', '/v1/me/support-requests'))['items'] as List).cast<Map<String, dynamic>>();
+
   Future<List<SubjectAttendance>> history() async {
     final j = await _send('GET', '/v1/me/attendance');
     return (j['subjects'] as List).map((e) => SubjectAttendance.fromJson(e as Map<String, dynamic>)).toList();
