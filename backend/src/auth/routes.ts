@@ -81,7 +81,15 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
   // ── SSO ────────────────────────────────────────────────────────────────────
   app.get('/v1/auth/oidc/login', rateLimit, async (req, reply) => {
     const q = parse(loginQuery, req.query);
-    if (!ctx.oidc) throw new ApiError(503, 'sso_not_configured', 'College sign-in is not configured on this server.');
+    if (!ctx.oidc) {
+      // This is a browser navigation: send people back to a page that explains, not a JSON error.
+      if (q.client === 'mobile') {
+        const target = new URL(ctx.config.mobileRedirectUri);
+        target.searchParams.set('error', 'sso_not_configured');
+        return reply.redirect(target.href, 302);
+      }
+      return reply.redirect('/login?error=sso_not_configured', 302);
+    }
     if (q.client === 'mobile' && !q.app_challenge) {
       throw new ApiError(400, 'validation_failed', 'app_challenge is required for mobile sign-in.');
     }
@@ -189,6 +197,9 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
 
   // ── Me + policy ────────────────────────────────────────────────────────────
   app.get('/v1/policy', async () => ({ version: POLICY_VERSION, text: POLICY_TEXT }));
+
+  /** Which sign-in methods this server offers, so sign-in pages only show what works. */
+  app.get('/v1/auth/methods', async () => ({ sso: ctx.oidc !== null, dev_login: ctx.config.devLogin, domains: ctx.config.oidc.hostedDomains }));
 
   app.get('/v1/me', { preHandler: needAuth() }, async (req) => {
     const u = currentUser(req);

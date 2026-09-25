@@ -608,6 +608,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sign-in methods this server offers (so sign-in pages only show what works) */
+        get: operations["authMethods"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me": {
         parameters: {
             query?: never;
@@ -5256,6 +5273,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Policy"];
+                };
+            };
+        };
+    };
+    authMethods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description College Google sign-in is configured */
+                        sso: boolean;
+                        dev_login: boolean;
+                        domains: string[];
+                    };
                 };
             };
         };

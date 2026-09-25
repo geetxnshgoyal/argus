@@ -388,3 +388,17 @@ describe.skipIf(!hasDb)('auth (integration)', () => {
     });
   });
 });
+
+describe('sign-in methods', () => {
+  it('reports SSO off and sends browsers to a friendly page instead of a JSON error', async () => {
+    const t = await makeApp({ oidc: null });
+    const m = (await t.app.inject('/v1/auth/methods')).json();
+    expect(m).toMatchObject({ sso: false, dev_login: true, domains: ['college.test'] });
+    const web = await t.app.inject('/v1/auth/oidc/login');
+    expect(web.statusCode).toBe(302);
+    expect(web.headers.location).toBe('/login?error=sso_not_configured');
+    const mobile = await t.app.inject(`/v1/auth/oidc/login?client=mobile&app_challenge=${'a'.repeat(43)}`);
+    expect(mobile.headers.location).toBe('app.argus.argus:/auth/callback?error=sso_not_configured');
+    await t.app.close();
+  });
+});
