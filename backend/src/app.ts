@@ -20,6 +20,7 @@ import { registerAttendanceRoutes } from './attendance/routes.ts';
 import { registerDeviceRoutes } from './devices/routes.ts';
 import { registerAdminAttendanceRoutes } from './admin/attendance-routes.ts';
 import { registerSupportRoutes } from './support/routes.ts';
+import { registerNoticeRoutes } from './notices/routes.ts';
 import { registerTimetableRoutes } from './timetable/routes.ts';
 
 export interface AppOptions {
@@ -137,6 +138,7 @@ export async function buildApp(ctx: AppContext, opts: AppOptions = {}): Promise<
   registerDeviceRoutes(app, ctx);
   registerAttendanceRoutes(app, ctx);
   registerSupportRoutes(app, ctx);
+  registerNoticeRoutes(app, ctx);
   registerCronRoute(app, ctx);
   registerAdminAttendanceRoutes(app, ctx);
 

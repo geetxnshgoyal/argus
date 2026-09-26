@@ -28,5 +28,6 @@ the spec, the ADR wins. Status is `Accepted` unless marked otherwise.
 | [0020](0020-vercel-hosting.md) | Hosting on Vercel: one function + static pages, Neon Postgres, jobs via `job_runs` (replaces pg-boss) | Hosting |
 | [0021](0021-android-pilot-mode.md) | Android pilot mode: key attestation and our signing key, without Play Integrity | Hosting |
 | [0022](0022-phone-registration-survives-sign-out.md) | Sign-out keeps the phone registration; the session key identifies the install | M3 fix |
+| [0023](0023-notices.md) | Notices from Acad Ops; class changes announced automatically to the class | M6+ |
 
 New ADRs: copy the format of any existing one (Context / Decision / Consequences), keep it under a page.

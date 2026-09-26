@@ -7,6 +7,7 @@ import 'api_client.dart';
 import 'auth_controller.dart';
 import 'device_controller.dart';
 import 'screens/history_screen.dart';
+import 'screens/notices_screen.dart';
 import 'screens/scan_screen.dart';
 import 'screens/support_sheet.dart';
 import 'theme.dart';
@@ -35,7 +36,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late final SupportSender _support = SupportSender(widget.auth.api, widget.security);
   List<ActiveAttendance> _active = const [];
   Map<String, dynamic>? _supportStatus;
+  List<AppNotice> _notices = const [];
   Timer? _poll;
+  int _ticks = 0;
 
   PhoneState? _lastPhoneState;
 
@@ -66,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       _startPolling();
       unawaited(_loadActive());
+      unawaited(_loadNotices());
     } else if (state == AppLifecycleState.paused) {
       _poll?.cancel();
     }
@@ -73,7 +77,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _startPolling() {
     _poll?.cancel();
-    _poll = Timer.periodic(const Duration(seconds: 8), (_) => unawaited(_loadActive()));
+    _poll = Timer.periodic(const Duration(seconds: 8), (_) {
+      unawaited(_loadActive());
+      // Notices change rarely: about once a minute is plenty.
+      if (++_ticks % 8 == 0) unawaited(_loadNotices());
+    });
+  }
+
+  Future<void> _loadNotices() async {
+    try {
+      final n = await widget.auth.api.notices();
+      if (mounted) setState(() => _notices = n);
+    } catch (_) {
+      // Offline: keep the last list.
+    }
+  }
+
+  Future<void> _openNotices() async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => NoticesScreen(api: widget.auth.api)));
+    unawaited(_loadNotices());
   }
 
   Future<void> _loadActive() async {
@@ -103,6 +125,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _classes = widget.auth.api.timetable();
     });
     unawaited(_phone.load().then((_) => _loadActive()));
+    unawaited(_loadNotices());
   }
 
   Future<void> _scan(ActiveAttendance a) async {
@@ -121,10 +144,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final me = widget.auth.me!;
     final text = Theme.of(context).textTheme;
+    final unread = _notices.where((n) => !n.read).toList();
     return Scaffold(
       appBar: AppBar(
         title: const ArgusWordmark(size: 20),
-        actions: [IconButton(tooltip: 'Sign out', onPressed: widget.auth.signOut, icon: const Icon(Icons.logout))],
+        actions: [
+          IconButton(
+            tooltip: 'Notices',
+            onPressed: _openNotices,
+            icon: Badge(isLabelVisible: unread.isNotEmpty, label: Text('${unread.length}'), backgroundColor: ArgusColors.accent, child: const Icon(Icons.notifications_outlined)),
+          ),
+          IconButton(tooltip: 'Sign out', onPressed: widget.auth.signOut, icon: const Icon(Icons.logout)),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async => _refresh(),
@@ -135,6 +166,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const SizedBox(height: 4),
             Text('${me.usn ?? ''}${me.section != null ? ' · ${me.section}' : ''}${me.batch != null ? ' · ${me.batch}' : ''}', style: text.bodyMedium),
             const SizedBox(height: 20),
+            // Unread notices first: a cancelled or moved class matters before anything else.
+            if (unread.isNotEmpty) ...[
+              NoticeCard(notice: unread.first, onTap: _openNotices),
+              if (unread.length > 1)
+                Align(alignment: Alignment.centerRight, child: TextButton(onPressed: _openNotices, child: Text('${unread.length - 1} more new notice${unread.length > 2 ? 's' : ''}'))),
+              const SizedBox(height: 16),
+            ],
             ListenableBuilder(
               listenable: _phone,
               builder: (context, _) => _AttendanceCard(phone: _phone, active: _active, support: _supportStatus, onScan: _scan, onAskHelp: (a) => _askHelp(context, a)),
