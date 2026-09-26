@@ -230,13 +230,20 @@ describe.skipIf(!hasDb)('bootstrap administrators', () => {
     const db = await testDb();
     await resetDb(db);
     await createUser(db, 'teacher', 'existing@college.test');
-    const t = await makeApp({ db, config: { bootstrapAdminEmails: ['first.admin@college.test', 'existing@college.test', 'x@gmail.com'] } });
-    expect(await bootstrapAdmins(t.ctx)).toEqual(['first.admin@college.test']);
+    const t = await makeApp({
+      db,
+      config: {
+        bootstrapAdminEmails: ['first.admin@college.test', 'existing@college.test', 'x@gmail.com', 'owner@gmail.com'],
+        oidc: { issuer: 'http://idp.test', clientId: undefined, clientSecret: undefined, hostedDomains: ['college.test'], allowedEmails: ['owner@gmail.com'] },
+      },
+    });
+    expect(await bootstrapAdmins(t.ctx)).toEqual(['first.admin@college.test', 'owner@gmail.com']);
     expect(await bootstrapAdmins(t.ctx)).toEqual([]);
     const roles = await db.selectFrom('users').select(['email', 'role']).orderBy('email').execute();
     expect(roles).toEqual([
       { email: 'existing@college.test', role: 'teacher' },
       { email: 'first.admin@college.test', role: 'admin' },
+      { email: 'owner@gmail.com', role: 'admin' },
     ]);
     await t.app.close();
   });

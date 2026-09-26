@@ -1,4 +1,5 @@
 import { appendAudit } from '../audit/audit.ts';
+import { emailAllowed } from '../config.ts';
 import type { AppContext } from '../context.ts';
 import { uuidv7 } from '../platform/ids.ts';
 
@@ -11,10 +12,8 @@ import { uuidv7 } from '../platform/ids.ts';
 export async function bootstrapAdmins(ctx: AppContext): Promise<string[]> {
   const created: string[] = [];
   for (const email of ctx.config.bootstrapAdminEmails) {
-    const domain = email.split('@')[1] ?? '';
-    const domains = ctx.config.oidc.hostedDomains;
-    if (domains.length > 0 && !domains.includes(domain)) {
-      ctx.logger.warn({ domain }, 'bootstrap admin email is outside the sign-in domains; skipped');
+    if (!emailAllowed(ctx.config.oidc, email)) {
+      ctx.logger.warn({ domain: email.split('@')[1] }, 'bootstrap admin email is not allowed to sign in (OIDC_HOSTED_DOMAIN / OIDC_ALLOWED_EMAILS); skipped');
       continue;
     }
     await ctx.db.transaction().execute(async (tx) => {
