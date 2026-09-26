@@ -24,6 +24,7 @@ no other services. It runs either on **Vercel** (below) or on **your own server*
    | `OIDC_HOSTED_DOMAIN` | `svyasa-sas.edu.in,newtonschool.co` |
    | `CRON_SECRET` | any random string of 16+ characters |
    | `ARGUS_BOOTSTRAP_ADMIN_EMAILS` | the first administrator's Google address (created at startup if missing) |
+   | `OIDC_ALLOWED_EMAILS` | optional: individual addresses outside the two domains that may sign in (e.g. a personal Gmail during the pilot) |
    | `PLAY_INTEGRITY_MODE` | `off` for the pilot APK (ADR-0021) |
    | `ANDROID_SIGNING_CERT_SHA256` | SHA-256 of the APK signing certificate (the GitHub release workflow prints it) |
    | `IOS_APP_ID`, `IOS_APP_ATTEST_ENV` | `<TEAMID>.<bundle id>`, `development` for Xcode-installed builds |
@@ -35,7 +36,9 @@ no other services. It runs either on **Vercel** (below) or on **your own server*
    - Credentials, then Create OAuth client ID, type **Web application**.
      Authorized redirect URI: `https://<your-project>.vercel.app/v1/auth/oidc/callback`.
      Add `http://localhost:5173/v1/auth/oidc/callback` too for local development.
-   - Copy the client ID and secret into the Vercel settings, then redeploy.
+   - Click **Download JSON** in the dialog that shows the new client, then run
+     `node scripts/set-google-client.mjs ~/Downloads/client_secret_….json`.
+     It stores the ID and secret in Vercel (you never paste the secret anywhere). Redeploy.
 5. Open `https://<your-project>.vercel.app/v1/health`. It should show
    `"status":"ok"`. The first request creates the tables.
 

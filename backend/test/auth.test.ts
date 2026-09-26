@@ -239,9 +239,9 @@ describe.skipIf(!hasDb)('auth (integration)', () => {
     });
     afterAll(() => idp.stop());
 
-    async function ssoApp(hostedDomains = ['college.test']) {
+    async function ssoApp(hostedDomains = ['college.test'], allowedEmails: string[] = []) {
       const oidc = new OidcService(
-        { issuer: idp.issuer, clientId: idp.clientId, clientSecret: idp.clientSecret, hostedDomains, redirectUri: 'http://localhost:5173/v1/auth/oidc/callback', allowInsecure: true },
+        { issuer: idp.issuer, clientId: idp.clientId, clientSecret: idp.clientSecret, hostedDomains, allowedEmails, redirectUri: 'http://localhost:5173/v1/auth/oidc/callback', allowInsecure: true },
         db,
       );
       return makeApp({ db, oidc, config: { devLogin: false }, now: Date.now() });
@@ -300,6 +300,21 @@ describe.skipIf(!hasDb)('auth (integration)', () => {
       await createUser(db, 'teacher', 'other@partner.test');
       const mixed = await signIn(s.app, { sub: 't2', email: 'other@partner.test', hd: 'college.test' });
       expect(mixed.callback.headers.location).toBe('/login?error=wrong_domain');
+      await s.app.close();
+    });
+
+    it('an individually allowed personal account (no hd claim) can sign in; others cannot', async () => {
+      await createUser(db, 'admin', 'owner@gmail.com');
+      await createUser(db, 'admin', 'other@gmail.com');
+      const s = await ssoApp(['college.test'], ['owner@gmail.com']);
+      const start = await s.app.inject('/v1/auth/oidc/login');
+      expect(new URL(String(start.headers.location)).searchParams.get('hd')).toBeNull();
+      const ok = await signIn(s.app, { sub: 'g1', email: 'owner@gmail.com' });
+      expect(ok.callback.headers.location).toBe('/admin');
+      const no = await signIn(s.app, { sub: 'g2', email: 'other@gmail.com' });
+      expect(no.callback.headers.location).toBe('/login?error=wrong_domain');
+      const unverified = await signIn(s.app, { sub: 'g3', email: 'owner@gmail.com', email_verified: false });
+      expect(unverified.callback.headers.location).toBe('/login?error=wrong_domain');
       await s.app.close();
     });
 

@@ -39,6 +39,9 @@ const envSchema = z.object({
   // Google Workspace domain(s), comma-separated; sign-in is limited to accounts in them when set.
   // e.g. "svyasa-sas.edu.in,newtonschool.co" (students on the college domain, teachers on Newton's).
   OIDC_HOSTED_DOMAIN: z.string().optional(),
+  // Individual addresses allowed to sign in from outside those domains (e.g. a developer's
+  // Gmail during the pilot). Comma-separated; must still be verified by Google.
+  OIDC_ALLOWED_EMAILS: z.string().optional(),
   ARGUS_MOBILE_REDIRECT_URI: z.string().default('app.argus.argus:/auth/callback'),
   // ── Device attestation (M3). A platform that is not configured cannot bind phones outside dev/test.
   ANDROID_PACKAGE_NAME: z.string().default('app.argus.argus'),
@@ -101,6 +104,8 @@ export interface Config {
     clientSecret: string | undefined;
     /** Allowed Google Workspace domains (lowercase). Empty = any account (dev/test only). */
     hostedDomains: string[];
+    /** Individual addresses allowed outside those domains (lowercase). */
+    allowedEmails: string[];
   };
   mobileRedirectUri: string;
   timeZone: string;
@@ -219,6 +224,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       clientId: e.OIDC_CLIENT_ID,
       clientSecret: e.OIDC_CLIENT_SECRET,
       hostedDomains,
+      allowedEmails: (e.OIDC_ALLOWED_EMAILS ?? '').split(',').map((x) => x.trim().toLowerCase()).filter((x) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)),
     },
     mobileRedirectUri: e.ARGUS_MOBILE_REDIRECT_URI,
     timeZone: e.ARGUS_TIMEZONE,
@@ -246,3 +252,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     dbPoolMax: e.DATABASE_POOL_MAX ?? (e.VERCEL === '1' ? 5 : 20),
   };
 }
+
+/** Whether an address may have an Argus account: an allowed domain or an individually allowed address. */
+export function emailAllowed(oidc: Config['oidc'], email: string): boolean {
+  const e = email.toLowerCase();
+  if (oidc.hostedDomains.length === 0) return true;
+  return oidc.hostedDomains.includes(e.split('@')[1] ?? '') || oidc.allowedEmails.includes(e);
+}
+

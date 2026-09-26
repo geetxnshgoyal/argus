@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { appendAudit } from '../audit/audit.ts';
 import { assertRecentAuth, currentUser, needAuth } from '../auth/guard.ts';
 import { revokeAllUserSessions } from '../auth/sessions.ts';
+import { emailAllowed } from '../config.ts';
 import type { AppContext } from '../context.ts';
 import type { Tx } from '../db/index.ts';
 import { mapDbError } from '../db/errors.ts';
@@ -29,7 +30,7 @@ function emailSchema(ctx: AppContext) {
     .trim()
     .toLowerCase()
     .email()
-    .refine((e) => domains.length === 0 || domains.includes(e.split('@')[1] ?? ''), `Must be an ${domains.map((d) => `@${d}`).join(' or ')} address`);
+    .refine((e) => emailAllowed(ctx.config.oidc, e), `Must be an ${domains.map((d) => `@${d}`).join(' or ')} address`);
 }
 
 const listQuery = z.object({

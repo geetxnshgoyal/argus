@@ -49,6 +49,7 @@ export function createContext(opts: {
               clientId: config.oidc.clientId,
               clientSecret: config.oidc.clientSecret,
               hostedDomains: config.oidc.hostedDomains,
+              allowedEmails: config.oidc.allowedEmails,
               redirectUri: `${config.publicUrl}/v1/auth/oidc/callback`,
               allowInsecure: config.env === 'dev' || config.env === 'test',
             },
