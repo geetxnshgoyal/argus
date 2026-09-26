@@ -6,6 +6,7 @@ import { useMe } from './lib/auth.ts';
 import { LoginPage } from './routes/LoginPage.tsx';
 import { AuditPage } from './routes/admin/AuditPage.tsx';
 import { AttendanceBrowserPage, AttendanceDetailPage } from './routes/admin/AttendanceBrowserPage.tsx';
+import { NoticesPage } from './routes/admin/NoticesPage.tsx';
 import { PhonesPage } from './routes/admin/PhonesPage.tsx';
 import { RESOURCE_CONFIGS } from './routes/admin/configs.ts';
 import { StudentImportPage } from './routes/admin/StudentImportPage.tsx';
@@ -113,6 +114,7 @@ function AdminShell() {
       <div className="shell">
         <nav className="sidenav" aria-label="Admin">
           <SideNavLink to="/admin">Overview</SideNavLink>
+          <SideNavLink to="/admin/notices">Notices</SideNavLink>
           <div className="section-label">People</div>
           <SideNavLink to="/admin/students">Students</SideNavLink>
           <SideNavLink to="/admin/students/import">Import students</SideNavLink>
@@ -151,6 +153,7 @@ function AdminShell() {
 const adminRoute = createRoute({ getParentRoute: () => frameRoute, path: '/admin', component: AdminShell });
 
 const OVERVIEW = [
+  { to: '/admin/notices', icon: 'bell', title: 'Notices', text: 'Tell students and teachers about room changes, holidays and more.' },
   { to: '/admin/students/import', icon: 'upload', title: 'Import students', text: 'Add or update the student list from a file.' },
   { to: '/admin/students', icon: 'users', title: 'Students', text: 'Search students, fix details, move batches.' },
   { to: '/admin/teachers', icon: 'book', title: 'Teachers', text: 'Add teachers and their departments.' },
@@ -201,6 +204,7 @@ const adminChildren = [
   createRoute({ getParentRoute: () => adminRoute, path: '/audit', component: AuditPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/attendance', component: AttendanceBrowserPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/phones', component: PhonesPage }),
+  createRoute({ getParentRoute: () => adminRoute, path: '/notices', component: NoticesPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/timetable', component: TimetablePage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/timetable/import', component: TimetableImportPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/calendar', component: CalendarPage }),

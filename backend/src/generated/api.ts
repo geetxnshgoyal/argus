@@ -1635,6 +1635,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Notices for me (announcements for 30 days; class changes until their day is over) */
+        get: operations["myNotices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/notices/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark notices read (the given ids, or all when ids is omitted) */
+        post: operations["markNoticesRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent notices with how many people they reached and read them */
+        get: operations["listNotices"];
+        put?: never;
+        /** Post an announcement */
+        post: operations["postNotice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/notices/audience": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** How many students and teachers an audience reaches now */
+        post: operations["noticeAudience"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/notices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw a notice (it disappears for everyone; recorded in the audit log) */
+        delete: operations["withdrawNotice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/verifier/support-requests": {
         parameters: {
             query?: never;
@@ -2626,6 +2714,75 @@ export interface components {
             reason: string;
             /** @description Required when the class already has attendance */
             confirm?: boolean;
+            /**
+             * @description Post a class-change notice to the class's students and teachers (ADR-0023)
+             * @default true
+             */
+            notify: boolean;
+            /** @description Optional extra line for the notice (the reason stays internal) */
+            notice?: string | null;
+        };
+        /** @description Who a notice is for. A section or subject class can be narrowed to one lab batch. */
+        NoticeAudience: {
+            /** @enum {string} */
+            kind: "everyone" | "students" | "teachers";
+        } | {
+            /** @enum {string} */
+            kind: "section";
+            /** Format: uuid */
+            section_id: string;
+            /** Format: uuid */
+            group_id?: string | null;
+        } | {
+            /** @enum {string} */
+            kind: "offering";
+            /** Format: uuid */
+            offering_id: string;
+            /** Format: uuid */
+            group_id?: string | null;
+        };
+        NoticeInput: {
+            title: string;
+            body?: string;
+            audience: components["schemas"]["NoticeAudience"];
+        };
+        MyNotice: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "announcement" | "class_change";
+            title: string;
+            body: string;
+            /**
+             * Format: date
+             * @description For class changes, the day of the class
+             */
+            class_date: string | null;
+            /** Format: date-time */
+            created_at: string;
+            read: boolean;
+        };
+        MyNotices: {
+            items: components["schemas"]["MyNotice"][];
+            unread: number;
+        };
+        OpsNotice: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "announcement" | "class_change";
+            title: string;
+            body: string;
+            audience_label: string;
+            /** Format: date */
+            class_date: string | null;
+            /** Format: date-time */
+            created_at: string;
+            created_by_name: string | null;
+            /** Format: date-time */
+            withdrawn_at: string | null;
+            recipients: number;
+            read: number;
         };
         CalendarDay: {
             /** Format: uuid */
@@ -7070,6 +7227,167 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+        };
+    };
+    myNotices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Newest first, at most 50 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyNotices"];
+                };
+            };
+            401: components["responses"]["Error401"];
+        };
+    };
+    markNoticesRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    ids?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Marked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    listNotices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Newest first, at most 100 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["OpsNotice"][];
+                    };
+                };
+            };
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    postNotice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoticeInput"];
+            };
+        };
+        responses: {
+            /** @description Posted */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        recipients: number;
+                        students: number;
+                        teachers: number;
+                    };
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    noticeAudience: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    audience: components["schemas"]["NoticeAudience"];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        label: string;
+                        students: number;
+                        teachers: number;
+                    };
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    withdrawNotice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Withdrawn */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];

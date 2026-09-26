@@ -261,6 +261,8 @@ function OverrideDialog(props: { termId: string; sectionId: string; session: Ses
     offering_id: '',
     group_id: '',
     reason: '',
+    notify: true,
+    notice: '',
   });
   const [needConfirm, setNeedConfirm] = useState(false);
   const set = (k: keyof typeof v) => (ev: { target: { value: string } }) => setV({ ...v, [k]: ev.target.value });
@@ -268,7 +270,7 @@ function OverrideDialog(props: { termId: string; sectionId: string; session: Ses
   const entry = s?.entry_id ? { id: s.entry_id } : undefined;
   const save = useMutation({
     mutationFn: (confirm: boolean) => {
-      const body: Record<string, unknown> = { date: v.date, action: v.action, reason: v.reason, confirm };
+      const body: Record<string, unknown> = { date: v.date, action: v.action, reason: v.reason, confirm, notify: v.notify, notice: v.notify && v.notice.trim() ? v.notice.trim() : null };
       if (v.action === 'add') Object.assign(body, { new_offering_id: v.offering_id, new_group_id: v.group_id || null, new_start: v.start, new_end: v.end, new_room_id: v.room_id || null, new_teacher_id: v.teacher_id || null });
       else {
         body.entry_id = entry?.id;
@@ -360,9 +362,17 @@ function OverrideDialog(props: { termId: string; sectionId: string; session: Ses
             </Field>
           </div>
         )}
-        <Field label="Reason (shown in the audit log)" error={errs.reason}>
+        <Field label="Reason (audit log only, not shown to students)" error={errs.reason}>
           <input value={v.reason} onChange={set('reason')} placeholder="e.g. Projector not working" />
         </Field>
+        <label className="check">
+          <input type="checkbox" checked={v.notify} onChange={(e) => setV({ ...v, notify: e.target.checked })} /> Tell the students and teachers of this class
+        </label>
+        {v.notify && (
+          <Field label="Extra line for the notice" hint="Optional. The notice already says what changed.">
+            <input value={v.notice} onChange={set('notice')} maxLength={300} placeholder="e.g. Bring your laptops" />
+          </Field>
+        )}
         {s && !entry && <Notice tone="warn">This is a one-off class; to remove it, undo the change that added it.</Notice>}
       </div>
     </Dialog>

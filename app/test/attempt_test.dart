@@ -122,5 +122,38 @@ void main() {
     expect(p['location'], isNull);
     expect(utf8.decode(bytes), canonicalize(p));
   });
-}
 
+  test('notices: parsed from the API, marked read by id or all at once', () async {
+    final sent = <String>[];
+    final api = ApiClient(
+      baseUrl: 'http://test',
+      security: SecurityBridge(),
+      store: MemoryTokenStore(),
+      client: MockClient((req) async {
+        if (req.method == 'POST') {
+          sent.add(req.body);
+          return http.Response('', 204);
+        }
+        return http.Response(
+          jsonEncode({
+            'items': [
+              {'id': 'n1', 'kind': 'class_change', 'title': 'AP changed · Wed 23 Sep', 'body': 'Room: C6 → C4', 'class_date': '2026-09-23', 'created_at': '2026-09-21T04:00:00.000Z', 'read': false},
+              {'id': 'n2', 'kind': 'announcement', 'title': 'Holiday', 'body': '', 'class_date': null, 'created_at': '2026-09-20T04:00:00.000Z', 'read': true},
+            ],
+            'unread': 1,
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+    final n = await api.notices();
+    expect(n.map((x) => x.id), ['n1', 'n2']);
+    expect(n.first.isClassChange, isTrue);
+    expect(n.first.classDate, '2026-09-23');
+    expect(n.last.read, isTrue);
+    await api.markNoticesRead(['n1']);
+    await api.markNoticesRead();
+    expect(sent, ['{"ids":["n1"]}', '{}']);
+  });
+}

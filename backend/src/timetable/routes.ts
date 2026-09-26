@@ -12,6 +12,7 @@ import { fromB64url } from '../platform/crypto.ts';
 import { idParams, isoDate, parse, uuid } from '../validation.ts';
 import { addDays, normTime, WEEKDAY_NAMES } from './dates.ts';
 import { importTimetable } from './import.ts';
+import { noticeForOverride, overrideUndone } from '../notices/service.ts';
 import type { TimetableRow } from './import-parse.ts';
 import {
   assertTermSection,
@@ -65,6 +66,9 @@ const overrideInput = z
     new_end: time.optional(),
     reason: z.string().trim().min(3, 'Please give a reason').max(300),
     confirm: z.boolean().optional(),
+    // Tell the class's students and teachers (ADR-0023); on unless turned off.
+    notify: z.boolean().default(true),
+    notice: z.string().trim().max(300).nullable().optional(),
   })
   .superRefine((o, c) => {
     if (o.action === 'add') {
@@ -261,7 +265,8 @@ export function registerTimetableRoutes(app: FastifyInstance, ctx: AppContext): 
         if (b.date < term.start_date || b.date > term.end_date) throw new ApiError(400, 'invalid_date', 'The date is outside the term.');
         // Replace an earlier active change for the same class and date.
         if (b.entry_id) {
-          await tx.updateTable('timetable_overrides').set({ revoked_at: at(), revoked_by: u.id }).where('entry_id', '=', b.entry_id).where('date', '=', b.date).where('revoked_at', 'is', null).execute();
+          const replaced = await tx.updateTable('timetable_overrides').set({ revoked_at: at(), revoked_by: u.id }).where('entry_id', '=', b.entry_id).where('date', '=', b.date).where('revoked_at', 'is', null).returning('id').execute();
+          for (const r of replaced) await overrideUndone(tx, ctx, r.id, { by: u.id, replaced: true });
         }
         const row = {
           id: uuidv7(ctx.now()),
@@ -282,7 +287,8 @@ export function registerTimetableRoutes(app: FastifyInstance, ctx: AppContext): 
         await tx.insertInto('timetable_overrides').values(row).execute();
         await rematerialize(tx, ctx, { termId, sectionId });
         await appendAudit(tx, { actorId: u.id, action: `timetable_override.${b.action}`, entityType: 'timetable_override', entityId: row.id, after: row, ip: req.ip }, at());
-        return row;
+        const notice = b.notify ? await noticeForOverride(tx, ctx, row.id, { createdBy: u.id, note: b.notice ?? null }) : null;
+        return { ...row, notified: notice?.recipients ?? 0 };
       });
       return reply.status(201).send(created);
     } catch (err) {
@@ -299,6 +305,7 @@ export function registerTimetableRoutes(app: FastifyInstance, ctx: AppContext): 
       if (!ov) throw new ApiError(404, 'not_found', 'Not found');
       if (ov.date < todayIn(ctx)) throw new ApiError(400, 'past_date', 'Past changes cannot be undone.');
       await rematerialize(tx, ctx, { termId: ov.term_id });
+      await overrideUndone(tx, ctx, id, { by: u.id, replaced: false });
       await appendAudit(tx, { actorId: u.id, action: 'timetable_override.revoke', entityType: 'timetable_override', entityId: id, before: ov, ip: req.ip }, at());
     });
     return reply.status(204).send();

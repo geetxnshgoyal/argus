@@ -197,6 +197,30 @@ class SubjectAttendance {
       );
 }
 
+/// A notice from Academic Operations (ADR-0023): an announcement or a class change.
+class AppNotice {
+  const AppNotice({required this.id, required this.kind, required this.title, required this.body, required this.createdAt, required this.read, this.classDate});
+  final String id;
+  final String kind;
+  final String title;
+  final String body;
+  final DateTime createdAt;
+  final bool read;
+  final String? classDate;
+
+  bool get isClassChange => kind == 'class_change';
+
+  factory AppNotice.fromJson(Map<String, dynamic> j) => AppNotice(
+        id: j['id'] as String,
+        kind: j['kind'] as String,
+        title: j['title'] as String,
+        body: j['body'] as String,
+        createdAt: DateTime.parse(j['created_at'] as String).toLocal(),
+        read: j['read'] as bool,
+        classDate: j['class_date'] as String?,
+      );
+}
+
 class Policy {
   const Policy(this.version, this.text);
   final String version;
@@ -308,6 +332,17 @@ class ApiClient {
 
   /// My recent support requests (latest first).
   Future<List<Map<String, dynamic>>> mySupportRequests() async => ((await _send('GET', '/v1/me/support-requests'))['items'] as List).cast<Map<String, dynamic>>();
+
+  // ── Notices (ADR-0023) ───────────────────────────────────────────────────
+  Future<List<AppNotice>> notices() async {
+    final j = await _send('GET', '/v1/me/notices');
+    return (j['items'] as List).map((e) => AppNotice.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// Marks the given notices read (all of them when [ids] is null).
+  Future<void> markNoticesRead([List<String>? ids]) async {
+    await _send('POST', '/v1/me/notices/read', body: {'ids': ?ids});
+  }
 
   Future<List<SubjectAttendance>> history() async {
     final j = await _send('GET', '/v1/me/attendance');

@@ -530,6 +530,38 @@ export interface JobRunsTable {
   last_error: string | null;
 }
 
+// ── Notices (ADR-0023) ─────────────────────────────────────────────────────
+
+export type NoticeKind = 'announcement' | 'class_change';
+
+export type NoticeAudience =
+  | { kind: 'everyone' }
+  | { kind: 'students' }
+  | { kind: 'teachers' }
+  | { kind: 'section'; section_id: string; group_id: string | null }
+  | { kind: 'offering'; offering_id: string; group_id: string | null };
+
+export interface NoticesTable {
+  id: string;
+  kind: NoticeKind;
+  title: string;
+  body: ColumnType<string, string | undefined, string>;
+  audience: Json<NoticeAudience>;
+  audience_label: string;
+  override_id: string | null;
+  class_date: DateOnly | null;
+  created_by: string | null;
+  created_at: CreatedAt;
+  withdrawn_at: Timestamp | null;
+  withdrawn_by: string | null;
+}
+
+export interface NoticeRecipientsTable {
+  notice_id: string;
+  user_id: string;
+  read_at: Timestamp | null;
+}
+
 export interface Database {
   users: UsersTable;
   departments: DepartmentsTable;
@@ -574,6 +606,8 @@ export interface Database {
   support_requests: SupportRequestsTable;
   attendance_corrections: AttendanceCorrectionsTable;
   job_runs: JobRunsTable;
+  notices: NoticesTable;
+  notice_recipients: NoticeRecipientsTable;
   course_offerings_labeled: CourseOfferingsTable & { subject_code: string; subject_name: string; subject_kind: string; section_name: string; term_name: string };
   teaching_assignments_labeled: TeachingAssignmentsTable & { teacher_name: string; subject_code: string; subject_name: string; section_name: string; group_name: string | null };
 }

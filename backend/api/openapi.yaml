@@ -3617,6 +3617,169 @@ paths:
           $ref: "#/components/responses/Error403"
         "404":
           $ref: "#/components/responses/Error404"
+  /v1/me/notices:
+    get:
+      tags:
+      - me
+      operationId: myNotices
+      summary: Notices for me (announcements for 30 days; class changes until their day is over)
+      responses:
+        '200':
+          description: Newest first, at most 50
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyNotices'
+        '401':
+          $ref: '#/components/responses/Error401'
+  /v1/me/notices/read:
+    post:
+      tags:
+      - me
+      operationId: markNoticesRead
+      summary: Mark notices read (the given ids, or all when ids is omitted)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  maxItems: 200
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '204':
+          description: Marked
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+  /v1/admin/notices:
+    get:
+      tags:
+      - admin
+      operationId: listNotices
+      summary: Recent notices with how many people they reached and read them
+      responses:
+        '200':
+          description: Newest first, at most 100
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OpsNotice'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+    post:
+      tags:
+      - admin
+      operationId: postNotice
+      summary: Post an announcement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoticeInput'
+      responses:
+        '201':
+          description: Posted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - id
+                - recipients
+                - students
+                - teachers
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  recipients:
+                    type: integer
+                  students:
+                    type: integer
+                  teachers:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+  /v1/admin/notices/audience:
+    post:
+      tags:
+      - admin
+      operationId: noticeAudience
+      summary: How many students and teachers an audience reaches now
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - audience
+              properties:
+                audience:
+                  $ref: '#/components/schemas/NoticeAudience'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - label
+                - students
+                - teachers
+                properties:
+                  label:
+                    type: string
+                  students:
+                    type: integer
+                  teachers:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+  /v1/admin/notices/{id}:
+    parameters:
+    - $ref: '#/components/parameters/Id'
+    delete:
+      tags:
+      - admin
+      operationId: withdrawNotice
+      summary: Withdraw a notice (it disappears for everyone; recorded in the audit log)
+      responses:
+        '204':
+          description: Withdrawn
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
   /v1/verifier/support-requests:
     get:
       tags:
@@ -5877,6 +6040,174 @@ components:
         confirm:
           type: boolean
           description: Required when the class already has attendance
+        notify:
+          type: boolean
+          default: true
+          description: Post a class-change notice to the class's students and teachers (ADR-0023)
+        notice:
+          type:
+          - string
+          - 'null'
+          maxLength: 300
+          description: Optional extra line for the notice (the reason stays internal)
+    NoticeAudience:
+      description: Who a notice is for. A section or subject class can be narrowed to one lab batch.
+      oneOf:
+      - type: object
+        required:
+        - kind
+        properties:
+          kind:
+            type: string
+            enum:
+            - everyone
+            - students
+            - teachers
+      - type: object
+        required:
+        - kind
+        - section_id
+        properties:
+          kind:
+            type: string
+            enum:
+            - section
+          section_id:
+            type: string
+            format: uuid
+          group_id:
+            type:
+            - string
+            - 'null'
+            format: uuid
+      - type: object
+        required:
+        - kind
+        - offering_id
+        properties:
+          kind:
+            type: string
+            enum:
+            - offering
+          offering_id:
+            type: string
+            format: uuid
+          group_id:
+            type:
+            - string
+            - 'null'
+            format: uuid
+    NoticeInput:
+      type: object
+      required:
+      - title
+      - audience
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 120
+        body:
+          type: string
+          maxLength: 2000
+        audience:
+          $ref: '#/components/schemas/NoticeAudience'
+    MyNotice:
+      type: object
+      required:
+      - id
+      - kind
+      - title
+      - body
+      - class_date
+      - created_at
+      - read
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+          - announcement
+          - class_change
+        title:
+          type: string
+        body:
+          type: string
+        class_date:
+          type:
+          - string
+          - 'null'
+          format: date
+          description: For class changes, the day of the class
+        created_at:
+          type: string
+          format: date-time
+        read:
+          type: boolean
+    MyNotices:
+      type: object
+      required:
+      - items
+      - unread
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MyNotice'
+        unread:
+          type: integer
+    OpsNotice:
+      type: object
+      required:
+      - id
+      - kind
+      - title
+      - body
+      - audience_label
+      - class_date
+      - created_at
+      - created_by_name
+      - withdrawn_at
+      - recipients
+      - read
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+          - announcement
+          - class_change
+        title:
+          type: string
+        body:
+          type: string
+        audience_label:
+          type: string
+        class_date:
+          type:
+          - string
+          - 'null'
+          format: date
+        created_at:
+          type: string
+          format: date-time
+        created_by_name:
+          type:
+          - string
+          - 'null'
+        withdrawn_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        recipients:
+          type: integer
+        read:
+          type: integer
     CalendarDay:
       type: object
       required:

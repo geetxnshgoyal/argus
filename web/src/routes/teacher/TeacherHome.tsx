@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { NoticesCard } from '../../components/NoticesCard.tsx';
 import { ErrorNotice, IconTile, Notice, PageHead } from '../../components/ui.tsx';
 import { apiGet, apiSend, type Schemas } from '../../lib/api.ts';
 import { formatDate } from '../../lib/refs.ts';
@@ -43,6 +44,7 @@ export function TeacherHome() {
           <a href={`/teacher/session/${questions.data!.items[0]!.attendance_session_id}`}>Answer now</a>
         </Notice>
       )}
+      <NoticesCard />
       {today.isSuccess && items.length === 0 && <Notice>No classes today.</Notice>}
       {focus && <CurrentClass session={focus} attendance={byClass.get(focus.id)} canStart={focus === current || focus === running} now={now} />}
       {items.length > 0 && (
