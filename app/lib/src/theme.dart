@@ -126,15 +126,9 @@ class ArgusWordmark extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: size + 8,
-          height: size + 8,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(9),
-            gradient: const LinearGradient(colors: [ArgusColors.brandA, ArgusColors.brandB], begin: Alignment.topLeft, end: Alignment.bottomRight),
-          ),
-          alignment: Alignment.center,
-          child: Text('A', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: size * 0.7)),
+        ClipRRect(
+          borderRadius: BorderRadius.circular((size + 8) * 0.24),
+          child: Image.asset('assets/argus-icon.png', width: size + 8, height: size + 8, filterQuality: FilterQuality.medium),
         ),
         const SizedBox(width: 12),
         Text('ARGUS', style: TextStyle(fontSize: size, fontWeight: FontWeight.w800, letterSpacing: size * 0.15, color: ArgusColors.fg)),

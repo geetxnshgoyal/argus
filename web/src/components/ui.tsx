@@ -36,11 +36,7 @@ export function IconTile({ name, tone }: { name: string; tone?: 'warn' | 'bad' |
 }
 
 export function BrandMark() {
-  return (
-    <span className="brand-mark" aria-hidden="true">
-      A
-    </span>
-  );
+  return <img className="brand-mark" src="/argus-icon-128.png" alt="" aria-hidden="true" />;
 }
 
 export function Notice({ tone = 'info', children }: { tone?: 'info' | 'good' | 'warn' | 'bad'; children: ReactNode }) {
