@@ -4,6 +4,5 @@ app
 **/node_modules
 **/dist
 .vercel
-.claude
 coverage
 *.log

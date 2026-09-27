@@ -17,7 +17,6 @@ app/android/.gradle/
 app/android/local.properties
 app/ios/Flutter/Generated.xcconfig
 app/ios/Flutter/flutter_export_environment.sh
-.claude/
 .vercel/
 # Android release signing (never commit)
 app/android/key.properties
