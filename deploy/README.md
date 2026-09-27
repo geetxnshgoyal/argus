@@ -21,7 +21,7 @@ no other services. It runs either on **Vercel** (below) or on **your own server*
    | `ARGUS_MASTER_KEY` | `openssl rand -base64 32`. Keep a copy somewhere safe. |
    | `ARGUS_TRUST_PROXY` | `true` |
    | `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` | from Google (step 4) |
-   | `OIDC_HOSTED_DOMAIN` | `svyasa-sas.edu.in,newtonschool.co` |
+   | `OIDC_HOSTED_DOMAIN` | `svyasa-sas.edu.in,svyasa.edu.in,newtonschool.co` (students on the first; teachers on either of the others). Add `gmail.com` while testing with personal accounts; only accounts created in Argus can sign in, but remove it before the pilot. |
    | `CRON_SECRET` | any random string of 16+ characters |
    | `ARGUS_BOOTSTRAP_ADMIN_EMAILS` | the first administrator's Google address (created at startup if missing) |
    | `OIDC_ALLOWED_EMAILS` | optional: individual addresses outside the two domains that may sign in (e.g. a personal Gmail during the pilot) |
@@ -31,7 +31,7 @@ no other services. It runs either on **Vercel** (below) or on **your own server*
 
 4. **Google sign-in.** In Google Cloud Console, open APIs & Services:
    - OAuth consent screen: user type **External** (students and teachers are on
-     two different Workspace domains), app name "Argus", scopes `openid`,
+     different Workspace domains), app name "Argus", scopes `openid`,
      `email`, `profile`. Publish it (it needs no Google verification for these scopes).
    - Credentials, then Create OAuth client ID, type **Web application**.
      Authorized redirect URI: `https://<your-project>.vercel.app/v1/auth/oidc/callback`.

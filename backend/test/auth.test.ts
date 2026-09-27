@@ -303,6 +303,21 @@ describe.skipIf(!hasDb)('auth (integration)', () => {
       await s.app.close();
     });
 
+    it('gmail.com as an allowed domain: verified Gmail accounts Argus knows can sign in (test accounts)', async () => {
+      await createUser(db, 'teacher', 'tester@gmail.com');
+      const s = await ssoApp(['college.test', 'gmail.com']);
+      const start = await s.app.inject('/v1/auth/oidc/login');
+      expect(new URL(String(start.headers.location)).searchParams.get('hd')).toBeNull(); // don't hide personal accounts
+      expect((await signIn(s.app, { sub: 'g1', email: 'tester@gmail.com' })).callback.headers.location).toBe('/teacher');
+      expect((await signIn(s.app, { sub: 'g2', email: 'tester@gmail.com', email_verified: false })).callback.headers.location).toBe('/login?error=wrong_domain');
+      // A Gmail address that Acad Ops never created is still refused.
+      expect((await signIn(s.app, { sub: 'g3', email: 'stranger@gmail.com' })).callback.headers.location).toBe('/login?error=not_provisioned');
+      // Workspace domains still need their hd claim.
+      await createUser(db, 'teacher', 'x@college.test');
+      expect((await signIn(s.app, { sub: 'g4', email: 'x@college.test' })).callback.headers.location).toBe('/login?error=wrong_domain');
+      await s.app.close();
+    });
+
     it('an individually allowed personal account (no hd claim) can sign in; others cannot', async () => {
       await createUser(db, 'admin', 'owner@gmail.com');
       await createUser(db, 'admin', 'other@gmail.com');

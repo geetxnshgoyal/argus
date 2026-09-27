@@ -5,6 +5,12 @@ import { ApiError } from '../errors.ts';
 import { randomToken } from '../platform/crypto.ts';
 
 /**
+ * Google's consumer domains. Listing one in OIDC_HOSTED_DOMAIN (e.g. gmail.com for test
+ * accounts) lets any verified address there sign in, though only accounts Acad Ops created.
+ */
+export const PERSONAL_GOOGLE_DOMAINS: ReadonlySet<string> = new Set(['gmail.com', 'googlemail.com']);
+
+/**
  * College SSO via OpenID Connect (auth code + PKCE). The college uses Google
  * Workspace, so the defaults target Google; any OIDC provider works.
  *
@@ -98,8 +104,9 @@ export class OidcService {
     if (opts.reauth) params.max_age = '0';
     // Google's hd hint takes one domain, or "*" for "any Workspace account"; the real check is below.
     const domains = this.settings.hostedDomains;
-    // With individually allowed personal accounts, don't hint "Workspace only".
-    if (domains.length > 0 && (this.settings.allowedEmails ?? []).length === 0) params.hd = domains.length === 1 ? (domains[0] as string) : '*';
+    // With personal accounts allowed (individually, or all of gmail.com), don't hint "Workspace only".
+    const personal = (this.settings.allowedEmails ?? []).length > 0 || domains.some((d) => PERSONAL_GOOGLE_DOMAINS.has(d));
+    if (domains.length > 0 && !personal) params.hd = domains.length === 1 ? (domains[0] as string) : '*';
     return oidc.buildAuthorizationUrl(config, params);
   }
 
@@ -138,7 +145,9 @@ export class OidcService {
       // Both the address and Google's hosted-domain claim must name the same allowed domain.
       const emailDomain = email?.split('@')[1] ?? '';
       const listed = Boolean(email && emailVerified && (this.settings.allowedEmails ?? []).includes(email));
-      const domainOk = (domains.includes(emailDomain) && claims.hd === emailDomain) || listed;
+      // Personal Google accounts (gmail.com) have no hd claim; allowed only when that domain is listed.
+      const personal = PERSONAL_GOOGLE_DOMAINS.has(emailDomain) && emailVerified && claims.hd === undefined;
+      const domainOk = (domains.includes(emailDomain) && (claims.hd === emailDomain || personal)) || listed;
       if (!domainOk) {
         throw new ApiError(403, 'wrong_domain', `Please sign in with your college account (${domains.map((d) => `@${d}`).join(' or ')}).`);
       }
