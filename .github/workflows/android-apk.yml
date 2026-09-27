@@ -5,7 +5,8 @@ name: Android APK
 #  - Run manually (Actions tab)        -> pre-release "pilot" (replaced each time),
 #                                         app version <pubspec version>-pilot.<run>
 # Needs repository secrets ANDROID_KEYSTORE_B64, ANDROID_KEYSTORE_PASSWORD,
-# ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD and the variable ARGUS_PUBLIC_URL.
+# ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD and the variable ARGUS_PUBLIC_URL. Phone notifications
+# also need GOOGLE_SERVICES_JSON_B64 (base64 of Firebase's google-services.json).
 on:
   workflow_dispatch:
   push:
@@ -43,6 +44,13 @@ jobs:
       - name: Server address
         run: |
           if [ -z "${{ vars.ARGUS_PUBLIC_URL }}" ]; then echo "::error::Set the repository variable ARGUS_PUBLIC_URL"; exit 1; fi
+      - name: Firebase settings (phone notifications)
+        env:
+          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON_B64" ]; then echo "::warning::No GOOGLE_SERVICES_JSON_B64 secret: this build has no phone notifications"; exit 0; fi
+          echo "$GOOGLE_SERVICES_JSON_B64" | base64 -d > "$RUNNER_TEMP/google-services.json"
+          node ../scripts/set-firebase.mjs "$RUNNER_TEMP/google-services.json"
       - run: flutter pub get
       - name: Version
         id: version

@@ -1,17 +1,18 @@
 // Turns on phone notifications (ADR-0025) from the two files the Firebase console gives you:
 //   node scripts/set-firebase.mjs ~/Downloads/google-services.json ~/Downloads/<project>-firebase-adminsdk-….json
 //
-// 1. google-services.json (not secret): writes the Android app's Firebase settings to
-//    app/android/app/src/main/res/values/firebase.xml, which Firebase reads at start-up.
-// 2. The service account key (secret): stores it on Vercel as FCM_SERVICE_ACCOUNT for Production,
-//    so the server can send notifications. It is never printed.
+// 1. google-services.json: writes the Android app's Firebase settings to
+//    app/android/app/src/main/res/values/firebase.xml (git-ignored), which Firebase reads at start-up.
+//    GitHub builds do the same from the GOOGLE_SERVICES_JSON_B64 repository secret.
+// 2. The service account key (optional, secret): stores it on Vercel as FCM_SERVICE_ACCOUNT for
+//    Production, so the server can send notifications. It is never printed.
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const PACKAGE = 'app.argus.argus';
 const [servicesFile, keyFile] = process.argv.slice(2);
-if (!servicesFile || !keyFile) {
-  console.error('Usage: node scripts/set-firebase.mjs <google-services.json> <firebase-adminsdk key .json>');
+if (!servicesFile) {
+  console.error('Usage: node scripts/set-firebase.mjs <google-services.json> [<firebase-adminsdk key .json>]');
   process.exit(2);
 }
 
@@ -30,8 +31,7 @@ const values = {
   ...(services.project_info.storage_bucket ? { google_storage_bucket: services.project_info.storage_bucket } : {}),
 };
 const xml = `<?xml version="1.0" encoding="utf-8"?>
-<!-- Firebase settings for phone notifications (ADR-0025), from google-services.json by scripts/set-firebase.mjs.
-     Not secret: they identify the app to Firebase; sending needs the server's key. -->
+<!-- Firebase settings for phone notifications (ADR-0025), written by scripts/set-firebase.mjs. Not committed. -->
 <resources>
 ${Object.entries(values)
   .map(([k, v]) => `    <string name="${k}" translatable="false">${esc(v)}</string>`)
@@ -39,6 +39,10 @@ ${Object.entries(values)
 </resources>
 `;
 writeFileSync(new URL('../app/android/app/src/main/res/values/firebase.xml', import.meta.url), xml);
+if (!keyFile) {
+  console.log(`Firebase project ${values.project_id}: Android settings written.`);
+  process.exit(0);
+}
 
 const key = JSON.parse(readFileSync(keyFile, 'utf8'));
 if (key.type !== 'service_account' || !key.private_key || !key.client_email) {
