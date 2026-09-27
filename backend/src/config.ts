@@ -59,6 +59,8 @@ const envSchema = z.object({
   // Android pilot mode (ADR-0021): 'off' accepts phones without Play Integrity (e.g. an APK
   // installed outside Google Play) while still requiring hardware key attestation and our signing key.
   PLAY_INTEGRITY_MODE: z.enum(['required', 'off']).default('required'),
+  // iPhone pilot mode (ADR-0024): accept iPhones that cannot do App Attest (free Apple developer accounts).
+  IOS_ATTESTATION_MODE: z.enum(['required', 'off']).default('required'),
   // First administrators, comma-separated (created at startup if missing; existing users are never changed).
   ARGUS_BOOTSTRAP_ADMIN_EMAILS: z.string().optional(),
   // Vercel Cron sends "Authorization: Bearer <CRON_SECRET>" (ADR-0020).
@@ -120,6 +122,8 @@ export interface Config {
     ios: {
       appId: string | undefined;
       environment: 'production' | 'development';
+      /** 'off' = pilot mode: iPhones without App Attest may register (keys still in the Secure Enclave). */
+      attestMode: 'required' | 'off';
       deviceCheckKeyId: string | undefined;
       deviceCheckKeyPath: string | undefined;
     };
@@ -238,6 +242,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       ios: {
         appId: e.IOS_APP_ID,
         environment: e.IOS_APP_ATTEST_ENV,
+        attestMode: e.IOS_ATTESTATION_MODE,
         deviceCheckKeyId: e.APPLE_DEVICECHECK_KEY_ID,
         deviceCheckKeyPath: e.APPLE_DEVICECHECK_KEY,
       },

@@ -278,7 +278,8 @@ export interface ClassSessionAudiencesTable {
 // ── Devices (M3) ────────────────────────────────────────────────────────────
 
 export type DeviceState = 'active' | 'pending' | 'revoked';
-export type AttestationLevel = 'strongbox' | 'tee' | 'app_attest' | 'dev_bypass';
+/** 'unattested': an iPhone registered in pilot mode without App Attest (ADR-0024). */
+export type AttestationLevel = 'strongbox' | 'tee' | 'app_attest' | 'unattested' | 'dev_bypass';
 
 export interface DevicesTable extends Timestamps {
   id: string;

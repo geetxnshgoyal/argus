@@ -29,5 +29,6 @@ the spec, the ADR wins. Status is `Accepted` unless marked otherwise.
 | [0021](0021-android-pilot-mode.md) | Android pilot mode: key attestation and our signing key, without Play Integrity | Hosting |
 | [0022](0022-phone-registration-survives-sign-out.md) | Sign-out keeps the phone registration; the session key identifies the install | M3 fix |
 | [0023](0023-notices.md) | Notices from Acad Ops; class changes announced automatically to the class | M6+ |
+| [0024](0024-iphone-pilot-mode.md) | iPhone pilot mode: iPhones without App Attest (free Apple account), pilots only | Hosting |
 
 New ADRs: copy the format of any existing one (Context / Decision / Consequences), keep it under a page.

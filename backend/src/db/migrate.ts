@@ -8,6 +8,7 @@ import * as m0005 from './migrations/0005_attendance.ts';
 import * as m0006 from './migrations/0006_support.ts';
 import * as m0007 from './migrations/0007_job_runs.ts';
 import * as m0008 from './migrations/0008_notices.ts';
+import * as m0009 from './migrations/0009_ios_pilot.ts';
 
 /**
  * Migrations are listed statically (not read from disk) so they are bundled
@@ -23,6 +24,7 @@ const MIGRATIONS: Record<string, Migration> = {
   '0006_support': m0006,
   '0007_job_runs': m0007,
   '0008_notices': m0008,
+  '0009_ios_pilot': m0009,
 };
 
 const provider: MigrationProvider = {

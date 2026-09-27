@@ -6703,6 +6703,16 @@ components:
               attestation_object: *a1
               devicecheck_token: *a1
           - type: object
+            description: iPhone that could not do App Attest; accepted only in iPhone pilot mode (IOS_ATTESTATION_MODE=off, ADR-0024)
+            required:
+            - kind
+            properties:
+              kind:
+                const: ios_unattested
+              error:
+                type: string
+                maxLength: 200
+          - type: object
             required:
             - kind
             properties:
@@ -6769,6 +6779,7 @@ components:
           - strongbox
           - tee
           - app_attest
+          - unattested
           - dev_bypass
         bound_at: *a3
         activated_at:

@@ -110,8 +110,15 @@ class DeviceController extends ChangeNotifier {
       }
       evidence = {'kind': 'android', 'attempt_key_chain': key.chain, 'play_integrity_token': ?token};
     } else {
-      final att = await security.appAttestKey(Uint8List.fromList(hash));
-      evidence = {'kind': 'ios', 'app_attest_key_id': att.keyId, 'attestation_object': att.attestation, 'devicecheck_token': ?await security.deviceCheckToken()};
+      try {
+        final att = await security.appAttestKey(Uint8List.fromList(hash));
+        evidence = {'kind': 'ios', 'app_attest_key_id': att.keyId, 'attestation_object': att.attestation, 'devicecheck_token': ?await security.deviceCheckToken()};
+      } on PlatformException catch (e) {
+        // Builds from a free Apple account cannot use App Attest. Say so and let the server
+        // decide: only servers in iPhone pilot mode accept this (ADR-0024).
+        if (e.code != 'attest_unsupported' && e.code != 'attest_failed') rethrow;
+        evidence = {'kind': 'ios_unattested', 'error': e.code};
+      }
     }
     return api.bindDevice({'payload': b64url(payload), 'session_signature': sessionSig, 'attempt_signature': attemptSig, 'evidence': evidence});
   }

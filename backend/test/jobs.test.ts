@@ -58,7 +58,7 @@ describe('Android pilot mode (ADR-0021)', () => {
   const device = { platform: 'android' as const, attestation_level: 'tee', app_attest_public_key: null, app_attest_counter: 0 };
   const svc = (over: Parameters<typeof testConfig>[0]) => new AttestationService(testConfig(over), logSink().logger, { play: null, revokedSerials: async () => new Set() });
   const android = (mode: 'required' | 'off', digests: string[]) => ({ packageName: 'app.argus.argus', signingCertDigests: digests, playIntegrityCredentialsPath: undefined, playIntegrityMode: mode });
-  const ios = { appId: undefined, environment: 'production' as const, deviceCheckKeyId: undefined, deviceCheckKeyPath: undefined };
+  const ios = { appId: undefined, environment: 'production' as const, attestMode: 'required' as const, deviceCheckKeyId: undefined, deviceCheckKeyPath: undefined };
 
   it('production refuses Android registration without Play Integrity unless pilot mode is on', () => {
     expect(svc({ env: 'production', attestation: { android: android('required', ['ab'.repeat(32)]), ios } }).platformReady('android').ok).toBe(false);
@@ -72,5 +72,31 @@ describe('Android pilot mode (ADR-0021)', () => {
   it('pilot-mode scans are not flagged for the missing Play Integrity token', async () => {
     const r = await svc({ env: 'production', attestation: { android: android('off', ['ab'.repeat(32)]), ios } }).verifyRequest(device, Buffer.from('x'), { kind: 'none' });
     expect(r.result).toBe('not_required');
+  });
+});
+
+describe('iPhone pilot mode (ADR-0024)', () => {
+  const android = { packageName: 'app.argus.argus', signingCertDigests: ['ab'.repeat(32)], playIntegrityCredentialsPath: undefined, playIntegrityMode: 'off' as const };
+  const ios = (attestMode: 'required' | 'off') => ({ appId: undefined, environment: 'development' as const, attestMode, deviceCheckKeyId: undefined, deviceCheckKeyPath: undefined });
+  const svc = (attestMode: 'required' | 'off') =>
+    new AttestationService(testConfig({ env: 'production', attestation: { android, ios: ios(attestMode) } }), logSink().logger, { play: null, revokedSerials: async () => new Set() });
+  const bind = (s: AttestationService) =>
+    s.verifyBind({ platform: 'ios', evidence: { kind: 'ios_unattested', error: 'attest_failed' }, payload: Buffer.from('p'), challenge: Buffer.from('c'), attemptKeySpki: Buffer.from('k') });
+  const unattested = { platform: 'ios' as const, attestation_level: 'unattested', app_attest_public_key: null, app_attest_counter: 0 };
+
+  it('accepts an iPhone without App Attest only when pilot mode is on', async () => {
+    expect(await bind(svc('off'))).toEqual({ level: 'unattested' });
+    await expect(bind(svc('required'))).rejects.toThrow(/App Attest/);
+    expect(svc('off').platformReady('ios').ok).toBe(true);
+    expect(svc('required').platformReady('ios').ok).toBe(false); // no IOS_APP_ID
+  });
+
+  it('never accepts unattested evidence from an Android phone', async () => {
+    await expect(svc('off').verifyBind({ platform: 'android', evidence: { kind: 'ios_unattested' }, payload: Buffer.from('p'), challenge: Buffer.from('c'), attemptKeySpki: Buffer.from('k') })).rejects.toThrow();
+  });
+
+  it('scans from a pilot iPhone are not flagged; turning pilot mode off stops them', async () => {
+    expect((await svc('off').verifyRequest(unattested, Buffer.from('x'), { kind: 'missing', error: 'attest_unsupported' })).result).toBe('not_required');
+    await expect(svc('required').verifyRequest(unattested, Buffer.from('x'), { kind: 'missing' })).rejects.toThrow(/register it again/);
   });
 });

@@ -44,6 +44,7 @@ export const bindPayloadSchema = z.object({
 export const bindEvidenceSchema: z.ZodType<BindEvidence> = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('android'), attempt_key_chain: z.array(z.string().max(8192)).min(2).max(10), play_integrity_token: z.string().max(20000).optional() }),
   z.object({ kind: z.literal('ios'), app_attest_key_id: z.string().max(100), attestation_object: z.string().max(20000), devicecheck_token: z.string().max(10000).optional() }),
+  z.object({ kind: z.literal('ios_unattested'), error: z.string().max(200).optional() }),
   z.object({ kind: z.literal('dev_bypass') }),
 ]);
 

@@ -29,7 +29,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     timeZone: 'Asia/Kolkata',
     attestation: {
       android: { packageName: 'app.argus.argus', signingCertDigests: [], playIntegrityCredentialsPath: undefined, playIntegrityMode: 'required' },
-      ios: { appId: undefined, environment: 'production', deviceCheckKeyId: undefined, deviceCheckKeyPath: undefined },
+      ios: { appId: undefined, environment: 'production', attestMode: 'required', deviceCheckKeyId: undefined, deviceCheckKeyPath: undefined },
     },
     devices: { rebindCooldownMs: 48 * 3600_000, maxRebindsPerTerm: 2 },
     serverless: false,

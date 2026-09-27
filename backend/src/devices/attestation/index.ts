@@ -15,6 +15,8 @@ export { AttestationFailed, AttestationUnavailable };
 export type BindEvidence =
   | { kind: 'android'; attempt_key_chain: string[]; play_integrity_token?: string | undefined }
   | { kind: 'ios'; app_attest_key_id: string; attestation_object: string; devicecheck_token?: string | undefined }
+  /** The iPhone could not do App Attest (e.g. a build from a free Apple account). Accepted only in pilot mode. */
+  | { kind: 'ios_unattested'; error?: string | undefined }
   | { kind: 'dev_bypass' };
 
 /** Evidence attached to an attempt or other signed request (protocol §5.4). */
@@ -26,7 +28,7 @@ export type RequestEvidence =
   | { kind: 'none' };
 
 export interface BindResult {
-  level: 'strongbox' | 'tee' | 'app_attest' | 'dev_bypass';
+  level: 'strongbox' | 'tee' | 'app_attest' | 'unattested' | 'dev_bypass';
   appAttest?: { keyId: string; publicKeySpki: string };
   /** iOS: DeviceCheck bit0 was already set (phone bound to an Argus account before). */
   deviceCheckSeen?: boolean;
@@ -110,7 +112,7 @@ export class AttestationService {
       }
       return { ok: true };
     }
-    if (!a.ios.appId) return { ok: false, reason: 'iPhones cannot be registered yet: the server is missing its App Attest settings.' };
+    if (!a.ios.appId && a.ios.attestMode !== 'off') return { ok: false, reason: 'iPhones cannot be registered yet: the server is missing its App Attest settings.' };
     return { ok: true };
   }
 
@@ -119,6 +121,15 @@ export class AttestationService {
     if (evidence.kind === 'dev_bypass') {
       if (!this.bypassAllowed) throw new AttestationFailed('development builds cannot register on this server');
       return { level: 'dev_bypass' };
+    }
+    if (evidence.kind === 'ios_unattested') {
+      // iPhone pilot mode (ADR-0024): the keys are still hardware keys in the Secure Enclave, but
+      // nothing proves they were made by the genuine Argus app on a real iPhone.
+      if (input.platform !== 'ios') throw new AttestationFailed('iOS evidence expected');
+      if (this.config.attestation.ios.attestMode !== 'off') {
+        throw new AttestationFailed(`this iPhone could not verify the Argus app with Apple (App Attest${evidence.error ? `: ${evidence.error}` : ''})`);
+      }
+      return { level: 'unattested' };
     }
     const ready = this.platformReady(input.platform);
     if (!ready.ok) throw new AttestationUnavailable(ready.reason);
@@ -149,11 +160,12 @@ export class AttestationService {
 
     if (evidence.kind !== 'ios') throw new AttestationFailed('iOS evidence expected');
     const ios = this.config.attestation.ios;
+    if (!ios.appId) throw new AttestationUnavailable('iPhones cannot be verified yet: the server is missing IOS_APP_ID.');
     const r = verifyAppAttestation({
       keyId: evidence.app_attest_key_id,
       attestationObject: evidence.attestation_object,
       clientDataHash: sha256(input.payload),
-      policy: { appId: ios.appId as string, environment: ios.environment },
+      policy: { appId: ios.appId, environment: ios.environment },
       root: this.appleRoot,
       now: new Date(this.now()),
     });
@@ -184,6 +196,11 @@ export class AttestationService {
     if (device.attestation_level === 'dev_bypass') {
       if (!this.bypassAllowed) throw new AttestationFailed('this phone was registered with a development build');
       return { result: 'bypass' };
+    }
+    if (device.attestation_level === 'unattested') {
+      // Registered in iPhone pilot mode: there is no App Attest key to check requests against.
+      if (this.config.attestation.ios.attestMode !== 'off') throw new AttestationFailed('this iPhone was registered without App Attest, which this server no longer accepts; register it again');
+      return { result: 'not_required' };
     }
     // Only possible in dev/test: staging and production refuse Android binds without Play Integrity
     // (platformReady), so there is nothing to check a token against. Don't flag every scan for it.

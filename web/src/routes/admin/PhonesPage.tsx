@@ -7,7 +7,7 @@ type Rebind = Schemas['RebindRequest'];
 type Device = Schemas['Device'];
 
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
-const LEVEL: Record<string, string> = { strongbox: 'Secure chip (StrongBox)', tee: 'Secure hardware', app_attest: 'Apple App Attest', dev_bypass: 'Development build' };
+const LEVEL: Record<string, string> = { strongbox: 'Secure chip (StrongBox)', tee: 'Secure hardware', app_attest: 'Apple App Attest', unattested: 'iPhone, not verified (pilot)', dev_bypass: 'Development build' };
 
 /** Phone changes (ADR-0007) and a student's registered phones. */
 export function PhonesPage() {

@@ -2968,6 +2968,10 @@ export interface components {
                 devicecheck_token?: string;
             } | {
                 /** @constant */
+                kind: "ios_unattested";
+                error?: string;
+            } | {
+                /** @constant */
                 kind: "dev_bypass";
             };
         };
@@ -2992,7 +2996,7 @@ export interface components {
             os_version: string;
             app_version: string;
             /** @enum {string} */
-            attestation_level: "strongbox" | "tee" | "app_attest" | "dev_bypass";
+            attestation_level: "strongbox" | "tee" | "app_attest" | "unattested" | "dev_bypass";
             /** Format: date-time */
             bound_at: string;
             /** Format: date-time */
