@@ -176,7 +176,7 @@ export const RESOURCES: ResourceDef[] = [
         .where('id', '=', row.section_id as string)
         .where('term_id', '=', row.term_id as string)
         .executeTakeFirst();
-      if (!ok) throw new ApiError(400, 'invalid_section', 'The section must belong to the selected term.');
+      if (!ok) throw new ApiError(400, 'invalid_section', 'The section must belong to the selected semester.');
     },
   },
   {

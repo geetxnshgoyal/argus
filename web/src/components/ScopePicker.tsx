@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAdminList } from '../lib/refs.ts';
 
-/** Term + section selectors used across timetable pages. */
+/** Semester + section selectors used across timetable pages. */
 export function ScopePicker(props: {
   termId: string;
   sectionId: string;
@@ -13,15 +13,15 @@ export function ScopePicker(props: {
   const sections = useAdminList('sections', { term_id: props.termId || undefined }, Boolean(props.termId));
   const { termId, setTermId } = props;
 
-  // Default to the latest term.
+  // Default to the latest semester.
   useEffect(() => {
     if (!termId && terms.data?.length) setTermId(terms.data[terms.data.length - 1]!.id);
   }, [termId, terms.data, setTermId]);
 
   return (
     <div className="toolbar">
-      <select value={props.termId} onChange={(e) => { props.setTermId(e.target.value); props.setSectionId(''); }} aria-label="Term">
-        <option value="">Choose term…</option>
+      <select value={props.termId} onChange={(e) => { props.setTermId(e.target.value); props.setSectionId(''); }} aria-label="Semester">
+        <option value="">Choose semester…</option>
         {(terms.data ?? []).map((t) => (
           <option key={t.id} value={t.id}>{t.name}</option>
         ))}

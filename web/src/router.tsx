@@ -130,7 +130,7 @@ function AdminShell() {
           <SideNavLink to="/admin/calendar">Holidays</SideNavLink>
           <SideNavLink to="/admin/conflicts">Timetable check</SideNavLink>
           <div className="section-label">Academic</div>
-          <SideNavLink to="/admin/terms">Terms</SideNavLink>
+          <SideNavLink to="/admin/terms">Semesters</SideNavLink>
           <SideNavLink to="/admin/sections">Sections</SideNavLink>
           <SideNavLink to="/admin/groups">Lab batches</SideNavLink>
           <SideNavLink to="/admin/subjects">Subjects</SideNavLink>

@@ -30,12 +30,12 @@ export const RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
   },
   terms: {
     path: 'terms',
-    title: 'Terms',
-    subtitle: 'Semesters. Timetables and sections belong to a term.',
-    singular: 'Term',
+    title: 'Semesters',
+    subtitle: 'Each year’s timetable and batches belong to a semester.',
+    singular: 'Semester',
     columns: [{ key: 'name', label: 'Name' }, { key: 'start_date', label: 'Starts' }, { key: 'end_date', label: 'Ends' }],
     fields: [
-      { key: 'name', label: 'Name', type: 'text', required: true, hint: 'e.g. 2026 Odd Semester' },
+      { key: 'name', label: 'Name', type: 'text', required: true, hint: 'e.g. Semester 3' },
       { key: 'start_date', label: 'Start date', type: 'date', required: true },
       { key: 'end_date', label: 'End date', type: 'date', required: true },
     ],
@@ -43,13 +43,13 @@ export const RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
   sections: {
     path: 'sections',
     title: 'Sections',
-    subtitle: 'A class of students that shares a timetable, e.g. "2nd Year 3rd Sem".',
+    subtitle: 'The students of one year who share a timetable, e.g. "2nd Year".',
     singular: 'Section',
-    columns: [{ key: 'name', label: 'Name' }, { key: 'program_id', label: 'Program' }, { key: 'term_id', label: 'Term' }],
+    columns: [{ key: 'name', label: 'Name' }, { key: 'program_id', label: 'Program' }, { key: 'term_id', label: 'Semester' }],
     fields: [
       { key: 'name', label: 'Name', type: 'text', required: true },
       { key: 'program_id', label: 'Program', type: 'ref', required: true, ref: { path: 'programs', label: byCode } },
-      { key: 'term_id', label: 'Term', type: 'ref', required: true, ref: { path: 'terms', label: byName } },
+      { key: 'term_id', label: 'Semester', type: 'ref', required: true, ref: { path: 'terms', label: byName } },
     ],
   },
   groups: {

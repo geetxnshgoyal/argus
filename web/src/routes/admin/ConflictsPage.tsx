@@ -16,7 +16,7 @@ export function ConflictsPage() {
       <PageHead title="Timetable check" subtitle="Double-bookings, and things that will stop attendance from working (like classes without a teacher)." />
       <ScopePicker {...scope} needSection={false} />
       <ErrorNotice error={r.error} />
-      {!scope.termId && <Notice>Choose a term.</Notice>}
+      {!scope.termId && <Notice>Choose a semester.</Notice>}
       {r.data && (
         <>
           <div className="card">

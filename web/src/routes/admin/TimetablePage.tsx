@@ -28,7 +28,7 @@ export function TimetablePage() {
         </button>
       </div>
       {!scope.termId || !scope.sectionId ? (
-        <Notice>Choose a term and section.</Notice>
+        <Notice>Choose a semester and section.</Notice>
       ) : tab === 'week' ? (
         <WeeklyView termId={scope.termId} sectionId={scope.sectionId} />
       ) : (

@@ -70,7 +70,7 @@ async function runImport(tx: Tx, ctx: AppContext, actorId: string, input: Import
   const { term, section } = await assertTermSection(tx, input.termId, input.sectionId);
   const effectiveFrom = input.effectiveFrom ?? defaultEffectiveFrom(ctx, term.start_date);
   if (effectiveFrom < term.start_date || effectiveFrom > term.end_date) {
-    throw new ApiError(400, 'invalid_date', 'The start date must be within the term.');
+    throw new ApiError(400, 'invalid_date', 'The start date must be within the semester.');
   }
 
   const report: ImportReport = {

@@ -43,7 +43,7 @@ export function CalendarPage() {
       <PageHead title="Holidays & special days" subtitle='Declare holidays and exam days, or make a day follow another weekday (e.g. "Saturday follows Monday").' />
       <ScopePicker {...scope} needSection={false} />
       {!scope.termId ? (
-        <Notice>Choose a term.</Notice>
+        <Notice>Choose a semester.</Notice>
       ) : (
         <>
           <div className="card">
@@ -74,7 +74,7 @@ export function CalendarPage() {
             {save.error && !Object.keys(errs).length ? <ErrorNotice error={save.error} /> : null}
           </div>
           <div className="card">
-            <h3>Special days this term</h3>
+            <h3>Special days this semester</h3>
             <ErrorNotice error={days.error ?? remove.error} />
             {(days.data?.items.length ?? 0) === 0 ? (
               <p className="muted">None yet. Every day follows the weekly timetable.</p>

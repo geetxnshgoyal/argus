@@ -262,7 +262,7 @@ export function registerTimetableRoutes(app: FastifyInstance, ctx: AppContext): 
           }
         }
         const term = await tx.selectFrom('terms').select(['start_date', 'end_date']).where('id', '=', termId).executeTakeFirstOrThrow();
-        if (b.date < term.start_date || b.date > term.end_date) throw new ApiError(400, 'invalid_date', 'The date is outside the term.');
+        if (b.date < term.start_date || b.date > term.end_date) throw new ApiError(400, 'invalid_date', 'The date is outside the semester.');
         // Replace an earlier active change for the same class and date.
         if (b.entry_id) {
           const replaced = await tx.updateTable('timetable_overrides').set({ revoked_at: at(), revoked_by: u.id }).where('entry_id', '=', b.entry_id).where('date', '=', b.date).where('revoked_at', 'is', null).returning('id').execute();
@@ -327,8 +327,8 @@ export function registerTimetableRoutes(app: FastifyInstance, ctx: AppContext): 
     );
     return ctx.db.transaction().execute(async (tx) => {
       const term = await tx.selectFrom('terms').selectAll().where('id', '=', p.term_id).executeTakeFirst();
-      if (!term) throw new ApiError(404, 'not_found', 'Term not found');
-      if (p.date < term.start_date || p.date > term.end_date) throw new ApiError(400, 'invalid_date', 'The date is outside the term.');
+      if (!term) throw new ApiError(404, 'not_found', 'Semester not found');
+      if (p.date < term.start_date || p.date > term.end_date) throw new ApiError(400, 'invalid_date', 'The date is outside the semester.');
       const row = { term_id: p.term_id, date: p.date, kind: b.kind, follows_weekday: b.follows_weekday ?? null, note: b.note ?? '' };
       const saved = await tx
         .insertInto('term_calendar_days')
