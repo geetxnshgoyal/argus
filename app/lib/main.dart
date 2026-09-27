@@ -11,6 +11,9 @@ import 'src/screens/policy_screen.dart';
 import 'src/theme.dart';
 
 void main() {
+  // Must come first: restoring the sign-in reads secure storage and the phone keys through
+  // platform channels, which fail before the binding exists (every launch then looked "offline").
+  WidgetsFlutterBinding.ensureInitialized();
   final security = SecurityBridge();
   final api = ApiClient(baseUrl: defaultApiBase(), security: security, store: SecureTokenStore());
   runApp(ArgusApp(auth: AuthController(api)..start(), security: security));
