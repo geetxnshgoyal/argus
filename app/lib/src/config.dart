@@ -13,7 +13,7 @@ String defaultApiBase() {
 }
 
 /// App version sent with registrations and attempts.
-const appVersion = String.fromEnvironment('ARGUS_APP_VERSION', defaultValue: '1.1.0');
+const appVersion = String.fromEnvironment('ARGUS_APP_VERSION', defaultValue: '0.0.1');
 
 /// Google Cloud project number for Play Integrity (Android). 0 = not configured
 /// (development builds; the server's dev attestation bypass is used instead).

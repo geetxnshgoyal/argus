@@ -1,8 +1,9 @@
 name: Android APK
 
 # Builds the release APK for the hosted server and attaches it to a GitHub Release.
-#  - Push a tag like v1.2.0            -> release "v1.2.0"
-#  - Run manually (Actions tab)        -> pre-release "pilot" (replaced each time)
+#  - Push a tag like v0.0.2            -> release "v0.0.2" (app version 0.0.2)
+#  - Run manually (Actions tab)        -> pre-release "pilot" (replaced each time),
+#                                         app version <pubspec version>-pilot.<run>
 # Needs repository secrets ANDROID_KEYSTORE_B64, ANDROID_KEYSTORE_PASSWORD,
 # ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD and the variable ARGUS_PUBLIC_URL.
 on:
@@ -43,7 +44,14 @@ jobs:
         run: |
           if [ -z "${{ vars.ARGUS_PUBLIC_URL }}" ]; then echo "::error::Set the repository variable ARGUS_PUBLIC_URL"; exit 1; fi
       - run: flutter pub get
-      - run: flutter build apk --release --dart-define=ARGUS_API=${{ vars.ARGUS_PUBLIC_URL }} --dart-define=ARGUS_APP_VERSION=${{ github.ref_type == 'tag' && github.ref_name || format('pilot-{0}', github.run_number) }} --build-number=${{ github.run_number }}
+      - name: Version
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then V="${{ github.ref_name }}"; V="${V#v}"
+          else V="$(sed -n 's/^version: *\([^+]*\).*/\1/p' pubspec.yaml)-pilot.${{ github.run_number }}"; fi
+          echo "App version $V"
+          echo "name=$V" >> "$GITHUB_OUTPUT"
+      - run: flutter build apk --release --dart-define=ARGUS_API=${{ vars.ARGUS_PUBLIC_URL }} --dart-define=ARGUS_APP_VERSION=${{ steps.version.outputs.name }} --build-name=${{ steps.version.outputs.name }} --build-number=${{ github.run_number }}
       - name: Name the APK and show its signing certificate
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk argus.apk
