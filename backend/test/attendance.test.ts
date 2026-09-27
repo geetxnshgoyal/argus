@@ -361,4 +361,28 @@ describe.skipIf(!hasDb)('attendance (integration, spec §16 adversarial suite)',
     // Idempotent.
     expect(await runRetention(t.ctx)).toEqual({ attemptSignalsCleared: 0, flagDetailsCleared: 0, signInRowsDeleted: 0 });
   });
+  it('a one-off class that already has attendance cannot be removed (and says why)', async () => {
+    const ops = await loginAs(t.app, 'ops@college.test');
+    const add = await t.app.inject({
+      method: 'POST',
+      url: '/v1/admin/timetable/overrides',
+      headers: ops.headers,
+      payload: { date: '2026-09-21', action: 'add', new_offering_id: c.off.ap.id, new_start: '12:00', new_end: '13:00', new_room_id: c.room.concept.id, new_teacher_id: c.tA.id, reason: 'Extra class', notify: false },
+    });
+    expect(add.statusCode).toBe(201);
+    const extra = await db.selectFrom('class_sessions').select('id').where('source_override_id', '=', add.json().id).executeTakeFirstOrThrow();
+    t.clock.now = Date.UTC(2026, 8, 21, 6, 30, 0); // 12:00 India (past the 2 h idle sign-out: sign in again)
+    teacher = await loginAs(t.app, c.tA.email);
+    const ops2 = await loginAs(t.app, 'ops@college.test');
+    expect((await post(`/v1/teacher/class-sessions/${extra.id}/attendance/start`)).statusCode).toBe(201);
+
+    const del = await t.app.inject({ method: 'DELETE', url: `/v1/admin/timetable/overrides/${add.json().id}`, headers: ops2.headers });
+    expect(del.statusCode).toBe(409);
+    expect(del.json()).toMatchObject({ code: 'session_has_attendance' });
+    expect(del.json().message).toMatch(/can’t be removed/);
+    // Nothing changed: the change is still active and the class still there, marked as having attendance.
+    expect((await db.selectFrom('timetable_overrides').select('revoked_at').where('id', '=', add.json().id).executeTakeFirstOrThrow()).revoked_at).toBeNull();
+    const listed = await t.app.inject({ url: `/v1/admin/class-sessions?section_id=${c.section.id}&from=2026-09-21&to=2026-09-21`, headers: ops2.headers });
+    expect(listed.json().items.find((x: { id: string }) => x.id === extra.id)).toMatchObject({ has_attendance: true, changed: true });
+  });
 });

@@ -306,6 +306,24 @@ export function registerTimetableRoutes(app: FastifyInstance, ctx: AppContext): 
       const ov = await tx.updateTable('timetable_overrides').set({ revoked_at: at(), revoked_by: u.id }).where('id', '=', id).where('revoked_at', 'is', null).returningAll().executeTakeFirst();
       if (!ov) throw new ApiError(404, 'not_found', 'Not found');
       if (ov.date < todayIn(ctx)) throw new ApiError(400, 'past_date', 'Past changes cannot be undone.');
+      // The class this change produced already has attendance: materialization would keep it
+      // anyway (ADR-0019), so say so instead of reporting a removal that didn't happen.
+      const locked = await tx
+        .selectFrom('class_sessions')
+        .select('id')
+        .where('attendance_locked', '=', true)
+        .where((eb) => (ov.entry_id ? eb.and([eb('source_entry_id', '=', ov.entry_id), eb('date', '=', ov.date)]) : eb('source_override_id', '=', ov.id)))
+        .executeTakeFirst();
+      if (locked) {
+        throw new ApiError(
+          409,
+          'session_has_attendance',
+          ov.action === 'add'
+            ? 'This class already has attendance, so it can’t be removed. The attendance stays on record; fix individual students with attendance corrections.'
+            : 'This class already has attendance, so this change can’t be undone. The attendance stays on record; fix individual students with attendance corrections.',
+          { class_session_id: locked.id },
+        );
+      }
       await rematerialize(tx, ctx, { termId: ov.term_id });
       const n = await overrideUndone(tx, ctx, id, { by: u.id, replaced: false });
       await appendAudit(tx, { actorId: u.id, action: 'timetable_override.revoke', entityType: 'timetable_override', entityId: id, before: ov, ip: req.ip }, at());

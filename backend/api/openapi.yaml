@@ -6579,6 +6579,7 @@ components:
       - ends_at
       - status
       - changed
+      - has_attendance
       - subject
       - section
       - batch
@@ -6614,6 +6615,9 @@ components:
         changed:
           type: boolean
           description: Changed for this date by Acad Ops
+        has_attendance:
+          type: boolean
+          description: Attendance was taken, so the timetable can no longer remove or move this class
         subject:
           type: object
           required:

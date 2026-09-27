@@ -2932,6 +2932,8 @@ export interface components {
             status: "scheduled" | "in_progress" | "completed" | "cancelled";
             /** @description Changed for this date by Acad Ops */
             changed: boolean;
+            /** @description Attendance was taken, so the timetable can no longer remove or move this class */
+            has_attendance: boolean;
             subject: {
                 code: string;
                 name: string;

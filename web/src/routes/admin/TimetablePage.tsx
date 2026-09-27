@@ -238,6 +238,7 @@ function DatesView({ termId, sectionId }: { termId: string; sectionId: string })
                   ...(s.status === 'cancelled' ? [{ text: 'Cancelled', tone: 'badge-bad' }] : []),
                   ...(s.changed && s.status !== 'cancelled' ? [s.entry_id ? { text: 'Changed for this day', tone: 'badge-warn' } : { text: 'Extra class' }] : []),
                   ...(!s.teacher && s.status !== 'cancelled' ? [{ text: 'No teacher', tone: 'badge-warn' }] : []),
+                  ...(s.has_attendance ? [{ text: 'Attendance taken', tone: 'badge-good' }] : []),
                 ]}
                 onClick={() => setChanging(s)}
               />
@@ -315,7 +316,7 @@ function OverrideDialog(props: { termId: string; sectionId: string; session: Ses
       onClose={props.onClose}
       footer={
         <>
-          {s?.override_id && (
+          {s?.override_id && !s.has_attendance && (
             <button
               className="btn btn-danger"
               style={{ marginRight: 'auto' }}
@@ -401,7 +402,13 @@ function OverrideDialog(props: { termId: string; sectionId: string; session: Ses
             <input value={v.notice} onChange={set('notice')} maxLength={300} placeholder="e.g. Bring your laptops" />
           </Field>
         )}
-        {s && !entry && <Notice>This is a one-off class. Use "Remove this class" to take it off the timetable.</Notice>}
+        {s?.has_attendance ? (
+          <Notice tone="warn">
+            Attendance was already taken for this class, so it stays on the timetable and can’t be removed. To fix a student’s attendance, use attendance corrections.
+          </Notice>
+        ) : (
+          s && !entry && <Notice>This is a one-off class. Use "Remove this class" to take it off the timetable.</Notice>
+        )}
       </div>
     </Dialog>
   );
