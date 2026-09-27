@@ -66,3 +66,8 @@ export async function fileToBase64(file: File): Promise<string> {
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(bin);
 }
+
+/** A person's name, plus their email when another person in `all` has the same name. */
+export function personLabel(p: Row, all: Row[]): string {
+  return all.some((o) => o.id !== p.id && o.name === p.name) ? `${p.name} (${p.email})` : String(p.name);
+}

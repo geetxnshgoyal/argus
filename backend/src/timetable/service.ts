@@ -174,15 +174,36 @@ export async function rematerialize(tx: Tx, ctx: AppContext, scope: { termId?: s
     await sql`release savepoint argus_mat`.execute(tx);
     return r;
   } catch (err) {
-    const e = err as { code?: string; constraint?: string };
+    const e = err as { code?: string; constraint?: string; detail?: string };
     if (e.code === '23P01') {
       await sql`rollback to savepoint argus_mat`.execute(tx);
-      throw new ApiError(409, 'double_booking', CONSTRAINT_MESSAGES[e.constraint ?? ''] ?? 'This would double-book a room, teacher or batch.', {
+      const base = CONSTRAINT_MESSAGES[e.constraint ?? ''] ?? 'This would double-book a room, teacher or batch.';
+      const other = await describeExistingClash(tx, e.detail, ctx.config.timeZone).catch(() => null);
+      throw new ApiError(409, 'double_booking', other ? `${base.slice(0, -1)}: it clashes with ${other}.` : base, {
         constraint: e.constraint,
       });
     }
     throw err;
   }
+}
+
+/**
+ * Names the class already holding the slot, from Postgres's exclusion-violation detail:
+ * `... conflicts with existing key (room_id, time_range)=(<uuid>, ["…","…")).`
+ * Returns null when that class was itself part of the rolled-back change.
+ */
+async function describeExistingClash(db: DbOrTx, detail: string | undefined, timeZone: string): Promise<string | null> {
+  const m = /existing key \((room_id|teacher_id|audience_id), time_range\)=\(([0-9a-f-]{36}), (.+)\)\.?$/.exec(detail ?? '');
+  if (!m) return null;
+  const [, column, id, range] = m as unknown as [string, string, string, string];
+  const q = sessionsView(db, timeZone).where(sql<boolean>`cs.time_range = ${range}::tstzrange`).where('cs.status', '!=', 'cancelled');
+  const row = await (column === 'audience_id'
+    ? q.where('cs.id', 'in', db.selectFrom('class_session_audiences').select('class_session_id').where('audience_id', '=', id))
+    : q.where(column === 'room_id' ? 'cs.room_id' : 'cs.teacher_id', '=', id)
+  ).executeTakeFirst();
+  if (!row) return null;
+  const day = new Date(`${row.date}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  return `${row.subject_code} (${row.section_name}${row.group_name ? `, ${row.group_name}` : ''}) on ${day}, ${row.start}–${row.end}`;
 }
 
 /** Nightly job: materialize every active term, one section at a time so one problem doesn't block the rest. */

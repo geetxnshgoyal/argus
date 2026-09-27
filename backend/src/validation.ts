@@ -8,9 +8,18 @@ export function parse<T>(schema: ZodType<T>, input: unknown): T {
   const fields: Record<string, string> = {};
   for (const issue of r.error.issues) {
     const key = issue.path.join('.') || '(body)';
-    fields[key] ??= issue.message;
+    fields[key] ??= friendlyMessage(issue);
   }
   throw new ApiError(400, 'validation_failed', 'Some fields are missing or invalid.', { fields });
+}
+
+/** Zod's default messages are for developers ("expected string, received undefined"); forms show these. */
+function friendlyMessage(issue: z.core.$ZodIssue): string {
+  if (issue.code === 'invalid_type' && /received (undefined|null)/.test(issue.message)) return 'Required';
+  if (issue.code === 'too_small' && issue.origin === 'string' && Number(issue.minimum) <= 1) return 'Required';
+  if (issue.code === 'invalid_format' && issue.format === 'uuid') return 'Choose an option';
+  if (issue.code === 'invalid_type') return `Must be a ${issue.expected === 'number' || issue.expected === 'int' ? 'number' : 'valid value'}`;
+  return issue.message;
 }
 
 export const uuid = z.string().uuid();

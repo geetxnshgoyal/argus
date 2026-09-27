@@ -335,7 +335,7 @@ class _ClassTile extends StatelessWidget {
               children: [
                 Text(c.subjectName == c.subjectCode ? c.subjectCode : '${c.subjectCode} · ${c.subjectName}', style: t.titleSmall?.merge(muted)),
                 Text([c.room ?? 'Room TBA', if (c.batch != null) c.batch!, if (c.teacher != null) c.teacher!].join(' · '), style: t.bodySmall?.copyWith(color: ArgusColors.fg2)),
-                if (c.cancelled) const _Badge('Cancelled', ArgusColors.bad) else if (c.changed) const _Badge('Changed today', ArgusColors.warn),
+                if (c.cancelled) const _Badge('Cancelled', ArgusColors.bad) else if (c.changed) const _Badge('Changed', ArgusColors.warn),
               ],
             ),
           ),

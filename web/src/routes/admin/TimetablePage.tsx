@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ScopePicker } from '../../components/ScopePicker.tsx';
 import { Dialog, ErrorNotice, Field, Notice, PageHead } from '../../components/ui.tsx';
 import { apiGet, apiSend, ApiRequestError, qs, type Schemas } from '../../lib/api.ts';
-import { addDaysIso, DAYS, formatDate, isoToday, mondayOf, useAdminList, useScope, type Row } from '../../lib/refs.ts';
+import { addDaysIso, DAYS, formatDate, isoToday, mondayOf, personLabel, useAdminList, useScope, type Row } from '../../lib/refs.ts';
 
 type Entry = Schemas['TimetableEntry'];
 type Session = Schemas['ClassSession'];
@@ -63,8 +63,15 @@ function WeeklyView({ termId, sectionId }: { termId: string; sectionId: string }
     queryKey: ['entries', termId, sectionId],
     queryFn: () => apiGet<{ items: Entry[] }>(`/v1/admin/timetable/entries${qs({ term_id: termId, section_id: sectionId })}`),
   });
+  const assignments = useAdminList('teaching-assignments');
   const items = entries.data?.items ?? [];
   const days = [1, 2, 3, 4, 5, 6].filter((d) => d <= 5 || items.some((e) => e.weekday === d));
+  /** Same rule as the server (timetable/teachers.ts): the batch's teacher, else the section-wide one. */
+  const assignedTeacher = (e: Entry): string | null => {
+    const forOffering = (assignments.data ?? []).filter((a) => a.offering_id === e.offering_id);
+    const pick = (g: string | null) => forOffering.find((a) => a.group_id === g && a.role === 'primary') ?? forOffering.find((a) => a.group_id === g);
+    return ((e.group_id ? pick(e.group_id) : undefined) ?? pick(null))?.teacher_name ?? null;
+  };
   return (
     <>
       <div className="btn-row" style={{ marginBottom: '1rem' }}>
@@ -79,16 +86,16 @@ function WeeklyView({ termId, sectionId }: { termId: string; sectionId: string }
               <ClassCard
                 key={e.id}
                 title={`${e.start_time}–${e.end_time} · ${e.subject_code}`}
-                lines={[e.group_name ?? 'Whole section', e.room ?? 'No room', e.teacher_name ?? null]}
-                badges={e.teacher_name ? [] : [{ text: 'Teacher from assignments' }]}
+                lines={[e.group_name ?? 'Whole section', e.room ?? 'No room', e.teacher_name ?? assignedTeacher(e) ?? 'No teacher']}
+                badges={e.teacher_name || assignedTeacher(e) || assignments.isPending ? [] : [{ text: 'No teacher', tone: 'badge-warn' }]}
                 onClick={() => setEditing(e)}
               />
             ))}
-            {!items.some((e) => e.weekday === d) && <p className="muted small">No classes</p>}
+            {!items.some((e) => e.weekday === d) && <p className="muted small">{entries.isPending ? 'Loading…' : 'No classes'}</p>}
           </section>
         ))}
       </div>
-      {editing && <EntryDialog termId={termId} sectionId={sectionId} entry={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
+      {editing && <EntryDialog key={editing === 'new' ? 'new' : editing.id} termId={termId} sectionId={sectionId} entry={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
     </>
   );
 }
@@ -186,7 +193,7 @@ function EntryDialog(props: { termId: string; sectionId: string; entry: Entry | 
           <Field label="Teacher" hint="Leave empty to use Teaching assignments">
             <select value={v.teacher_id} onChange={set('teacher_id')}>
               <option value="">From teaching assignments</option>
-              {(teachers.data ?? []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              {(teachers.data ?? []).map((t) => <option key={t.id} value={t.id}>{personLabel(t, teachers.data ?? [])}</option>)}
             </select>
           </Field>
         </div>
@@ -229,17 +236,17 @@ function DatesView({ termId, sectionId }: { termId: string; sectionId: string })
                 lines={[s.batch ?? 'Whole section', s.room ?? 'No room', s.teacher ?? 'No teacher']}
                 badges={[
                   ...(s.status === 'cancelled' ? [{ text: 'Cancelled', tone: 'badge-bad' }] : []),
-                  ...(s.changed && s.status !== 'cancelled' ? [{ text: 'Changed today', tone: 'badge-warn' }] : []),
+                  ...(s.changed && s.status !== 'cancelled' ? [s.entry_id ? { text: 'Changed for this day', tone: 'badge-warn' } : { text: 'Extra class' }] : []),
                   ...(!s.teacher && s.status !== 'cancelled' ? [{ text: 'No teacher', tone: 'badge-warn' }] : []),
                 ]}
                 onClick={() => setChanging(s)}
               />
             ))}
-            {!items.some((s) => s.date === d) && <p className="muted small">No classes</p>}
+            {!items.some((s) => s.date === d) && <p className="muted small">{sessions.isPending ? 'Loading…' : 'No classes'}</p>}
           </section>
         ))}
       </div>
-      {changing && <OverrideDialog termId={termId} sectionId={sectionId} session={changing === 'add' ? null : changing} defaultDate={monday < isoToday() ? isoToday() : monday} onClose={() => setChanging(null)} />}
+      {changing && <OverrideDialog key={changing === 'add' ? 'add' : changing.id} termId={termId} sectionId={sectionId} session={changing === 'add' ? null : changing} defaultDate={monday < isoToday() ? isoToday() : monday} onClose={() => setChanging(null)} />}
     </>
   );
 }
@@ -378,7 +385,7 @@ function OverrideDialog(props: { termId: string; sectionId: string; session: Ses
             <Field label="Teacher">
               <select value={v.teacher_id} onChange={set('teacher_id')}>
                 <option value="">{s ? 'Same teacher' : 'From teaching assignments'}</option>
-                {(teachers.data ?? []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                {(teachers.data ?? []).map((t) => <option key={t.id} value={t.id}>{personLabel(t, teachers.data ?? [])}</option>)}
               </select>
             </Field>
           </div>

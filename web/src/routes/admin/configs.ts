@@ -127,7 +127,7 @@ export const RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
     fields: [
       { key: 'offering_id', label: 'Subject', type: 'ref', required: true, createOnly: true, ref: { path: 'offerings', label: (r) => `${r.subject_code} · ${r.subject_name} (${r.section_name})` } },
       { key: 'group_id', label: 'Batch', type: 'ref', nullable: true, hint: 'Leave empty for the whole section', ref: { path: 'groups', label: byName } },
-      { key: 'teacher_id', label: 'Teacher', type: 'ref', required: true, createOnly: true, ref: { path: 'users', label: byName, filter: { role: 'teacher', status: 'active' } } },
+      { key: 'teacher_id', label: 'Teacher', type: 'ref', required: true, createOnly: true, ref: { path: 'users', label: (r) => `${r.name} (${r.email})`, filter: { role: 'teacher', status: 'active' } } },
       { key: 'role', label: 'Role', type: 'select', options: [{ value: 'primary', label: 'Main teacher' }, { value: 'assistant', label: 'Assistant' }] },
     ],
   },
