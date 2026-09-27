@@ -148,6 +148,38 @@ export function registerUserRoutes(app: FastifyInstance, ctx: AppContext): void 
     }
   });
 
+  /**
+   * Deletes an account entered by mistake (wrong import, test account). Anyone with attendance,
+   * phone registrations or other history can't be deleted: disable them instead, so the records
+   * stay intact and they can no longer sign in.
+   */
+  app.delete('/v1/admin/users/:id', { preHandler: guard }, async (req, reply) => {
+    const actor = currentUser(req);
+    const { id } = parse(idParams, req.params);
+    const before = await loadUser(ctx.db, id);
+    if (!before) throw new ApiError(404, 'not_found', 'Not found');
+    if (actor.id === id) throw new ApiError(400, 'cannot_delete_self', 'You cannot delete your own account.');
+    if (STAFF_ROLES.includes(before.role) && actor.role !== 'admin') throw new ApiError(403, 'forbidden', 'Only an administrator can delete staff accounts.');
+    try {
+      await ctx.db.transaction().execute(async (tx) => {
+        // What an unused account can own; everything else (attendance, phones, decisions) blocks the delete.
+        await tx.deleteFrom('enrollments').where('student_id', '=', id).execute();
+        await tx.deleteFrom('teaching_assignments').where('teacher_id', '=', id).execute();
+        await tx.deleteFrom('notice_recipients').where('user_id', '=', id).execute();
+        await tx.deleteFrom('policy_acceptances').where('user_id', '=', id).execute();
+        await tx.deleteFrom('users').where('id', '=', id).execute();
+        await appendAudit(tx, { actorId: actor.id, action: 'user.delete', entityType: 'user', entityId: id, before, ip: req.ip }, new Date(ctx.now()));
+      });
+    } catch (err) {
+      if ((err as { code?: string }).code === '23503') {
+        throw new ApiError(409, 'has_history', `${before.name} has attendance, timetable or other records, so the account can't be deleted. Disable it instead: the records stay and they can no longer sign in.`);
+      }
+      throw err;
+    }
+    await revokeAllUserSessions(ctx.db, id).catch(() => undefined);
+    return reply.status(204).send();
+  });
+
   app.patch('/v1/admin/users/:id', { preHandler: guard }, async (req) => {
     const actor = currentUser(req);
     const { id } = parse(idParams, req.params);

@@ -152,4 +152,17 @@ class SecurityBridge {
 
   /// iOS: DeviceCheck token (null if unsupported).
   Future<String?> deviceCheckToken() async => Platform.isIOS ? _channel.invokeMethod<String>('deviceCheckToken') : null;
+
+  // ── Phone notifications (ADR-0025, Android only: iPhone push needs a paid Apple account) ──
+
+  /// Asks for Android 13+'s notification permission (once; later calls just report it).
+  Future<bool> requestNotificationPermission() async =>
+      Platform.isAndroid ? (await _channel.invokeMethod<bool>('requestNotificationPermission') ?? false) : false;
+
+  /// This install's FCM address, or null when the build has no Firebase settings.
+  Future<String?> pushToken() async => Platform.isAndroid ? _channel.invokeMethod<String>('pushToken') : null;
+
+  Future<void> deletePushToken() async {
+    if (Platform.isAndroid) await _channel.invokeMethod<void>('deletePushToken');
+  }
 }

@@ -6,6 +6,7 @@ import type { Config } from './config.ts';
 import type { Db } from './db/index.ts';
 import { AttestationService, type AttestationDeps } from './devices/attestation/index.ts';
 import { RiskSettingsStore } from './risk/settings.ts';
+import { FcmSender, type PushSender } from './notify/push.ts';
 
 /** Everything route handlers need, built once at startup (and by tests with fakes). */
 export interface AppContext {
@@ -27,6 +28,10 @@ export interface AppContext {
   events: LiveEvents;
   /** Cached risk settings (ADR-0014). */
   risk: RiskSettingsStore;
+  /** Phone notifications; null when FCM is not configured (ADR-0025). */
+  push: PushSender | null;
+  /** Work that should finish after the response (on Vercel: waitUntil). Never throws. */
+  background: (work: Promise<unknown>) => void;
 }
 
 export function createContext(opts: {
@@ -37,6 +42,8 @@ export function createContext(opts: {
   now?: () => number;
   oidc?: OidcService | null;
   attestation?: AttestationDeps;
+  push?: PushSender | null;
+  background?: (work: Promise<unknown>) => void;
 }): AppContext {
   const { config, db } = opts;
   const oidc =
@@ -69,5 +76,11 @@ export function createContext(opts: {
     keys: new KeyCache(),
     events: new LiveEvents(),
     risk: new RiskSettingsStore(),
+    push: opts.push !== undefined ? opts.push : config.fcm ? new FcmSender(config.fcm, opts.logger) : null,
+    background:
+      opts.background ??
+      ((work) => {
+        void work.catch((err: unknown) => opts.logger.error({ err }, 'background work failed'));
+      }),
   };
 }

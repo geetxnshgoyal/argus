@@ -218,7 +218,7 @@ export function sessionsView(db: DbOrTx, timeZone: string) {
     .leftJoin('rooms as r', 'r.id', 'cs.room_id')
     .leftJoin('users as t', 't.id', 'cs.teacher_id')
     .select([
-      'cs.id', 'cs.date', 'cs.status', 'cs.offering_id', 'cs.group_id', 'cs.room_id', 'cs.teacher_id', 'cs.term_id', 'cs.source_entry_id',
+      'cs.id', 'cs.date', 'cs.status', 'cs.offering_id', 'cs.group_id', 'cs.room_id', 'cs.teacher_id', 'cs.term_id', 'cs.source_entry_id', 'cs.source_override_id',
       'o.section_id', 's.code as subject_code', 's.name as subject_name', 's.kind as subject_kind', 'sec.name as section_name',
       'g.name as group_name', 'r.code as room', 't.name as teacher_name',
       sql<string>`to_char(lower(cs.time_range) at time zone ${timeZone}, 'HH24:MI')`.as('start'),
@@ -244,6 +244,7 @@ export function presentSession(s: SessionRow) {
     status: s.status,
     changed: s.changed,
     entry_id: s.source_entry_id,
+    override_id: s.source_override_id,
     subject: { code: s.subject_code, name: s.subject_name, kind: s.subject_kind },
     section: { id: s.section_id, name: s.section_name },
     batch: s.group_name,

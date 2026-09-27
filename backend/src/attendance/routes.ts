@@ -1,8 +1,10 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { sql } from 'kysely';
 import { z } from 'zod';
 import { currentUser, needAuth } from '../auth/guard.ts';
 import type { AppContext } from '../context.ts';
 import { ApiError } from '../errors.ts';
+import { pushToUsers } from '../notify/push.ts';
 import { todayIn } from '../timetable/service.ts';
 import { idParams, parse, uuid } from '../validation.ts';
 import { submitAttempt } from './attempts.ts';
@@ -44,7 +46,9 @@ export function registerAttendanceRoutes(app: FastifyInstance, ctx: AppContext):
   app.post('/v1/teacher/class-sessions/:id/attendance/start', teacher, async (req, reply) => {
     const { id } = parse(idParams, req.params);
     reply.status(201);
-    return startAttendance(ctx, id, currentUser(req).id, req.ip);
+    const started = await startAttendance(ctx, id, currentUser(req).id, req.ip);
+    ctx.background(notifyAttendanceOpen(ctx, id));
+    return started;
   });
 
   /** The teacher's attendance sessions for a day (default today), to show status on class cards. */
@@ -175,4 +179,28 @@ export function registerAttendanceRoutes(app: FastifyInstance, ctx: AppContext):
 
   app.get('/v1/me/attendance', student, async (req) => studentHistory(ctx, currentUser(req).id));
 
+}
+
+/** "Attendance is open": a phone notification to the students expected in this class (ADR-0025). */
+async function notifyAttendanceOpen(ctx: AppContext, classSessionId: string): Promise<void> {
+  if (!ctx.push) return;
+  const cls = await ctx.db
+    .selectFrom('class_sessions as cs')
+    .innerJoin('course_offerings as o', 'o.id', 'cs.offering_id')
+    .innerJoin('subjects as s', 's.id', 'o.subject_id')
+    .leftJoin('rooms as r', 'r.id', 'cs.room_id')
+    .select(['s.code', 'r.code as room'])
+    .where('cs.id', '=', classSessionId)
+    .executeTakeFirst();
+  if (!cls) return;
+  const students = await sql<{ id: string }>`
+    select e.student_id as id from class_sessions cs
+    join enrollments e on e.offering_id = cs.offering_id
+    join users u on u.id = e.student_id and u.status = 'active'
+    where cs.id = ${classSessionId} and (cs.group_id is null or e.group_id = cs.group_id)`.execute(ctx.db);
+  await pushToUsers(
+    ctx,
+    students.rows.map((r) => r.id),
+    { title: `Attendance is open · ${cls.code}`, body: `Scan the code${cls.room ? ` in ${cls.room}` : ''} with the Argus app.`, data: { kind: 'attendance', class_session_id: classSessionId } },
+  );
 }

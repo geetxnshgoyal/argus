@@ -24,6 +24,12 @@ describe.skipIf(!hasDb)('admin (integration)', () => {
   const post = (url: string, payload: unknown, headers = ops.headers) => t.app.inject({ method: 'POST', url, headers, payload: payload as object });
   const patch = (url: string, payload: unknown, headers = ops.headers) => t.app.inject({ method: 'PATCH', url, headers, payload: payload as object });
 
+  async function orgFixture2() {
+    const term = (await t.app.inject({ url: '/v1/admin/terms?limit=10', headers: ops.headers })).json().items[0];
+    const sec = (await t.app.inject({ url: '/v1/admin/sections?limit=10', headers: ops.headers })).json().items[0];
+    return { term, sec };
+  }
+
   async function orgFixture() {
     const dept = (await post('/v1/admin/departments', { code: 'cse', name: 'Computer Science' })).json();
     const prog = (await post('/v1/admin/programs', { code: 'BTECH-CSE', name: 'B.Tech CSE', department_id: dept.id })).json();
@@ -122,6 +128,33 @@ describe.skipIf(!hasDb)('admin (integration)', () => {
       const late = await post('/v1/admin/users', { role: 'verifier', name: 'W', email: 'w@college.test' }, admin.headers);
       expect(late.statusCode).toBe(401);
       expect(late.json().code).toBe('reauth_required');
+    });
+
+    it('deletes accounts made by mistake; anyone with history must be disabled instead', async () => {
+      const { dept } = await orgFixture();
+      const del = (id: string, headers = ops.headers) => t.app.inject({ method: 'DELETE', url: `/v1/admin/users/${id}`, headers });
+      const wrong = (await post('/v1/admin/users', { role: 'teacher', name: 'Wrong Import', email: 'wrong@college.test', teacher: { faculty_id: 'F404', department_id: dept.id } })).json();
+      expect((await del(wrong.id)).statusCode).toBe(204);
+      expect(await db.selectFrom('users').select('id').where('id', '=', wrong.id).executeTakeFirst()).toBeUndefined();
+      const audit = await db.selectFrom('audit_log').select(['action', 'actor_id']).where('entity_id', '=', wrong.id).orderBy('id').execute();
+      expect(audit.map((a) => a.action)).toEqual(['user.create', 'user.delete']);
+
+      // A teacher on the timetable has records that must stay: delete is refused, disable works.
+      const { term, sec } = await orgFixture2();
+      const subj = (await post('/v1/admin/subjects', { code: 'ADA', name: 'ADA', kind: 'lecture' })).json();
+      const off = (await post('/v1/admin/offerings', { term_id: term.id, subject_id: subj.id, section_id: sec.id })).json();
+      const used = (await post('/v1/admin/users', { role: 'teacher', name: 'Used Teacher', email: 'used@college.test', teacher: { faculty_id: 'F500', department_id: dept.id } })).json();
+      expect((await post('/v1/admin/timetable/entries', { offering_id: off.id, weekday: 1, start_time: '09:30', end_time: '10:30', teacher_id: used.id })).statusCode).toBe(201);
+      const blocked = await del(used.id);
+      expect(blocked.statusCode).toBe(409);
+      expect(blocked.json().code).toBe('has_history');
+      expect((await patch(`/v1/admin/users/${used.id}`, { status: 'disabled' })).statusCode).toBe(200);
+
+      // Acad Ops can't delete staff, and nobody can delete themselves.
+      const admin = await createUser(db, 'admin', 'boss@college.test');
+      expect((await del(admin.id)).statusCode).toBe(403);
+      const me = (await t.app.inject({ url: '/v1/me', headers: ops.headers })).json().user.id;
+      expect((await del(me)).json().code).toBe('cannot_delete_self');
     });
 
     it('disabling a user ends their sessions', async () => {

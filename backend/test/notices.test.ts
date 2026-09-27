@@ -1,10 +1,22 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from '../src/db/index.ts';
 import { dayLabel } from '../src/notices/service.ts';
+import type { PushMessage, PushResult, PushSender } from '../src/notify/push.ts';
 import { createUser, loginAs, makeApp, type TestApp } from './helpers/app.ts';
 import { closeTestDb, hasDb, resetDb, testDb } from './helpers/db.ts';
 import { collegeFixture, type College } from './helpers/fixtures.ts';
 import { Phone } from './helpers/phone.ts';
+
+/** Records what would have gone to FCM; tokens in `dead` answer like an uninstalled app. */
+class FakePush implements PushSender {
+  sent: { token: string; msg: PushMessage }[] = [];
+  dead = new Set<string>();
+  async send(token: string, msg: PushMessage): Promise<PushResult> {
+    if (this.dead.has(token)) return 'invalid';
+    this.sent.push({ token, msg });
+    return 'ok';
+  }
+}
 
 // Monday 2026-09-21 09:30 India. The Batch 1 lab is on Wednesdays 10:00–11:00.
 const T0 = Date.UTC(2026, 8, 21, 4, 0, 0);
@@ -27,6 +39,7 @@ describe.skipIf(!hasDb)('notices from Acad Ops (integration, ADR-0023)', () => {
   let s2: Phone;
   let ids: Record<'s1' | 's2' | 'other', string>;
   let labEntry: string;
+  let push: FakePush;
 
   const req = (method: 'GET' | 'POST' | 'DELETE', url: string, headers: Record<string, string>, payload?: unknown) =>
     t.app.inject({ method, url, headers, ...(payload !== undefined ? { payload: payload as object } : {}) });
@@ -38,7 +51,8 @@ describe.skipIf(!hasDb)('notices from Acad Ops (integration, ADR-0023)', () => {
     db = await testDb();
     await resetDb(db);
     c = await collegeFixture(db);
-    t = await makeApp({ db, now: T0, config: { env: 'dev', attestationBypass: true } });
+    push = new FakePush();
+    t = await makeApp({ db, now: T0, config: { env: 'dev', attestationBypass: true }, push });
     await createUser(db, 'acadops', 'ops@college.test', 'Ops One');
     ops = await loginAs(t.app, 'ops@college.test');
     labEntry = (await c.entry({ offering: c.off.adaLab.id, group: c.b1.id, weekday: 3, start: '10:00', end: '11:00' })).id;
@@ -168,5 +182,43 @@ describe.skipIf(!hasDb)('notices from Acad Ops (integration, ADR-0023)', () => {
     const quiet = await req('POST', '/v1/admin/timetable/overrides', ops.headers, { date: '2026-09-30', action: 'cancel', entry_id: labEntry, reason: 'Exam', notify: false });
     expect(quiet.json().notified).toBe(0);
     expect(await db.selectFrom('notices').select('id').where('class_date', '=', '2026-09-30').execute()).toEqual([]);
+  });
+
+  it('phone notifications: notices reach registered phones; dead tokens are forgotten', async () => {
+    const token = (who: string) => `fcm-token-for-${who}-${'x'.repeat(20)}`;
+    expect((await req('POST', '/v1/me/push-token', s1.auth, { token: token('s1'), platform: 'android' })).statusCode).toBe(204);
+    expect((await req('POST', '/v1/me/push-token', s2.auth, { token: token('s2'), platform: 'android' })).statusCode).toBe(204);
+    expect((await req('POST', '/v1/me/push-token', ops.headers, { token: token('ops'), platform: 'android' })).statusCode).toBe(403);
+
+    await req('POST', '/v1/admin/notices', ops.headers, { title: 'Lab record due Friday', body: 'Bring your lab record.', audience: { kind: 'section', section_id: c.section.id, group_id: c.b1.id } });
+    await t.settle();
+    expect(push.sent).toEqual([{ token: token('s1'), msg: { title: 'Lab record due Friday', body: 'Bring your lab record.', data: { kind: 'notice', id: expect.any(String) } } }]);
+
+    // s2's app was uninstalled: FCM says the token is dead, so Argus forgets it.
+    push.dead.add(token('s2'));
+    await req('POST', '/v1/admin/notices', ops.headers, { title: 'Holiday on Friday', audience: { kind: 'students' } });
+    await t.settle();
+    expect((await db.selectFrom('push_tokens').select('token').execute()).map((r) => r.token)).toEqual([token('s1')]);
+
+    // Signing out removes this phone's address.
+    expect((await req('POST', '/v1/me/push-token/remove', s1.auth, { token: token('s1') })).statusCode).toBe(204);
+    expect(await db.selectFrom('push_tokens').select('token').execute()).toEqual([]);
+  });
+
+  it('a class change and "attendance is open" are pushed to the class', async () => {
+    const tok = `fcm-token-s1-${'y'.repeat(20)}`;
+    await req('POST', '/v1/me/push-token', s1.auth, { token: tok, platform: 'android' });
+    await req('POST', '/v1/admin/timetable/overrides', ops.headers, { date: WED, action: 'cancel', entry_id: labEntry, reason: 'Lab maintenance' });
+    await t.settle();
+    expect(push.sent.map((p) => p.msg.title)).toEqual(['ADA LAB cancelled · Wed 23 Sep']);
+
+    // A class running now (Monday 09:30) for the whole section, taught by Teacher B.
+    await c.entry({ offering: c.off.ada.id, weekday: 1, start: '09:30', end: '11:00', teacher: c.tB.id });
+    await req('POST', '/v1/admin/timetable/materialize', ops.headers, {});
+    const cls = await db.selectFrom('class_sessions').select('id').where('date', '=', '2026-09-21').where('offering_id', '=', c.off.ada.id).executeTakeFirstOrThrow();
+    const tB = await loginAs(t.app, c.tB.email);
+    expect((await req('POST', `/v1/teacher/class-sessions/${cls.id}/attendance/start`, tB.headers, {})).statusCode).toBe(201);
+    await t.settle();
+    expect(push.sent.at(-1)).toEqual({ token: tok, msg: { title: 'Attendance is open · ADA', body: 'Scan the code in Classroom 6 with the Argus app.', data: { kind: 'attendance', class_session_id: cls.id } } });
   });
 });

@@ -27,6 +27,8 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.play.core.integrity.IntegrityManagerFactory
+import com.google.firebase.FirebaseApp
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.android.play.core.integrity.StandardIntegrityManager.PrepareIntegrityTokenRequest
 import com.google.android.play.core.integrity.StandardIntegrityManager.StandardIntegrityTokenProvider
 import com.google.android.play.core.integrity.StandardIntegrityManager.StandardIntegrityTokenRequest
@@ -61,12 +63,14 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
     private var activity: Activity? = null
     private var binding: ActivityPluginBinding? = null
     private var pendingPermission: ((Boolean, Boolean) -> Unit)? = null
+    private var pendingNotify: ((Boolean) -> Unit)? = null
     private var integrityProvider: Pair<Long, StandardIntegrityTokenProvider>? = null
 
     override fun onAttachedToEngine(b: FlutterPlugin.FlutterPluginBinding) {
         context = b.applicationContext
         channel = MethodChannel(b.binaryMessenger, CHANNEL)
         channel.setMethodCallHandler(this)
+        ArgusNotifications.ensureChannel(context)
     }
 
     override fun onDetachedFromEngine(b: FlutterPlugin.FlutterPluginBinding) {
@@ -101,6 +105,16 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                     )
                 )
                 "sessionPublicKey" -> result.success(b64url(ensureSessionKey().public.encoded))
+                // ── Phone notifications (ADR-0025) ──
+                "pushToken" -> {
+                    if (FirebaseApp.getApps(context).isEmpty()) return result.success(null) // this build has no Firebase settings
+                    FirebaseMessaging.getInstance().token.addOnCompleteListener { t -> result.success(if (t.isSuccessful) t.result else null) }
+                }
+                "deletePushToken" -> {
+                    if (FirebaseApp.getApps(context).isNotEmpty()) FirebaseMessaging.getInstance().deleteToken()
+                    result.success(null)
+                }
+                "requestNotificationPermission" -> withNotificationPermission { ok -> result.success(ok) }
                 "signWithSessionKey" -> {
                     val data = call.argument<ByteArray>("data") ?: return result.error("bad_args", "data missing", null)
                     ensureSessionKey()
@@ -292,7 +306,22 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
         ActivityCompat.requestPermissions(act, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), REQ_LOCATION)
     }
 
+    /** Android 13+ asks before an app may show notifications; older versions allow them. */
+    private fun withNotificationPermission(then: (Boolean) -> Unit) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return then(true)
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return then(true)
+        val act = activity ?: return then(false)
+        pendingNotify = then
+        ActivityCompat.requestPermissions(act, arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQ_NOTIFY)
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray): Boolean {
+        if (requestCode == REQ_NOTIFY) {
+            val cb = pendingNotify
+            pendingNotify = null
+            cb?.invoke(grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED)
+            return true
+        }
         if (requestCode != REQ_LOCATION) return false
         val granted = permissions.zip(grantResults.toTypedArray()).filter { it.second == PackageManager.PERMISSION_GRANTED }.map { it.first }
         val cb = pendingPermission
@@ -331,5 +360,6 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
         const val ATTEMPT_ALIAS = "argus_attempt_v1"
         const val AUTH_WINDOW_S = 60
         const val REQ_LOCATION = 0x4152
+        const val REQ_NOTIFY = 0x4153
     }
 }

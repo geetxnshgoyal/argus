@@ -12,7 +12,8 @@ import { fromB64url } from '../platform/crypto.ts';
 import { idParams, isoDate, parse, uuid } from '../validation.ts';
 import { addDays, normTime, WEEKDAY_NAMES } from './dates.ts';
 import { importTimetable } from './import.ts';
-import { noticeForOverride, overrideUndone } from '../notices/service.ts';
+import { noticeForOverride, overrideUndone, type PostedNotice } from '../notices/service.ts';
+import { noticePush, pushToUsers } from '../notify/push.ts';
 import type { TimetableRow } from './import-parse.ts';
 import {
   assertTermSection,
@@ -288,9 +289,10 @@ export function registerTimetableRoutes(app: FastifyInstance, ctx: AppContext): 
         await rematerialize(tx, ctx, { termId, sectionId });
         await appendAudit(tx, { actorId: u.id, action: `timetable_override.${b.action}`, entityType: 'timetable_override', entityId: row.id, after: row, ip: req.ip }, at());
         const notice = b.notify ? await noticeForOverride(tx, ctx, row.id, { createdBy: u.id, note: b.notice ?? null }) : null;
-        return { ...row, notified: notice?.recipients ?? 0 };
+        return { row: { ...row, notified: notice?.recipients ?? 0 }, notice };
       });
-      return reply.status(201).send(created);
+      if (created.notice) ctx.background(pushToUsers(ctx, created.notice.users, noticePush(created.notice)));
+      return reply.status(201).send(created.row);
     } catch (err) {
       if (err instanceof ApiError) throw err;
       mapDbError(err, 'create');
@@ -300,14 +302,16 @@ export function registerTimetableRoutes(app: FastifyInstance, ctx: AppContext): 
   app.delete('/v1/admin/timetable/overrides/:id', admin, async (req, reply) => {
     const u = currentUser(req);
     const { id } = parse(idParams, req.params);
-    await ctx.db.transaction().execute(async (tx) => {
+    const undone: PostedNotice | null = await ctx.db.transaction().execute(async (tx) => {
       const ov = await tx.updateTable('timetable_overrides').set({ revoked_at: at(), revoked_by: u.id }).where('id', '=', id).where('revoked_at', 'is', null).returningAll().executeTakeFirst();
       if (!ov) throw new ApiError(404, 'not_found', 'Not found');
       if (ov.date < todayIn(ctx)) throw new ApiError(400, 'past_date', 'Past changes cannot be undone.');
       await rematerialize(tx, ctx, { termId: ov.term_id });
-      await overrideUndone(tx, ctx, id, { by: u.id, replaced: false });
+      const n = await overrideUndone(tx, ctx, id, { by: u.id, replaced: false });
       await appendAudit(tx, { actorId: u.id, action: 'timetable_override.revoke', entityType: 'timetable_override', entityId: id, before: ov, ip: req.ip }, at());
+      return n;
     });
+    if (undone) ctx.background(pushToUsers(ctx, undone.users, noticePush(undone)));
     return reply.status(204).send();
   });
 

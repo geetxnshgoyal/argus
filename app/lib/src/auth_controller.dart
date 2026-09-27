@@ -79,6 +79,12 @@ class AuthController extends ChangeNotifier {
       });
 
   Future<void> signOut() async {
+    // Stop notifications for this phone before the sign-in is revoked (best effort).
+    try {
+      final token = await api.security.pushToken();
+      if (token != null) await api.removePushToken(token);
+      await api.security.deletePushToken();
+    } catch (_) {}
     await api.logout();
     me = null;
     _set(AuthStatus.signedOut);

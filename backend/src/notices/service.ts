@@ -107,7 +107,15 @@ export interface NewNotice {
   classDate?: string | null;
 }
 
-export async function postNotice(tx: Tx, ctx: AppContext, n: NewNotice): Promise<{ id: string; recipients: number }> {
+export interface PostedNotice {
+  id: string;
+  recipients: number;
+  users: string[];
+  title: string;
+  body: string;
+}
+
+export async function postNotice(tx: Tx, ctx: AppContext, n: NewNotice): Promise<PostedNotice> {
   const id = uuidv7(ctx.now());
   await tx
     .insertInto('notices')
@@ -128,7 +136,7 @@ export async function postNotice(tx: Tx, ctx: AppContext, n: NewNotice): Promise
   for (let i = 0; i < users.length; i += 1000) {
     await tx.insertInto('notice_recipients').values(users.slice(i, i + 1000).map((user_id) => ({ notice_id: id, user_id }))).execute();
   }
-  return { id, recipients: users.length };
+  return { id, recipients: users.length, users, title: n.title, body: n.body };
 }
 
 // ── Reading ────────────────────────────────────────────────────────────────

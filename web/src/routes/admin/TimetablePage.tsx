@@ -290,6 +290,16 @@ function OverrideDialog(props: { termId: string; sectionId: string; session: Ses
       if (err instanceof ApiRequestError && err.code === 'session_has_attendance') setNeedConfirm(true);
     },
   });
+  // Undo the one-day change behind this class: a moved or cancelled class goes back to normal,
+  // a one-off class disappears. Students who were told about the change are told again.
+  const undo = useMutation({
+    mutationFn: () => apiSend('DELETE', `/v1/admin/timetable/overrides/${s!.override_id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['sessions'] });
+      props.onClose();
+    },
+  });
+  const oneOff = Boolean(s && !s.entry_id);
   const errs = save.error instanceof ApiRequestError ? save.error.fields : {};
   return (
     <Dialog
@@ -298,6 +308,16 @@ function OverrideDialog(props: { termId: string; sectionId: string; session: Ses
       onClose={props.onClose}
       footer={
         <>
+          {s?.override_id && (
+            <button
+              className="btn btn-danger"
+              style={{ marginRight: 'auto' }}
+              disabled={undo.isPending}
+              onClick={() => window.confirm(oneOff ? 'Remove this one-off class? Students who were told about it are told it is called off.' : 'Undo the change for this day? The class goes back to its usual time and room.') && undo.mutate()}
+            >
+              {oneOff ? 'Remove this class' : 'Undo this change'}
+            </button>
+          )}
           <button className="btn btn-ghost" onClick={props.onClose}>Close</button>
           {needConfirm ? (
             <button className="btn btn-danger" onClick={() => save.mutate(true)}>Change anyway</button>
@@ -312,6 +332,7 @@ function OverrideDialog(props: { termId: string; sectionId: string; session: Ses
       <div className="form">
         {needConfirm && <Notice tone="warn">This class already has attendance. Changing it is recorded in the audit log.</Notice>}
         {save.error && !needConfirm && !Object.keys(errs).length ? <ErrorNotice error={save.error} /> : null}
+        <ErrorNotice error={undo.error} />
         {s && (
           <p className="muted">
             {s.start}–{s.end} · {s.batch ?? 'Whole section'} · {s.room ?? 'No room'} · {s.teacher ?? 'No teacher'}
@@ -373,7 +394,7 @@ function OverrideDialog(props: { termId: string; sectionId: string; session: Ses
             <input value={v.notice} onChange={set('notice')} maxLength={300} placeholder="e.g. Bring your laptops" />
           </Field>
         )}
-        {s && !entry && <Notice tone="warn">This is a one-off class; to remove it, undo the change that added it.</Notice>}
+        {s && !entry && <Notice>This is a one-off class. Use "Remove this class" to take it off the timetable.</Notice>}
       </div>
     </Dialog>
   );

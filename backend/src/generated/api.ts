@@ -764,7 +764,8 @@ export interface paths {
         get: operations["getUser"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete an account made by mistake (only if it has no attendance or other history; otherwise disable it) */
+        delete: operations["deleteUser"];
         options?: never;
         head?: never;
         /** Update user */
@@ -1663,6 +1664,40 @@ export interface paths {
         put?: never;
         /** Mark notices read (the given ids, or all when ids is omitted) */
         post: operations["markNoticesRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/push-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register this app install for phone notifications (FCM token, ADR-0025) */
+        post: operations["registerPushToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/push-token/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop phone notifications to this app install (on sign-out) */
+        post: operations["removePushToken"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2917,6 +2952,11 @@ export interface components {
              * @description Weekly entry this class comes from (null for one-off classes)
              */
             entry_id: string | null;
+            /**
+             * Format: uuid
+             * @description The one-day change that added, moved or cancelled this class (null for a normal class).
+             */
+            override_id: string | null;
         };
         ClassSessionList: {
             items: components["schemas"]["ClassSession"][];
@@ -5740,6 +5780,31 @@ export interface operations {
             404: components["responses"]["Error404"];
         };
     };
+    deleteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
     updateUser: {
         parameters: {
             query?: never;
@@ -7282,6 +7347,61 @@ export interface operations {
             400: components["responses"]["Error400"];
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
+        };
+    };
+    registerPushToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                    /** @enum {string} */
+                    platform: "android" | "ios";
+                };
+            };
+        };
+        responses: {
+            /** @description Registered */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    removePushToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
         };
     };
     listNotices: {

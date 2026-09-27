@@ -5,6 +5,7 @@ import { buildApp, type AppOptions } from '../../src/app.ts';
 import type { OidcService } from '../../src/auth/oidc.ts';
 import type { Config } from '../../src/config.ts';
 import { createContext, type AppContext } from '../../src/context.ts';
+import type { PushSender } from '../../src/notify/push.ts';
 import { createDb, type Db } from '../../src/db/index.ts';
 import type { Role } from '../../src/db/schema.ts';
 import { createLogger } from '../../src/logger.ts';
@@ -34,6 +35,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     devices: { rebindCooldownMs: 48 * 3600_000, maxRebindsPerTerm: 2 },
     serverless: false,
     cronSecret: undefined,
+    fcm: null,
     bootstrapAdminEmails: [],
     dbPoolMax: 20,
     ...overrides,
@@ -62,13 +64,16 @@ export interface TestApp {
   apiRoutes: string[];
   logs: () => string;
   clock: { now: number };
+  /** Waits for background work (e.g. phone notifications) started so far. */
+  settle: () => Promise<void>;
 }
 
 export async function makeApp(
-  opts: { db?: Db; config?: Partial<Config>; oidc?: OidcService | null; now?: number } & AppOptions = {},
+  opts: { db?: Db; config?: Partial<Config>; oidc?: OidcService | null; now?: number; push?: PushSender | null } & AppOptions = {},
 ): Promise<TestApp> {
   const { logger, text } = logSink();
   const clock = { now: opts.now ?? Date.UTC(2026, 8, 21, 4, 0, 0) };
+  const pending: Promise<unknown>[] = [];
   const ctx = createContext({
     config: testConfig(opts.config),
     db: opts.db ?? noDb(),
@@ -76,9 +81,16 @@ export async function makeApp(
     version: '9.9.9-test',
     now: () => clock.now,
     oidc: opts.oidc ?? null,
+    push: opts.push ?? null,
+    background: (work) => {
+      pending.push(work.catch(() => undefined));
+    },
   });
   const { app, apiRoutes } = await buildApp(ctx, { checkDb: opts.checkDb ?? (async () => {}), webDir: opts.webDir });
-  return { app, ctx, apiRoutes, logs: text, clock };
+  const settle = async () => {
+    while (pending.length) await Promise.all(pending.splice(0));
+  };
+  return { app, ctx, apiRoutes, logs: text, clock, settle };
 }
 
 // ── Users and sessions ───────────────────────────────────────────────────────

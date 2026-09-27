@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { DataTable } from '../../components/DataTable.tsx';
-import { Dialog, ErrorNotice, Field, PageHead } from '../../components/ui.tsx';
+import { Dialog, ErrorNotice, Field, Notice, PageHead } from '../../components/ui.tsx';
 import { apiGet, apiSend, ApiRequestError, qs, type Schemas } from '../../lib/api.ts';
 import { ROLE_LABELS, useMe, type Role } from '../../lib/auth.ts';
 
@@ -170,6 +170,17 @@ function UserForm(props: {
       }
     },
   });
+  // Delete is for accounts made by mistake; anyone with history is disabled instead (the server decides).
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const remove = useMutation({
+    mutationFn: () => apiSend('DELETE', `/v1/admin/users/${user!.id}`),
+    onSuccess: props.onSaved,
+  });
+  const disableInstead = useMutation({
+    mutationFn: () => apiSend('PATCH', `/v1/admin/users/${user!.id}`, { status: 'disabled' }),
+    onSuccess: props.onSaved,
+  });
+  const hasHistory = remove.error instanceof ApiRequestError && remove.error.code === 'has_history';
   const errs = save.error instanceof ApiRequestError ? save.error.fields : {};
   const sectionGroups = refs.groups.filter((g) => g.section_id === v.section_id);
 
@@ -180,6 +191,19 @@ function UserForm(props: {
       onClose={props.onClose}
       footer={
         <>
+          {user &&
+            (confirmDelete ? (
+              <span className="btn-row" style={{ marginRight: 'auto' }}>
+                <button className="btn btn-danger" disabled={remove.isPending} onClick={() => remove.mutate()}>
+                  {remove.isPending ? 'Deleting…' : `Delete ${user.name}`}
+                </button>
+                <button className="btn btn-ghost" onClick={() => setConfirmDelete(false)}>Keep</button>
+              </span>
+            ) : (
+              <button className="btn btn-ghost" style={{ marginRight: 'auto' }} onClick={() => setConfirmDelete(true)}>
+                Delete…
+              </button>
+            ))}
           <button className="btn btn-ghost" onClick={props.onClose}>
             Cancel
           </button>
@@ -191,6 +215,21 @@ function UserForm(props: {
     >
       <div className="form">
         {save.error && !Object.keys(errs).length ? <ErrorNotice error={save.error} /> : null}
+        {confirmDelete && !remove.error && (
+          <Notice tone="warn">This removes the account completely. It only works for accounts that were never used; people with attendance are disabled instead.</Notice>
+        )}
+        {hasHistory ? (
+          <Notice tone="warn">
+            {(remove.error as Error).message}{' '}
+            {user?.status !== 'disabled' && (
+              <button className="btn btn-danger" disabled={disableInstead.isPending} onClick={() => disableInstead.mutate()}>
+                Disable instead
+              </button>
+            )}
+          </Notice>
+        ) : (
+          <ErrorNotice error={remove.error ?? disableInstead.error} />
+        )}
         <div className="form-grid">
           <Field label="Full name" error={errs.name}>
             <input value={v.name} onChange={set('name')} />

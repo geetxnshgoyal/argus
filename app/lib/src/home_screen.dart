@@ -53,6 +53,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
     _refresh();
     _startPolling();
+    unawaited(_registerPush());
+  }
+
+  /// Android: allow notifications and tell Argus where to send them (ADR-0025). Quietly does
+  /// nothing on iPhones and in builds without Firebase settings.
+  Future<void> _registerPush() async {
+    try {
+      await widget.security.requestNotificationPermission();
+      final token = await widget.security.pushToken();
+      if (token != null) await widget.auth.api.registerPushToken(token, 'android');
+    } catch (_) {
+      // No notifications this time; notices are still in the app.
+    }
   }
 
   @override

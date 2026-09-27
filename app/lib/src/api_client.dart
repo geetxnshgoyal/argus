@@ -333,6 +333,15 @@ class ApiClient {
   /// My recent support requests (latest first).
   Future<List<Map<String, dynamic>>> mySupportRequests() async => ((await _send('GET', '/v1/me/support-requests'))['items'] as List).cast<Map<String, dynamic>>();
 
+  // ── Phone notifications (ADR-0025) ───────────────────────────────────────
+  Future<void> registerPushToken(String token, String platform) async {
+    await _send('POST', '/v1/me/push-token', body: {'token': token, 'platform': platform});
+  }
+
+  Future<void> removePushToken(String token) async {
+    await _send('POST', '/v1/me/push-token/remove', body: {'token': token});
+  }
+
   // ── Notices (ADR-0023) ───────────────────────────────────────────────────
   Future<List<AppNotice>> notices() async {
     final j = await _send('GET', '/v1/me/notices');

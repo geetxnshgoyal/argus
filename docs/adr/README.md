@@ -30,5 +30,6 @@ the spec, the ADR wins. Status is `Accepted` unless marked otherwise.
 | [0022](0022-phone-registration-survives-sign-out.md) | Sign-out keeps the phone registration; the session key identifies the install | M3 fix |
 | [0023](0023-notices.md) | Notices from Acad Ops; class changes announced automatically to the class | M6+ |
 | [0024](0024-iphone-pilot-mode.md) | iPhone pilot mode: iPhones without App Attest (free Apple account), pilots only | Hosting |
+| [0025](0025-phone-notifications.md) | Phone notifications via Firebase Cloud Messaging (Android); iPhone push needs a paid account | M6+ |
 
 New ADRs: copy the format of any existing one (Context / Decision / Consequences), keep it under a page.

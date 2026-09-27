@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
+import { parseServiceAccount, type FcmServiceAccount } from './notify/push.ts';
 
 /**
  * Runtime configuration, read once from environment variables at startup.
@@ -65,6 +66,8 @@ const envSchema = z.object({
   ARGUS_BOOTSTRAP_ADMIN_EMAILS: z.string().optional(),
   // Vercel Cron sends "Authorization: Bearer <CRON_SECRET>" (ADR-0020).
   CRON_SECRET: z.string().min(16).optional(),
+  // Firebase service account key for Android push notifications (ADR-0025).
+  FCM_SERVICE_ACCOUNT: z.string().optional(),
   // Connections per process; serverless instances use a few each.
   DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).optional(),
   // Set by Vercel on its build and runtime.
@@ -135,6 +138,8 @@ export interface Config {
   /** Running as Vercel Functions: no long-lived process (ADR-0020). */
   serverless: boolean;
   cronSecret: string | undefined;
+  /** Firebase service account for Android push notifications (ADR-0025); null = no phone notifications. */
+  fcm: FcmServiceAccount | null;
   bootstrapAdminEmails: string[];
   dbPoolMax: number;
 }
@@ -208,6 +213,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
   if (e.APPLE_DEVICECHECK_KEY_ID && !e.IOS_APP_ID) problems.push('APPLE_DEVICECHECK_KEY_ID needs IOS_APP_ID (for the team ID)');
 
+  let fcm: FcmServiceAccount | null = null;
+  if (e.FCM_SERVICE_ACCOUNT) {
+    try {
+      fcm = parseServiceAccount(e.FCM_SERVICE_ACCOUNT);
+    } catch {
+      problems.push('FCM_SERVICE_ACCOUNT must be a Firebase service account key (JSON, or JSON in base64)');
+    }
+  }
   if (problems.length > 0) throw new ConfigError(problems);
 
   return {
@@ -253,6 +266,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     },
     serverless: e.VERCEL === '1',
     cronSecret: e.CRON_SECRET,
+    fcm,
     bootstrapAdminEmails: (e.ARGUS_BOOTSTRAP_ADMIN_EMAILS ?? '').split(',').map((x) => x.trim().toLowerCase()).filter((x) => x.includes('@')),
     dbPoolMax: e.DATABASE_POOL_MAX ?? (e.VERCEL === '1' ? 5 : 20),
   };

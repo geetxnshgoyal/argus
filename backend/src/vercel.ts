@@ -37,7 +37,8 @@ async function boot(): Promise<Booted> {
   for (const r of migrated.results ?? []) logger.info({ migration: r.migrationName, status: r.status }, 'migration');
   if (migrated.error) throw migrated.error;
   const version = typeof __ARGUS_VERSION__ !== 'undefined' ? __ARGUS_VERSION__ : 'dev';
-  const ctx = createContext({ config, db, logger, version });
+  // Keep the function alive until background work (e.g. phone notifications) is done.
+  const ctx = createContext({ config, db, logger, version, background: (work) => waitUntil(work.catch((err: unknown) => logger.error({ err }, 'background work failed'))) });
   await bootstrapAdmins(ctx);
   const { app } = await buildApp(ctx, { webDir: undefined });
   logger.info({ env: config.env, version }, 'argus function started');

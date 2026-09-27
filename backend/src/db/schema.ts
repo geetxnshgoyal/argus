@@ -557,6 +557,14 @@ export interface NoticesTable {
   withdrawn_by: string | null;
 }
 
+export interface PushTokensTable {
+  token: string;
+  user_id: string;
+  platform: 'android' | 'ios';
+  created_at: CreatedAt;
+  last_seen_at: Timestamp;
+}
+
 export interface NoticeRecipientsTable {
   notice_id: string;
   user_id: string;
@@ -609,6 +617,7 @@ export interface Database {
   job_runs: JobRunsTable;
   notices: NoticesTable;
   notice_recipients: NoticeRecipientsTable;
+  push_tokens: PushTokensTable;
   course_offerings_labeled: CourseOfferingsTable & { subject_code: string; subject_name: string; subject_kind: string; section_name: string; term_name: string };
   teaching_assignments_labeled: TeachingAssignmentsTable & { teacher_name: string; subject_code: string; subject_name: string; section_name: string; group_name: string | null };
 }

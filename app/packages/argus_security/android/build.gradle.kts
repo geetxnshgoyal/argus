@@ -77,6 +77,9 @@ dependencies {
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("com.google.android.gms:play-services-location:21.4.0")
     implementation("com.google.android.play:integrity:1.6.0")
+    // Phone notifications (ADR-0025). Initialised from the app's google_app_id etc. resources; without them, push is off.
+    implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
+    implementation("com.google.firebase:firebase-messaging")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.mockito:mockito-core:5.0.0")
 }
