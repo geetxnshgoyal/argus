@@ -231,12 +231,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     future: _device,
                     builder: (context, s) {
                       final d = s.data;
-                      final store = d?.platform == 'ios' ? 'Secure Enclave' : 'StrongBox';
+                      // Android keys live in StrongBox when the phone has that chip, otherwise in the
+                      // processor's secure area (TEE). Both are hardware and both are accepted.
+                      final ios = d?.platform == 'ios';
+                      final store = ios ? (d!.hardwareKeyStore ? 'Secure Enclave' : 'no Secure Enclave') : (d?.hardwareKeyStore ?? false) ? 'StrongBox secure chip' : 'Secure hardware (TEE)';
                       return _Row(
                         icon: Icons.phonelink_lock_outlined,
-                        tone: d != null && !d.hardwareKeyStore ? TileTone.warn : TileTone.good,
+                        tone: d != null && ios && !d.hardwareKeyStore ? TileTone.warn : TileTone.good,
                         title: 'This phone',
-                        value: d == null ? 'Checking…' : '${d.model} · $store ${d.hardwareKeyStore ? 'available' : 'not available'}',
+                        value: d == null ? 'Checking…' : '${d.model} · $store',
                       );
                     },
                   ),
