@@ -2,6 +2,7 @@ import { sql } from 'kysely';
 import type { AppContext } from './context.ts';
 import { housekeeping } from './attendance/service.ts';
 import { promoteDueDevices } from './devices/service.ts';
+import { runRetention } from './retention.ts';
 import { expireSupportRequests } from './support/service.ts';
 import { localDate } from './timetable/dates.ts';
 import { materializeAll } from './timetable/service.ts';
@@ -19,6 +20,8 @@ import { materializeAll } from './timetable/service.ts';
  *                requests 15 min after class end.
  *  materialize   once per college day (from 00:15 local): keeps the next 14 days
  *                of class sessions generated (ADR-0019).
+ *  retention     once per college day (from 02:30 local): clears old attempt
+ *                signals and sign-in leftovers (spec §13, src/retention.ts).
  */
 
 export const HOUSEKEEPING_EVERY_MS = 55_000;
@@ -34,15 +37,15 @@ async function claimHousekeeping(ctx: AppContext): Promise<boolean> {
   return Boolean(r);
 }
 
-/** Due once per college-local day, from 00:15. */
-async function claimMaterialize(ctx: AppContext): Promise<boolean> {
+/** Due once per college-local day, from `from` (HH:MM local). */
+async function claimDaily(ctx: AppContext, name: string, from: string): Promise<boolean> {
   const tz = ctx.config.timeZone;
   const now = new Date(ctx.now());
   const r = await sql<{ name: string }>`
     update job_runs set last_run_at = ${now}
-    where name = 'materialize'
+    where name = ${name}
       and (last_run_at at time zone ${tz})::date < ${localDate(ctx.now(), tz)}::date
-      and (${now}::timestamptz at time zone ${tz})::time >= '00:15'
+      and (${now}::timestamptz at time zone ${tz})::time >= ${from}::time
     returning name`.execute(ctx.db);
   return r.rows.length > 0;
 }
@@ -75,7 +78,7 @@ export async function runDueJobs(ctx: AppContext): Promise<{ ran: string[] }> {
       await finish(ctx, 'housekeeping', null, err);
     }
   }
-  if (await claimMaterialize(ctx)) {
+  if (await claimDaily(ctx, 'materialize', '00:15')) {
     ran.push('materialize');
     try {
       const r = await materializeAll(ctx);
@@ -84,6 +87,17 @@ export async function runDueJobs(ctx: AppContext): Promise<{ ran: string[] }> {
     } catch (err) {
       ctx.logger.error({ err }, 'materialization failed');
       await finish(ctx, 'materialize', null, err);
+    }
+  }
+  if (await claimDaily(ctx, 'retention', '02:30')) {
+    ran.push('retention');
+    try {
+      const r = await runRetention(ctx);
+      ctx.logger.info(r, 'retention');
+      await finish(ctx, 'retention', r, null);
+    } catch (err) {
+      ctx.logger.error({ err }, 'retention failed');
+      await finish(ctx, 'retention', null, err);
     }
   }
   return { ran };

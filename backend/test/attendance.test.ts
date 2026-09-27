@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { housekeeping } from '../src/attendance/service.ts';
 import type { Db } from '../src/db/index.ts';
 import { uuidv7 } from '../src/platform/ids.ts';
+import { runRetention } from '../src/retention.ts';
 import { createUser, deviceKey, loginAs, makeApp, type TestApp } from './helpers/app.ts';
 import { closeTestDb, hasDb, resetDb, testDb } from './helpers/db.ts';
 import { collegeFixture, type College } from './helpers/fixtures.ts';
@@ -330,5 +331,34 @@ describe.skipIf(!hasDb)('attendance (integration, spec §16 adversarial suite)',
     await post(`/v1/attendance/sessions/${id}/end`);
     const h = (await t.app.inject({ url: '/v1/me/attendance', headers: s1.auth })).json();
     expect(h.subjects[0]).toMatchObject({ code: 'ADA', total: 1, attended: 1, percent: 100 });
+  });
+  it('retention: after 90 days attempt signals and flag details go, decisions and records stay (spec §13)', async () => {
+    const id = await start();
+    const d = await display(id);
+    const scanned = await s1.scan(displayQr(d, t.clock.now), { location: { lat: 12.9, lon: 77.5, accuracy_m: 5, fix_age_ms: 100, is_mock: true } });
+    expect(scanned.json().decision).toBe('flagged_high');
+    await post(`/v1/attendance/sessions/${id}/end`);
+    const before = await db.selectFrom('attendance_attempts').select(['signals', 'decision', 'reason_codes']).executeTakeFirstOrThrow();
+    expect(before.signals).not.toBeNull();
+
+    t.clock.now += 89 * 86_400_000;
+    const early = await runRetention(t.ctx);
+    expect(early.attemptSignalsCleared).toBe(0);
+    // Web sessions (12 h) and refresh tokens (30 days) from the logins above are 30+ days past expiry.
+    expect(early.signInRowsDeleted).toBeGreaterThan(0);
+
+    // Risk flags take created_at from the database clock (real time), attempts from the app clock.
+    t.clock.now = Math.max(T0, Date.now()) + 91 * 86_400_000;
+    const r = await runRetention(t.ctx);
+    expect(r.attemptSignalsCleared).toBe(1);
+    expect(r.flagDetailsCleared).toBeGreaterThan(0);
+    const after = await db.selectFrom('attendance_attempts').select(['signals', 'device_time', 'decision', 'reason_codes']).executeTakeFirstOrThrow();
+    expect(after).toMatchObject({ signals: null, device_time: null, decision: before.decision, reason_codes: before.reason_codes });
+    expect(await db.selectFrom('risk_flags').select('details').where('details', 'is not', null).execute()).toHaveLength(0);
+    expect(await db.selectFrom('attendance_records').select('status').execute()).toHaveLength(2);
+    expect(await db.selectFrom('web_sessions').select('id_hash').execute()).toHaveLength(0);
+    expect(await db.selectFrom('refresh_tokens').select('id').execute()).toHaveLength(0);
+    // Idempotent.
+    expect(await runRetention(t.ctx)).toEqual({ attemptSignalsCleared: 0, flagDetailsCleared: 0, signInRowsDeleted: 0 });
   });
 });

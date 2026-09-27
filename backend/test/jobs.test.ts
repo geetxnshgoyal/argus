@@ -45,6 +45,18 @@ describe.skipIf(!hasDb)('background jobs without a daemon (ADR-0020)', () => {
     expect((await runDueJobs(t.ctx)).ran).toEqual(['housekeeping', 'materialize']);
   });
 
+  it('retention runs once per college day from 02:30', async () => {
+    await db.insertInto('job_runs').values({ name: 'retention' }).execute();
+    expect((await runDueJobs(t.ctx)).ran).toContain('retention'); // 09:30 India
+    expect((await runDueJobs(t.ctx)).ran).not.toContain('retention');
+    t.clock.now = Date.UTC(2026, 8, 21, 20, 0, 0); // 01:30 India next day
+    expect((await runDueJobs(t.ctx)).ran).not.toContain('retention');
+    t.clock.now = Date.UTC(2026, 8, 21, 21, 30, 0); // 03:00 India
+    expect((await runDueJobs(t.ctx)).ran).toContain('retention');
+    const row = await db.selectFrom('job_runs').selectAll().where('name', '=', 'retention').executeTakeFirstOrThrow();
+    expect(row.last_error).toBeNull();
+  });
+
   it('the cron endpoint needs the secret', async () => {
     expect((await t.app.inject('/v1/internal/cron')).statusCode).toBe(404);
     expect((await t.app.inject({ url: '/v1/internal/cron', headers: { authorization: 'Bearer wrong-secret-xxxxxxxx' } })).statusCode).toBe(404);
