@@ -86,6 +86,9 @@ export function LoginPage() {
             </div>
           )}
         </div>
+        <p className="muted small" style={{ textAlign: 'center', marginTop: '1rem' }}>
+          <a href="/privacy">Privacy</a> · <a href="/terms">Terms of use</a>
+        </p>
       </div>
     </div>
   );

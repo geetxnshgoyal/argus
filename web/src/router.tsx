@@ -4,6 +4,7 @@ import { ResourcePage } from './components/ResourcePage.tsx';
 import { IconTile, PageHead } from './components/ui.tsx';
 import { useMe } from './lib/auth.ts';
 import { LoginPage } from './routes/LoginPage.tsx';
+import { PrivacyPage, TermsPage } from './routes/LegalPages.tsx';
 import { AuditPage } from './routes/admin/AuditPage.tsx';
 import { AttendanceBrowserPage, AttendanceDetailPage } from './routes/admin/AttendanceBrowserPage.tsx';
 import { NoticesPage } from './routes/admin/NoticesPage.tsx';
@@ -31,6 +32,8 @@ const rootRoute = createRootRoute({
 });
 
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: '/login', component: LoginPage });
+const privacyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/privacy', component: PrivacyPage });
+const termsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/terms', component: TermsPage });
 
 const frameRoute = createRoute({ getParentRoute: () => rootRoute, id: 'frame', component: AppFrame });
 
@@ -216,6 +219,8 @@ const adminChildren = [
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
+  privacyRoute,
+  termsRoute,
   frameRoute.addChildren([indexRoute, studentRoute, teacherRoute, teacherSessionRoute, teacherPairRoute, verifyRoute, adminRoute.addChildren(adminChildren)]),
 ]);
 
