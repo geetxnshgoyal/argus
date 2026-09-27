@@ -86,7 +86,8 @@ export function makeCert(opts: {
   const exts = opts.extensions?.length ? [der.explicit(3, der.seq(...opts.extensions.map((e) => der.seq(der.oid(e.oid), der.octets(e.value)))))] : [];
   const tbs = der.seq(
     der.explicit(0, der.int(2)),
-    der.int(opts.serial ?? randomBytes(8)),
+    // DER integers are minimal: a random serial must not start with a 0x00 byte (or need one).
+    der.int(opts.serial ?? Buffer.concat([Buffer.from([1 + (randomBytes(1)[0] as number) % 0x7f]), randomBytes(7)])),
     ECDSA_SHA256,
     name(opts.issuer),
     der.seq(der.utcTime(opts.notBefore), der.utcTime(opts.notAfter)),

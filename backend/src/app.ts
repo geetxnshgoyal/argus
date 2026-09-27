@@ -44,9 +44,13 @@ function safeUrl(url: string): string {
 
 export async function buildApp(ctx: AppContext, opts: AppOptions = {}): Promise<BuiltApp> {
   const deps = { ...opts, logger: ctx.logger, version: ctx.version, now: ctx.now, checkDb: opts.checkDb ?? (() => pingDb(ctx.db)) };
+  const trustProxy = ctx.config.trustProxy || ctx.config.serverless ? (_addr: string, hop: number) => hop < 1 : false;
   const app = Fastify({
     loggerInstance: deps.logger,
-    trustProxy: ctx.config.trustProxy,
+    // Trust exactly one proxy hop (the college's reverse proxy, or Vercel's edge, which sets
+    // X-Forwarded-For itself): `true` would take the left-most, client-supplied address, so
+    // anyone could pick their IP and dodge per-IP rate limits or forge audit IPs.
+    trustProxy,
     genReqId: () => randomUUID(),
     requestIdHeader: false,
     // We write our own access log line (below) that omits query strings.

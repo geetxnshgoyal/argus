@@ -99,3 +99,18 @@ describe('web app serving', () => {
     expect(res.json()).toMatchObject({ code: 'not_found' });
   });
 });
+
+describe('client IP behind a proxy', () => {
+  it('a client cannot pick its own IP with X-Forwarded-For to dodge per-IP limits', async () => {
+    const t = await makeApp({ config: { trustProxy: true } });
+    apps.push(t.app);
+    const codes: number[] = [];
+    for (let i = 0; i < 31; i++) {
+      // The proxy appends the real client (203.0.113.9); the left-most entry is attacker-chosen.
+      const res = await t.app.inject({ url: '/v1/auth/oidc/login', headers: { 'x-forwarded-for': `198.51.100.${i}, 203.0.113.9` } });
+      codes.push(res.statusCode);
+    }
+    expect(codes.slice(0, 30).every((c) => c !== 429)).toBe(true);
+    expect(codes[30]).toBe(429);
+  });
+});
