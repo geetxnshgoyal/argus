@@ -24,3 +24,4 @@ app/android/app/src/main/res/values/firebase.xml
 app/android/key.properties
 *.jks
 *.keystore
+backups/

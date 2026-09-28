@@ -6,7 +6,8 @@ Academic Operations and verifiers work in the web app.
 
 - **Build spec (source of truth):** [docs/spec/phase1-build-spec.md](docs/spec/phase1-build-spec.md), amended by the [ADRs](docs/adr/README.md)
 - **Protocol:** [docs/protocol.md](docs/protocol.md)
-- **Threat model:** [docs/threat-model.md](docs/threat-model.md)
+- **Threat model:** [docs/threat-model.md](docs/threat-model.md), **security review:** [docs/security-review.md](docs/security-review.md)
+- **Runbooks (ops staff):** [docs/runbooks](docs/runbooks/README.md)
 
 ## Repository layout
 
@@ -52,6 +53,8 @@ web; `pnpm db:stop` stops Postgres, `pnpm db:reset` wipes it.
 | `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript across backend and web |
 | `pnpm gen:api` | Regenerate API types from `backend/api/openapi.yaml` (commit the result) |
 | `pnpm build` | Build the web app, then bundle the server into `backend/dist/` |
+| `pnpm backup [url]` / `pnpm restore:check <file>` | Database backup, and the restore drill ([runbook](docs/runbooks/backup-and-restore.md)) |
+| `pnpm --filter backend loadtest` | Load test: 100 classes × 60 students (see the script header) |
 
 Flutter app: `cd app && flutter run` with the dev API running. The Android
 emulator reaches your machine at `10.0.2.2:8080`; the iOS simulator uses

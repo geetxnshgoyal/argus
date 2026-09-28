@@ -142,6 +142,30 @@ void main() {
     expect(find.text('Cancelled'), findsOneWidget);
   });
 
+  testWidgets('accessibility: sign-in, policy and home meet Flutter\'s guidelines', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final (app, auth, _) = build(FakeServer());
+    await tester.pumpWidget(app);
+    await auth.start();
+    await tester.pumpAndSettle();
+    Future<void> check(String screen) async {
+      for (final g in [textContrastGuideline, androidTapTargetGuideline, iOSTapTargetGuideline, labeledTapTargetGuideline]) {
+        await expectLater(tester, meetsGuideline(g), reason: '$screen: ${g.description}');
+      }
+    }
+
+    await check('sign-in');
+    await tester.tap(find.text('Sign in as this student'));
+    await tester.pumpAndSettle();
+    await check('policy');
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    await tester.tap(find.text('Accept and continue'));
+    await tester.pumpAndSettle();
+    await check('home');
+    semantics.dispose();
+  });
+
   testWidgets('explains SSO errors in plain language', (tester) async {
     final (app, auth, _) = build(FakeServer());
     await tester.pumpWidget(app);

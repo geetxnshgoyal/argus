@@ -139,11 +139,12 @@ function SentNotice({ n }: { n: OpsNotice }) {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['notices'] }),
   });
   return (
-    <li style={{ alignItems: 'flex-start', opacity: n.withdrawn_at ? 0.6 : 1 }}>
+    <li style={{ alignItems: 'flex-start' }}>
       <div style={{ flex: 1 }}>
         <div>
           <span className={`badge ${n.kind === 'class_change' ? 'badge-warn' : ''}`}>{n.kind === 'class_change' ? 'Class change' : 'Announcement'}</span>{' '}
-          <strong>{n.title}</strong>
+          {/* Withdrawn: struck through (not faded, which fails text contrast); the badge says so too. */}
+          <strong style={n.withdrawn_at ? { textDecoration: 'line-through' } : undefined}>{n.title}</strong>
         </div>
         {n.body && <p style={{ whiteSpace: 'pre-wrap', margin: '0.35rem 0' }}>{n.body}</p>}
         <p className="muted small">

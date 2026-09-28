@@ -60,3 +60,23 @@ students scanning within 60 s on a MacBook with local Postgres: all 6000
 verified, server-side p95 6 ms (target < 500 ms); the same 6000 in 10 s: p95
 30 ms. Repeat against staging on Vercel + Neon before the pilot, where each
 database round trip is slower.
+
+## Accessibility pass (M7)
+
+axe-core (WCAG 2.1 A/AA rules) on every admin page, the main admin dialogs
+(add room, add student, weekly class, one-day change), the login, teacher home,
+live attendance (with recheck, spot check, correction and end dialogs), verifier,
+legal pages and the classroom display. Fixed: a withdrawn notice drawn at 60%
+opacity (text contrast), and the display's "Full screen" button and orange
+heading (contrast on white). Keyboard focus is visible everywhere
+(`:focus-visible`). The Flutter app's sign-in, policy and home screens pass
+Flutter's text-contrast, tap-target and labelled-button guidelines
+(`app/test/widget_test.dart`); the camera scan screen needs a manual check with
+TalkBack/VoiceOver on a phone.
+
+## Backup and restore drill (M7)
+
+2026-09-28, development database: `pnpm backup` then `pnpm restore:check`
+restored into a scratch database, applied 2 newer migrations and verified all
+132 audit hashes; a truncated file was reported as not usable. Procedure:
+docs/runbooks/backup-and-restore.md.

@@ -74,5 +74,8 @@ Replace the files in `/opt/argus/` with the new `backend/dist/` contents and run
 
 Open `https://<your-host>/v1/health`. It should show `"status":"ok"`.
 
-Backups, the health page for Acad Ops, and Windows service instructions are
-added in later milestones (see docs/adr/0003-simple-operations.md).
+## Backups and day-to-day operations
+
+See [docs/runbooks](../docs/runbooks/README.md): backups and the monthly
+restore drill (`pnpm backup`, `pnpm restore:check`), start of term, phones,
+attendance problems, outages and suspected proxy attendance.
