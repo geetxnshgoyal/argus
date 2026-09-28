@@ -107,8 +107,8 @@ describe('iPhone pilot mode (ADR-0024)', () => {
     await expect(svc('off').verifyBind({ platform: 'android', evidence: { kind: 'ios_unattested' }, payload: Buffer.from('p'), challenge: Buffer.from('c'), attemptKeySpki: Buffer.from('k') })).rejects.toThrow();
   });
 
-  it('scans from a pilot iPhone are not flagged; turning pilot mode off stops them', async () => {
-    expect((await svc('off').verifyRequest(unattested, Buffer.from('x'), { kind: 'missing', error: 'attest_unsupported' })).result).toBe('not_required');
+  it('scans from a pilot iPhone are marked unverified (flagged by phone_unverified); turning pilot mode off stops them', async () => {
+    expect((await svc('off').verifyRequest(unattested, Buffer.from('x'), { kind: 'missing', error: 'attest_unsupported' })).result).toBe('unverified');
     await expect(svc('required').verifyRequest(unattested, Buffer.from('x'), { kind: 'missing' })).rejects.toThrow(/register it again/);
   });
 });

@@ -14,6 +14,8 @@ regression test. Done-when for M7: no open high-severity findings.
 | 3 | Medium | Retention (spec §13) was documented but not implemented: raw attempt signals were kept forever. | Fixed: daily `retention` job (`src/retention.ts`), tested. |
 | 4 | Low | Removing a one-day change whose class already had attendance reported success but kept the class. Not exploitable; misleading for Acad Ops. | Fixed: 409 `session_has_attendance`. |
 | 5 | Low | The timetable `.xlsx` upload (Acad Ops only, 8 MB limit) is decompressed by exceljs; a crafted file could use a lot of memory. | Accepted: only trusted staff can upload; the body limit bounds it. |
+| 6 | High | iPhone pilot mode (ADR-0024) accepted unverified registrations immediately. A script with software keys could pose as an iPhone and send scans with any location and `is_mock: false`, turning a relayed QR into a remote one-tap bot. | Fixed: unverified iPhones need Acad Ops approval, and their scans are flagged (`phone_unverified`). Test: `adversarial-clients.test.ts`. |
+| 7 | High (availability) | iPhone pilot registration never worked: the server refused `ios_unattested` evidence as "does not match the platform" before the pilot-mode check. | Fixed; covered by the same test. |
 
 ## Checked, no issue
 
@@ -37,6 +39,19 @@ regression test. Done-when for M7: no open high-severity findings.
   the college's HTTPS proxy.
 - **Adversarial suite (spec §16).** All 12 items have automated tests
   (`attendance.test.ts`, `support.test.ts`, `audit.test.ts`, `attestation.test.ts`).
+
+## Phone-side attacks (USB debugging, fake GPS, modified app, scripts)
+
+| Attack | Result |
+|---|---|
+| Fake GPS app via Developer options | Allowed by Android, but the OS marks the fix (`isMock`; iOS `isSimulatedBySoftware`): scan flagged high, spot checks. |
+| USB debugging / ADB on the genuine app | Release builds aren't debuggable: no `run-as`, no debugger attach, keystore keys can't be read. |
+| Modified or re-signed APK (Frida gadget, patched checks) | Key attestation names the signing certificate; registration refused (`ANDROID_SIGNING_CERT_SHA256`). Reinstalling another signature wipes the old keys. |
+| Rooted phone (unlocked bootloader) | Key attestation reports it; registration refused. |
+| Emulator | Key is software-held; refused. |
+| Script posing as an Android phone | Needs a Google-rooted hardware key chain; refused. |
+| Script posing as an iPhone (pilot mode) | Finding 6: now waits for Acad Ops, and is flagged once approved. |
+| Leaked hardware attestation keybox ("TrickyStore") | Mitigated by Google's revocation list, fetched daily. Play Integrity (after the pilot) adds a second layer. |
 
 ## Load test
 

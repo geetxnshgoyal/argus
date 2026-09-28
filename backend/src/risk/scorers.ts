@@ -16,7 +16,7 @@ export interface AttemptFacts {
   campusNetwork: boolean | null;
   lateInWindow: boolean;
   deviceActivatedAt: Date | null;
-  attestation: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required';
+  attestation: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required' | 'unverified';
   /** Unresolved risk flags for this student in the last 14 days. */
   recentFlags: number;
   now: Date;
@@ -57,6 +57,7 @@ export const SCORERS: Scorer[] = [
   },
   { name: 'attestation_unavailable', score: (f, _o, w) => (f.attestation === 'unavailable' ? hit('attestation_unavailable', w) : none) },
   { name: 'attestation_missing', score: (f, _o, w) => (f.attestation === 'missing' ? hit('attestation_missing', w) : none) },
+  { name: 'phone_unverified', score: (f, _o, w) => (f.attestation === 'unverified' ? hit('phone_unverified', w) : none) },
   {
     name: 'recent_flag_history',
     score: (f, _o, w, s) => (f.recentFlags > 0 ? { points: Math.min(f.recentFlags * w, num(s, 'recent_flag_history_cap', 30)), flags: ['recent_flag_history'] } : none),

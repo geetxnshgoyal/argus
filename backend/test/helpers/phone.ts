@@ -39,8 +39,8 @@ export class Phone {
     return this;
   }
 
-  /** Binds with the dev attestation bypass; returns the raw response. */
-  async bind(overrides: { androidId?: string } = {}) {
+  /** Binds with the dev attestation bypass (or the given evidence); returns the raw response. */
+  async bind(overrides: { androidId?: string; platform?: 'android' | 'ios'; evidence?: Record<string, unknown> } = {}) {
     const ch = await this.app.inject({ method: 'POST', url: '/v1/devices/bind/challenge', headers: this.auth });
     if (ch.statusCode !== 200) throw new Error(`challenge failed: ${ch.body}`);
     const payload = Buffer.from(
@@ -49,18 +49,18 @@ export class Phone {
         challenge: ch.json().challenge,
         session_pub: this.session.spki,
         attempt_pub: this.attempt.spki,
-        platform: 'android',
+        platform: overrides.platform ?? 'android',
         model: 'Test Phone',
         os_version: '16',
         app_version: '1.0.0',
-        android_id: overrides.androidId ?? this.androidId,
+        ...(overrides.platform === 'ios' ? {} : { android_id: overrides.androidId ?? this.androidId }),
       }),
     );
     const res = await this.app.inject({
       method: 'POST',
       url: '/v1/devices/bind',
       headers: this.auth,
-      payload: { payload: b64url(payload), session_signature: this.session.sign(payload), attempt_signature: this.attempt.sign(payload), evidence: { kind: 'dev_bypass' } },
+      payload: { payload: b64url(payload), session_signature: this.session.sign(payload), attempt_signature: this.attempt.sign(payload), evidence: overrides.evidence ?? { kind: 'dev_bypass' } },
     });
     if (res.statusCode === 200) this.deviceId = res.json().device_id;
     return res;

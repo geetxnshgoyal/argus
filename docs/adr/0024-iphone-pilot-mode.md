@@ -9,3 +9,8 @@
 - If App Attest does work, the app sends it and it's verified as usual against `IOS_APP_ID` and `IOS_APP_ATTEST_ENV`.
 
 **Consequences.** The server can't tell a genuine Argus app on a real iPhone from a modified app or a simulator for these phones. The other checks remain: signed attempts, rotating QR, location and teacher spot checks. Use it for the pilot only. Joining the Apple Developer Program brings App Attest and TestFlight, after which the mode should be turned off. Free-account builds also expire after 7 days and install only on devices connected to the developer's Mac.
+
+**Amendment (M7 security review).** "The keys are still Secure Enclave keys" cannot be checked by the server without App Attest: a script on a laptop can make software keys, register as an "iPhone" and then send any location with `is_mock: false`. So in pilot mode:
+- An unverified iPhone registration always waits for Acad Ops approval (Phones page), who check the student's ID and see the Argus app on a real iPhone.
+- Every scan from an unverified iPhone carries the `phone_unverified` risk signal (30 points, enough to flag it), so these students appear in spot-check suggestions. Admins can change the weight like any other signal.
+- Test: `backend/test/adversarial-clients.test.ts`.

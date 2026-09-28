@@ -176,7 +176,8 @@ export async function bindDevice(ctx: AppContext, user: { id: string; tokenFamil
     .executeTakeFirst();
   if (used.numUpdatedRows === 0n) throw new ApiError(400, 'challenge_invalid', 'Registration took too long. Please try again.');
 
-  if (b.evidence.kind !== 'dev_bypass' && b.evidence.kind !== p.platform) throw new ApiError(400, 'validation_failed', 'Evidence does not match the platform.');
+  const evidencePlatform = b.evidence.kind === 'ios_unattested' ? 'ios' : b.evidence.kind;
+  if (evidencePlatform !== 'dev_bypass' && evidencePlatform !== p.platform) throw new ApiError(400, 'validation_failed', 'Evidence does not match the platform.');
   let att;
   try {
     att = await ctx.attestation.verifyBind({ platform: p.platform, evidence: b.evidence, payload: bytes, challenge: fromB64url(p.challenge), attemptKeySpki: fromB64url(p.attempt_pub) });
@@ -228,6 +229,11 @@ export async function bindDevice(ctx: AppContext, user: { id: string; tokenFamil
     }
     if (att.deviceCheckSeen && !mine.some((d) => d.platform === 'ios')) {
       approvalReason = 'This iPhone was registered to an Argus account before.';
+    }
+    // iPhone pilot mode (ADR-0024): without App Attest a script on a laptop could pose as an
+    // iPhone, so a person checks the student and the phone before it can mark attendance.
+    if (att.level === 'unattested') {
+      approvalReason = 'This iPhone could not be verified with Apple (pilot mode). Academic Operations must see the phone with the Argus app open.';
     }
 
     const samePhone = Boolean(active && ((hwHash && active.hardware_id_hash === hwHash) || active.session_key_spki === p.session_pub));

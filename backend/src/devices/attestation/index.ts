@@ -34,7 +34,7 @@ export interface BindResult {
   deviceCheckSeen?: boolean;
 }
 
-export type RequestAttestation = { result: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required'; newCounter?: number };
+export type RequestAttestation = { result: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required' | 'unverified'; newCounter?: number };
 
 export interface AttestationDeps {
   play?: PlayIntegrityDecoder | null;
@@ -200,7 +200,9 @@ export class AttestationService {
     if (device.attestation_level === 'unattested') {
       // Registered in iPhone pilot mode: there is no App Attest key to check requests against.
       if (this.config.attestation.ios.attestMode !== 'off') throw new AttestationFailed('this iPhone was registered without App Attest, which this server no longer accepts; register it again');
-      return { result: 'not_required' };
+      // Nothing proves these keys live on a real iPhone in the genuine app (a script could have
+      // made them), so every scan carries the phone_unverified risk signal.
+      return { result: 'unverified' };
     }
     // Only possible in dev/test: staging and production refuse Android binds without Play Integrity
     // (platformReady), so there is nothing to check a token against. Don't flag every scan for it.

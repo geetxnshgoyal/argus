@@ -370,7 +370,7 @@ export interface AttemptSignals {
   is_mock: boolean;
   campus_network: boolean | null;
   /** bypass: dev build; not_required: pilot mode without Play Integrity (ADR-0021). */
-  attestation: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required';
+  attestation: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required' | 'unverified';
   app_version: string;
   extra?: Record<string, unknown>;
 }
