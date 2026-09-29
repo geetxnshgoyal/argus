@@ -18,7 +18,8 @@
     "seed:dev": "cd backend && ARGUS_ENV=dev node scripts/seed-dev.ts",
     "build:vercel": "pnpm --filter web build && node backend/build-vercel.mjs",
     "backup": "node backend/scripts/backup.ts",
-    "restore:check": "node backend/scripts/restore-check.ts"
+    "restore:check": "node backend/scripts/restore-check.ts",
+    "release": "node scripts/release.mjs"
   },
   "devDependencies": {
     "openapi-typescript": "^7.13.0",

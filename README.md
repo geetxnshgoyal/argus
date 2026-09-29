@@ -53,6 +53,7 @@ web; `pnpm db:stop` stops Postgres, `pnpm db:reset` wipes it.
 | `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript across backend and web |
 | `pnpm gen:api` | Regenerate API types from `backend/api/openapi.yaml` (commit the result) |
 | `pnpm build` | Build the web app, then bundle the server into `backend/dist/` |
+| `pnpm release 0.0.6` | One version for app, server and web; commits, tags and pushes (GitHub builds the APK, Vercel deploys) |
 | `pnpm backup [url]` / `pnpm restore:check <file>` | Database backup, and the restore drill ([runbook](docs/runbooks/backup-and-restore.md)) |
 | `pnpm --filter backend loadtest` | Load test: 100 classes × 60 students (see the script header) |
 
