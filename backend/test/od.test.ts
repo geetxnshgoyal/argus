@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from '../src/db/index.ts';
+import { runRetention } from '../src/retention.ts';
 import { createUser, loginAs, makeApp, type TestApp } from './helpers/app.ts';
 import { closeTestDb, hasDb, resetDb, testDb } from './helpers/db.ts';
 import { collegeFixture, type College } from './helpers/fixtures.ts';
@@ -187,5 +188,44 @@ describe.skipIf(!hasDb)('OD requests and attendance issues (ADR-0027)', () => {
     expect((await post(`/v1/teacher/attendance-issues/${id}/answer`, tA.headers, { decision: 'decline' })).statusCode).toBe(400);
     expect((await post(`/v1/teacher/attendance-issues/${id}/answer`, tA.headers, { decision: 'decline', note: 'Not in class; I checked the headcount' })).json()).toEqual({ status: 'declined' });
     expect(await record('s2@college.test')).toMatchObject({ status: 'absent' });
+  });
+  it('proof files: photo or PDF by content, 3 MB and 3 files max, visible to the student and approvers only, audited, deleted by retention', async () => {
+    const id = (await post('/v1/me/od-requests', s1.auth, { kind: 'days', dates: ['2026-09-22'], event: 'Sports meet', reason: 'Team member' })).json().id as string;
+    const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(100, 7)]);
+    const pdf = Buffer.from('%PDF-1.7\n1 0 obj<<>>endobj\n%%EOF');
+    const up = (name: string, data: Buffer, who = s1.auth) => post(`/v1/me/od-requests/${id}/attachments`, who, { filename: name, data: data.toString('base64') });
+
+    const photo = await up('letter photo.JPG', jpeg);
+    expect(photo.statusCode).toBe(201);
+    expect(photo.json()).toMatchObject({ filename: 'letter photo.jpg', content_type: 'image/jpeg', size: jpeg.length });
+    // Named .pdf but really a JPEG → stored as what it is; an HTML file dressed as PDF is refused.
+    expect((await up('letter.pdf', jpeg)).json().content_type).toBe('image/jpeg');
+    expect((await up('evil.pdf', Buffer.from('<html><script>alert(1)</script>'))).statusCode).toBe(415);
+    expect((await up('big.pdf', Buffer.concat([Buffer.from('%PDF-'), Buffer.alloc(3 * 1024 * 1024)]))).statusCode).toBe(413);
+    expect((await up('note.pdf', pdf)).statusCode).toBe(201);
+    expect((await up('fourth.pdf', pdf)).json().code).toBe('too_many_files');
+    expect((await up('x.pdf', pdf, s2.auth)).statusCode).toBe(404); // not s2's request
+
+    const listed = (await get('/v1/community/od-requests', cm.headers)).json().items[0];
+    expect(listed.attachments.map((a: { filename: string }) => a.filename)).toEqual(['letter photo.jpg', 'letter.jpg', 'note.pdf']);
+    const file = `/v1/od-requests/${id}/attachments/${photo.json().id}`;
+    const seen = await get(file, cm.headers);
+    expect(seen.statusCode).toBe(200);
+    expect(seen.headers['content-type']).toBe('image/jpeg');
+    expect(seen.headers['content-security-policy']).toContain('sandbox');
+    expect(Buffer.compare(seen.rawPayload, jpeg)).toBe(0);
+    expect((await get(file, s1.auth)).statusCode).toBe(200);
+    expect((await get(file, s2.auth)).statusCode).toBe(404);
+    const tA = await loginAs(t.app, c.tA.email);
+    expect((await get(file, tA.headers)).statusCode).toBe(403);
+    expect((await db.selectFrom('audit_log').select('action').where('action', '=', 'od.view_attachment').execute()).length).toBe(1);
+
+    // Decided → no more changes; 180 days later the files go, the decision stays.
+    await post(`/v1/community/od-requests/${id}/decision`, cm.headers, { decision: 'approve' });
+    await post(`/v1/admin/od-requests/${id}/decision`, ops.headers, { decision: 'approve' });
+    expect((await up('late.pdf', pdf)).json().code).toBe('already_decided');
+    t.clock.now += 181 * 86_400_000;
+    expect((await runRetention(t.ctx)).odProofsDeleted).toBe(3);
+    expect((await db.selectFrom('od_requests').select('status').where('id', '=', id).executeTakeFirstOrThrow()).status).toBe('approved');
   });
 });

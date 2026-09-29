@@ -375,6 +375,10 @@ class ApiClient {
 
   Future<void> cancelOd(String id) async => _send('POST', '/v1/me/od-requests/$id/cancel');
 
+  /// Proof for an OD request: a JPEG/PNG photo or a PDF, up to 3 MB.
+  Future<Map<String, dynamic>> addOdAttachment(String requestId, String filename, List<int> bytes) =>
+      _send('POST', '/v1/me/od-requests/$requestId/attachments', body: {'filename': filename, 'data': base64Encode(bytes)});
+
   Future<List<Map<String, dynamic>>> attendanceIssues() async => ((await _send('GET', '/v1/me/attendance-issues'))['items'] as List).cast<Map<String, dynamic>>();
 
   Future<Map<String, dynamic>> raiseIssue({required String classId, required String reason, required String note}) =>

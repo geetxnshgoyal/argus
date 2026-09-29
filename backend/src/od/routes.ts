@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { currentUser, needAuth } from '../auth/guard.ts';
 import type { AppContext } from '../context.ts';
 import { idParams, isoDate, parse, uuid } from '../validation.ts';
+import { addAttachment, getAttachment, MAX_ATTACHMENT_BYTES, removeAttachment } from './attachments.ts';
 import { answerIssue, cancelIssue, listIssues, opsIssueDecision, raiseIssue } from './issues.ts';
 import { cancelOdRequest, createOdRequest, decideOdRequest, myOdRequests, odQueue } from './service.ts';
 
@@ -36,6 +37,28 @@ export function registerOdRoutes(app: FastifyInstance, ctx: AppContext): void {
     return createOdRequest(ctx, currentUser(req).id, b, req.ip);
   });
   app.post('/v1/me/od-requests/:id/cancel', student, async (req) => cancelOdRequest(ctx, currentUser(req).id, parse(idParams, req.params).id, req.ip));
+
+  // Proof: a photo or PDF, base64 in JSON (≤ 3 MB decoded, so the body stays under 4.5 MB).
+  app.post('/v1/me/od-requests/:id/attachments', { ...student, ...limited, bodyLimit: Math.ceil((MAX_ATTACHMENT_BYTES * 4) / 3) + 4096 }, async (req, reply) => {
+    const b = parse(z.object({ filename: z.string().trim().min(1).max(200), data: z.string().regex(/^[A-Za-z0-9+/]+={0,2}$/, 'Base64 file content') }), req.body);
+    reply.status(201);
+    return addAttachment(ctx, currentUser(req).id, parse(idParams, req.params).id, b, req.ip);
+  });
+  app.delete('/v1/me/od-requests/:id/attachments/:attachment_id', student, async (req) => {
+    const p = parse(z.object({ id: uuid, attachment_id: uuid }), req.params);
+    return removeAttachment(ctx, currentUser(req).id, p.id, p.attachment_id, req.ip);
+  });
+  app.get('/v1/od-requests/:id/attachments/:attachment_id', { preHandler: needAuth('student', 'community_manager', 'acadops', 'admin') }, async (req, reply) => {
+    const p = parse(z.object({ id: uuid, attachment_id: uuid }), req.params);
+    const f = await getAttachment(ctx, currentUser(req), p.id, p.attachment_id, req.ip);
+    return reply
+      .header('content-type', f.content_type)
+      .header('content-disposition', `inline; filename*=UTF-8''${encodeURIComponent(f.filename)}`)
+      // Shown in the browser, never able to run anything or reach the site.
+      .header('content-security-policy', "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox")
+      .header('x-content-type-options', 'nosniff')
+      .send(f.data);
+  });
 
   app.get('/v1/me/attendance-issues', student, async (req) => listIssues(ctx, { studentId: currentUser(req).id }));
   app.post('/v1/me/attendance-issues', { ...student, ...limited }, async (req, reply) => {

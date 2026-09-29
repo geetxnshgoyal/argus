@@ -17,6 +17,8 @@ import type { AppContext } from './context.ts';
  */
 export const SIGNAL_RETENTION_DAYS = 90;
 export const SIGN_IN_RETENTION_DAYS = 30;
+/** OD proof files: kept 180 days after the request is decided (the decision itself stays). */
+export const OD_PROOF_RETENTION_DAYS = 180;
 
 const DAY_MS = 86_400_000;
 
@@ -24,6 +26,7 @@ export interface RetentionResult {
   attemptSignalsCleared: number;
   flagDetailsCleared: number;
   signInRowsDeleted: number;
+  odProofsDeleted: number;
 }
 
 export async function runRetention(ctx: AppContext): Promise<RetentionResult> {
@@ -66,7 +69,19 @@ export async function runRetention(ctx: AppContext): Promise<RetentionResult> {
         .executeTakeFirst(),
     );
 
+    const proofs = await tx
+      .deleteFrom('od_attachments')
+      .where('od_request_id', 'in', (eb) =>
+        eb
+          .selectFrom('od_requests')
+          .select('id')
+          .where('status', 'in', ['approved', 'rejected', 'cancelled'])
+          .where(sql<boolean>`coalesce(ops_decided_at, cm_decided_at, created_at) < ${new Date(ctx.now() - OD_PROOF_RETENTION_DAYS * DAY_MS)}`),
+      )
+      .executeTakeFirst();
+
     return {
+      odProofsDeleted: Number(proofs.numDeletedRows),
       attemptSignalsCleared: Number(attempts.numUpdatedRows),
       flagDetailsCleared: Number(flags.numUpdatedRows),
       signInRowsDeleted: signIn,

@@ -359,7 +359,7 @@ describe.skipIf(!hasDb)('attendance (integration, spec §16 adversarial suite)',
     expect(await db.selectFrom('web_sessions').select('id_hash').execute()).toHaveLength(0);
     expect(await db.selectFrom('refresh_tokens').select('id').execute()).toHaveLength(0);
     // Idempotent.
-    expect(await runRetention(t.ctx)).toEqual({ attemptSignalsCleared: 0, flagDetailsCleared: 0, signInRowsDeleted: 0 });
+    expect(await runRetention(t.ctx)).toEqual({ attemptSignalsCleared: 0, flagDetailsCleared: 0, signInRowsDeleted: 0, odProofsDeleted: 0 });
   });
   it('a one-off class that already has attendance cannot be removed (and says why)', async () => {
     const ops = await loginAs(t.app, 'ops@college.test');

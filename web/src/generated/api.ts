@@ -2048,6 +2048,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/od-requests/{id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach proof to a waiting OD request: a JPEG/PNG photo or a PDF, up to 3 MB, at most 3 */
+        post: operations["addOdAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/od-requests/{id}/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a proof file while the request is waiting */
+        delete: operations["removeOdAttachment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/od-requests/{id}/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        /** The proof file itself: the student who asked, community managers, Acad Ops and admins (staff views are audited) */
+        get: operations["getOdAttachment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/od-requests/{id}/cancel": {
         parameters: {
             query?: never;
@@ -3880,6 +3939,16 @@ export interface components {
             };
             community_manager: components["schemas"]["OdStep"];
             acadops: components["schemas"]["OdStep"];
+            /** @description Proof files (photo or PDF); open with GET /v1/od-requests/{id}/attachments/{attachment_id} */
+            attachments: components["schemas"]["OdAttachment"][];
+        };
+        OdAttachment: {
+            /** Format: uuid */
+            id: string;
+            filename: string;
+            /** @enum {string} */
+            content_type: "image/jpeg" | "image/png" | "application/pdf";
+            size: number;
         };
         OdStep: {
             name: string;
@@ -8530,6 +8599,115 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OdCreated"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    addOdAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    filename: string;
+                    /** @description File content, standard base64. The type is read from the content, not the name. */
+                    data: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Attached */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OdAttachment"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+            /** @description File larger than 3 MB */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not a JPEG, PNG or PDF */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeOdAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResult"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    getOdAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file (image/jpeg, image/png or application/pdf) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
                 };
             };
             400: components["responses"]["Error400"];

@@ -26,8 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Argus lets you attach a photo of an on-duty letter to your OD request.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Argus uses the camera to scan the attendance QR code shown in your classroom.</string>
+	<string>Argus uses the camera to scan the attendance QR code shown in your classroom, and to photograph an on-duty letter if you attach one.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Argus asks for Face ID or your passcode so only you can mark your attendance.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

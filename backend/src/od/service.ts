@@ -180,6 +180,9 @@ async function present(ctx: AppContext, rows: ListRow[]) {
         where cs.id = any(${ids}::uuid[])`.execute(ctx.db)
     : { rows: [] };
   const byId = new Map(classes.rows.map((c) => [c.id, c]));
+  const files = rows.length
+    ? await ctx.db.selectFrom('od_attachments').select(['id', 'od_request_id', 'filename', 'content_type', 'size']).where('od_request_id', 'in', rows.map((r) => r.id)).orderBy('created_at').execute()
+    : [];
   return rows.map((r) => ({
     id: r.id,
     kind: r.kind,
@@ -191,6 +194,7 @@ async function present(ctx: AppContext, rows: ListRow[]) {
     rejected_by_role: r.rejected_by_role,
     created_at: r.created_at.toISOString(),
     student: { name: r.student_name, usn: r.usn, section: r.section_name },
+    attachments: files.filter((f) => f.od_request_id === r.id).map(({ od_request_id: _, ...f }) => f),
     community_manager: r.cm_name ? { name: r.cm_name, note: r.cm_note, at: r.cm_decided_at?.toISOString() ?? null } : null,
     acadops: r.ops_name ? { name: r.ops_name, note: r.ops_note, at: r.ops_decided_at?.toISOString() ?? null } : null,
   }));

@@ -26,6 +26,7 @@ export function WifiRoutersPage() {
     },
   });
   const withRouters = (rooms.data ?? []).filter((r) => Array.isArray(r.wifi_routers) && r.wifi_routers.length > 0);
+  const missing = (rooms.data ?? []).filter((r) => !Array.isArray(r.wifi_routers) || r.wifi_routers.length === 0);
   const items = learned.data?.items ?? [];
   return (
     <>
@@ -54,6 +55,13 @@ export function WifiRoutersPage() {
           </table>
         )}
       </section>
+      {missing.length > 0 && (
+        <section className="card">
+          <h2>Rooms without routers ({missing.length})</h2>
+          <p className="muted small">Scans in these rooms can't be matched to the room yet (they aren't penalised for it). Add routers on the Rooms page, or accept learned ones below once students have scanned there.</p>
+          <p>{missing.map((r) => r.code).join(' · ')}</p>
+        </section>
+      )}
       <section className="card">
         <h2>Learned from scans</h2>
         <p className="muted small">The strongest college router in verified scans, per room. A router seen in many scans in one room almost certainly belongs to it; one seen in several rooms is probably in a corridor.</p>

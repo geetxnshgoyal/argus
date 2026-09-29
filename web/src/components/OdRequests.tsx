@@ -77,6 +77,22 @@ function OdItem({ r, base, canDecide, step }: { r: Od; base: string; canDecide: 
         {r.kind === 'days' ? 'Whole days: ' : 'Classes: '}
         {scope(r)} · asked {new Date(r.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
       </p>
+      {r.attachments.length > 0 ? (
+        <p className="small">
+          Proof:{' '}
+          {r.attachments.map((a, i) => (
+            <span key={a.id}>
+              {i > 0 && ' · '}
+              <a href={`/v1/od-requests/${r.id}/attachments/${a.id}`} target="_blank" rel="noopener noreferrer">
+                {a.filename}
+              </a>{' '}
+              <span className="muted">({Math.max(1, Math.round(a.size / 1024))} KB)</span>
+            </span>
+          ))}
+        </p>
+      ) : (
+        <p className="small muted">No proof attached.</p>
+      )}
       {r.community_manager && (
         <p className="small">
           Community manager: {r.community_manager.name}

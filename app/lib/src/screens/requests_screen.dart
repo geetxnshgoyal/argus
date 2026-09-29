@@ -1,4 +1,6 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../api_client.dart';
 import '../theme.dart';
@@ -89,6 +91,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
                       : (r['classes'] as List).map((c) => '${c['code']} ${c['date']} ${c['start']}').join(' · '),
                   status: _odStatus[r['status']] ?? ('${r['status']}', ArgusColors.fg3),
                   notes: [
+                    if ((r['attachments'] as List? ?? const []).isNotEmpty) 'Proof: ${(r['attachments'] as List).length} file${(r['attachments'] as List).length > 1 ? 's' : ''} attached',
                     if (r['community_manager']?['note'] != null) 'Community manager: ${r['community_manager']['note']}',
                     if (r['acadops']?['note'] != null) 'Academic Operations: ${r['acadops']['note']}',
                   ],
@@ -179,6 +182,40 @@ class _OdFormScreenState extends State<OdFormScreen> {
   }();
   bool _busy = false;
   String? _error;
+  final _proof = <({String name, List<int> bytes})>[];
+  static const _maxBytes = 3 * 1024 * 1024;
+
+  void _addProof(String name, List<int> bytes) {
+    if (bytes.length > _maxBytes) {
+      setState(() => _error = '$name is larger than 3 MB. Take a photo of the letter instead.');
+    } else if (_proof.length >= 3) {
+      setState(() => _error = 'Up to 3 files.');
+    } else {
+      setState(() {
+        _error = null;
+        _proof.add((name: name, bytes: bytes));
+      });
+    }
+  }
+
+  /// A photo of the letter, resized so it stays well under 3 MB.
+  Future<void> _pickPhoto(ImageSource source) async {
+    try {
+      final x = await ImagePicker().pickImage(source: source, maxWidth: 2000, maxHeight: 2000, imageQuality: 75);
+      if (x != null) _addProof(x.name, await x.readAsBytes());
+    } catch (_) {
+      setState(() => _error = source == ImageSource.camera ? 'Could not open the camera.' : 'Could not open your photos.');
+    }
+  }
+
+  Future<void> _pickPdf() async {
+    try {
+      final files = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: const ['pdf']);
+      if (files.isNotEmpty) _addProof(files.first.name, await files.first.readAsBytes());
+    } catch (_) {
+      setState(() => _error = 'Could not open your files.');
+    }
+  }
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -192,13 +229,24 @@ class _OdFormScreenState extends State<OdFormScreen> {
       _error = null;
     });
     try {
-      await widget.api.requestOd(
+      final created = await widget.api.requestOd(
         kind: _kind,
         dates: _kind == 'days' ? (_dates.toList()..sort()) : null,
         classIds: _kind == 'classes' ? _classIds.toList() : null,
         event: _event.text.trim(),
         reason: _reason.text.trim(),
       );
+      final failed = <String>[];
+      for (final f in _proof) {
+        try {
+          await widget.api.addOdAttachment(created['id'] as String, f.name, f.bytes);
+        } catch (_) {
+          failed.add(f.name);
+        }
+      }
+      if (failed.isNotEmpty && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Request sent, but ${failed.join(', ')} could not be attached.')));
+      }
       if (mounted) Navigator.of(context).pop(true);
     } on ApiException catch (e) {
       setState(() => _error = e.message);
@@ -253,6 +301,24 @@ class _OdFormScreenState extends State<OdFormScreen> {
               ]);
             },
           ),
+        const SizedBox(height: 16),
+        Text('Proof (optional)', style: t.titleSmall),
+        const SizedBox(height: 4),
+        Text('A photo or PDF of the letter or event list. Helps it get approved faster.', style: t.bodySmall),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final f in _proof)
+            InputChip(
+              avatar: Icon(f.name.toLowerCase().endsWith('.pdf') ? Icons.picture_as_pdf_outlined : Icons.image_outlined, size: 18),
+              label: Text('${f.name} · ${(f.bytes.length / 1024).round()} KB'),
+              onDeleted: () => setState(() => _proof.remove(f)),
+            ),
+          if (_proof.length < 3) ...[
+            ActionChip(avatar: const Icon(Icons.photo_camera_outlined, size: 18), label: const Text('Take photo'), onPressed: () => _pickPhoto(ImageSource.camera)),
+            ActionChip(avatar: const Icon(Icons.photo_library_outlined, size: 18), label: const Text('Choose photo'), onPressed: () => _pickPhoto(ImageSource.gallery)),
+            ActionChip(avatar: const Icon(Icons.picture_as_pdf_outlined, size: 18), label: const Text('Choose PDF'), onPressed: _pickPdf),
+          ],
+        ]),
         const SizedBox(height: 16),
         TextField(controller: _event, maxLength: 120, onChanged: (_) => setState(() {}), decoration: const InputDecoration(labelText: 'Event or duty', hintText: 'e.g. Inter-college hackathon')),
         TextField(controller: _reason, maxLength: 500, maxLines: 3, onChanged: (_) => setState(() {}), decoration: const InputDecoration(labelText: 'Details', hintText: 'Who asked you to go, where, when')),

@@ -563,6 +563,17 @@ export interface OdRequestsTable {
   created_at: CreatedAt;
 }
 
+export interface OdAttachmentsTable {
+  id: string;
+  od_request_id: string;
+  filename: string;
+  content_type: 'image/jpeg' | 'image/png' | 'application/pdf';
+  size: number;
+  sha256: string;
+  data: Buffer;
+  created_at: CreatedAt;
+}
+
 export type IssueStatus = 'pending_teacher' | 'pending_ops' | 'resolved' | 'declined' | 'cancelled';
 export type IssueReason = 'marked_absent_but_present' | 'marked_late_but_on_time' | 'wrong_record' | 'other';
 
@@ -683,6 +694,7 @@ export interface Database {
   app_settings: AppSettingsTable;
   wifi_observations: WifiObservationsTable;
   od_requests: OdRequestsTable;
+  od_attachments: OdAttachmentsTable;
   attendance_issues: AttendanceIssuesTable;
   notices: NoticesTable;
   notice_recipients: NoticeRecipientsTable;

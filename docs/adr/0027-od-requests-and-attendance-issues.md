@@ -10,4 +10,6 @@
 - The Acad Ops **Requests** page also gives corrections their missing approval screen.
 - Everything is audited (`od.*`, `issue.*`, `correction.*`).
 
-**Consequences.** Students no longer need paper OD slips or office visits for simple record errors. OD evidence is text only for now; a proof-file upload can be added with storage (e.g. Vercel Blob) later.
+**Consequences.** Students no longer need paper OD slips or office visits for simple record errors.
+
+**Amendment (proof files).** A student can attach up to three photos (JPEG/PNG, resized on the phone) or PDFs, 3 MB each, while the request is waiting. They are stored in Postgres (`od_attachments`), not a separate file service, to keep operations to one database (ADR-0003); the type is read from the file's bytes, not its name. Only the student, community managers, Acad Ops and admins can open them; staff views are audited, and files are served sandboxed. The retention job deletes them 180 days after the request is decided.

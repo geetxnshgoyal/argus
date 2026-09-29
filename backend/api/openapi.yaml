@@ -4510,6 +4510,139 @@ paths:
           $ref: "#/components/responses/Error404"
         "409":
           $ref: "#/components/responses/Error409"
+  /v1/me/od-requests/{id}/attachments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - student
+      operationId: addOdAttachment
+      summary: "Attach proof to a waiting OD request: a JPEG/PNG photo or a PDF, up to 3 MB, at most 3"
+      security:
+      - bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filename, data]
+              properties:
+                filename:
+                  type: string
+                  maxLength: 200
+                data:
+                  type: string
+                  description: File content, standard base64. The type is read from the content, not the name.
+      responses:
+        "201":
+          description: Attached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OdAttachment"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+        "413":
+          description: File larger than 3 MB
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "415":
+          description: Not a JPEG, PNG or PDF
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/me/od-requests/{id}/attachments/{attachment_id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: attachment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    delete:
+      tags:
+      - student
+      operationId: removeOdAttachment
+      summary: Remove a proof file while the request is waiting
+      security:
+      - bearer: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResult"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/od-requests/{id}/attachments/{attachment_id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: attachment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - community
+      operationId: getOdAttachment
+      summary: "The proof file itself: the student who asked, community managers, Acad Ops and admins (staff views are audited)"
+      responses:
+        "200":
+          description: The file (image/jpeg, image/png or application/pdf)
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
   /v1/me/od-requests/{id}/cancel:
     parameters:
     - name: id
@@ -8767,7 +8900,7 @@ components:
           format: uuid
     OdRequest:
       type: object
-      required: [id, kind, dates, classes, event, reason, status, rejected_by_role, created_at, student, community_manager, acadops]
+      required: [id, kind, dates, classes, event, reason, status, rejected_by_role, created_at, student, community_manager, acadops, attachments]
       properties:
         id:
           type: string
@@ -8823,6 +8956,25 @@ components:
           $ref: "#/components/schemas/OdStep"
         acadops:
           $ref: "#/components/schemas/OdStep"
+        attachments:
+          type: array
+          description: Proof files (photo or PDF); open with GET /v1/od-requests/{id}/attachments/{attachment_id}
+          items:
+            $ref: "#/components/schemas/OdAttachment"
+    OdAttachment:
+      type: object
+      required: [id, filename, content_type, size]
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        content_type:
+          type: string
+          enum: [image/jpeg, image/png, application/pdf]
+        size:
+          type: integer
     OdStep:
       type: [object, "null"]
       required: [name, note, at]

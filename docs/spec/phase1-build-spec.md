@@ -432,6 +432,25 @@ Rate limits (Redis): per device on /attendance/attempts (e.g. 10/min), per user 
 - **M7 — Hardening.** Load test (simulate 100 concurrent classes × 60 students scanning within 60 s; target p95 attempt latency < 500 ms server-side), security review, adversarial test suite (§16), accessibility pass, retention job, runbooks, backup/restore drill. Done when: no open high-severity findings; restore drill succeeds.
 - **M8 — Pilot support.** Shadow mode flag (attendance computed but not official), metrics dashboard: false-reject rate, time-to-mark, support-request rate, spot-check miss rate, flag distribution.
 
+### Status (2026-09-29)
+
+All milestones are built. Where the build differs from the text above, the ADR wins (see [docs/adr](../adr/README.md)).
+
+| Milestone | Status | Differences from the text above |
+|---|---|---|
+| M0 Foundations | Done (v0.0.1) | Node/TypeScript backend, no Docker/Redis/mock OIDC: one Node process + Postgres (ADR-0001, 0003); hosted on Vercel + Neon (ADR-0020) |
+| M1 Auth, roles, org data, audit | Done | Teachers use the web only (ADR-0002); sign-in design ADR-0016; roster import sends five fields (ADR-0017) |
+| M2 Timetable | Done | Term calendar (ADR-0012); grid importer with exact dry run (ADR-0019) |
+| M3 Device binding and attestation | Done | Two device keys (ADR-0008); rebind keeps the old phone (ADR-0007); Android/iPhone pilot modes (ADR-0021, 0024); fingerprint/face-bound attempt keys (ADR-0029) |
+| M4 Attendance core | Done | Display pairing + round keys (ADR-0004); cheap checks first (ADR-0005); protocol encoding (ADR-0011) |
+| M5 Risk, live dashboard, rechecks, spot checks | Done | Live panel polls on Vercel instead of WebSockets (ADR-0020); runtime risk settings + admin page (ADR-0014) |
+| M6 Support and corrections | Done | Verifier needs QR evidence (ADR-0006); verifiers merged into Acad Ops (ADR-0028); Android push via FCM, iPhone push needs a paid Apple account (ADR-0025) |
+| M7 Hardening | Done | Load test p95 6 ms locally; security review, adversarial suite, accessibility, retention, runbooks, backup drill: [security-review.md](../security-review.md), [runbooks](../runbooks/README.md) |
+| M8 Pilot support | Done | Shadow mode + §17 metrics (ADR-0026) |
+| Added | Done | Notices (ADR-0023); OD requests and student issues (ADR-0027); class topics; classroom Wi-Fi routers (ADR-0030) |
+
+**Open before the pilot:** paid Apple Developer account (App Attest, iPhone Wi-Fi and push, TestFlight; free installs expire after 7 days), load test against the hosted server, screen-reader check of the scan screen, live-site setup (campus area, Wi-Fi routers, teaching assignments, holidays, student import, campus IP). Then §17 measurements during the pilot.
+
 ## 16. Adversarial test suite (automated where possible)
 
 - Login as another student on an unbound device → attempt rejected.
