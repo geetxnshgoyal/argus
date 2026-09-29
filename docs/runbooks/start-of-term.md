@@ -44,10 +44,10 @@ Current area (Tower C, RV Vidyaniketan, set up 2026-09-29), outline including th
 25 m margin:
 
 ```
-12.920986, 77.500767
+12.920914, 77.50065
 12.92143, 77.501498
-12.920196, 77.502288
-12.919752, 77.501558
+12.920158, 77.502312
+12.919643, 77.501465
 ```
 
 ## If something goes wrong
