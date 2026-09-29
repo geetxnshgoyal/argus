@@ -12,7 +12,7 @@ export interface FieldDef {
   key: string;
   label: string;
   /** 'polygon': [[lat, lon], …] edited as one "lat, lon" corner per line. */
-  type: 'text' | 'number' | 'date' | 'select' | 'ref' | 'polygon';
+  type: 'text' | 'number' | 'date' | 'select' | 'ref' | 'polygon' | 'lines';
   required?: boolean;
   hint?: string;
   options?: { value: string; label: string }[];
@@ -176,6 +176,7 @@ function ResourceForm(props: { config: ResourceConfig; refs: RefMaps; row: Row |
         const v = row?.[f.key];
         if (v === null || v === undefined) return [f.key, ''];
         if (f.type === 'polygon') return [f.key, (v as [number, number][]).map(([a, b]) => `${a}, ${b}`).join('\n')];
+        if (f.type === 'lines') return [f.key, (v as string[]).join('\n')];
         return [f.key, String(v)];
       }),
     ),
@@ -187,6 +188,10 @@ function ResourceForm(props: { config: ResourceConfig; refs: RefMaps; row: Row |
       const problems: Record<string, string> = {};
       for (const f of fields) {
         const v = values[f.key] ?? '';
+        if (f.type === 'lines') {
+          body[f.key] = v.split(/[\n,]+/).map((x) => x.trim()).filter(Boolean);
+          continue;
+        }
         if (v.trim() === '') {
           if (row && (f.nullable || !f.required)) body[f.key] = f.type === 'text' ? '' : null;
           if (!row && f.nullable) body[f.key] = null;
@@ -253,6 +258,14 @@ function ResourceForm(props: { config: ResourceConfig; refs: RefMaps; row: Row |
                   </option>
                 ))}
               </select>
+            ) : f.type === 'lines' ? (
+              <textarea
+                rows={3}
+                value={values[f.key]}
+                placeholder={'e0:c2:50:78:0e\ne0:c2:50:78:3b'}
+                aria-invalid={Boolean(fieldErrors[f.key])}
+                onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
+              />
             ) : f.type === 'polygon' ? (
               <textarea
                 rows={5}

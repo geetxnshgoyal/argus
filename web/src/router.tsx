@@ -12,6 +12,7 @@ import { PhonesPage } from './routes/admin/PhonesPage.tsx';
 import { RiskSettingsPage } from './routes/admin/RiskSettingsPage.tsx';
 import { PilotPage } from './routes/admin/PilotPage.tsx';
 import { RequestsPage } from './routes/admin/RequestsPage.tsx';
+import { WifiRoutersPage } from './routes/admin/WifiRoutersPage.tsx';
 import { CommunityPage } from './routes/community/CommunityPage.tsx';
 import { RESOURCE_CONFIGS } from './routes/admin/configs.ts';
 import { StudentImportPage } from './routes/admin/StudentImportPage.tsx';
@@ -155,6 +156,7 @@ function AdminShell() {
           <SideNavLink to="/admin/rooms">Rooms</SideNavLink>
           <SideNavLink to="/admin/geofences">Campus areas</SideNavLink>
           <SideNavLink to="/admin/campus-networks">Campus networks</SideNavLink>
+          <SideNavLink to="/admin/wifi-routers">Wi-Fi routers</SideNavLink>
           <div className="section-label">Attendance</div>
           <SideNavLink to="/admin/attendance">Attendance</SideNavLink>
           <SideNavLink to="/admin/phones">Phones</SideNavLink>
@@ -228,6 +230,7 @@ const adminChildren = [
   createRoute({ getParentRoute: () => adminRoute, path: '/risk-settings', component: RiskSettingsPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/pilot', component: PilotPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/requests', component: RequestsPage }),
+  createRoute({ getParentRoute: () => adminRoute, path: '/wifi-routers', component: WifiRoutersPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/support', component: VerifierPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/notices', component: NoticesPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/timetable', component: TimetablePage }),

@@ -417,4 +417,30 @@ describe.skipIf(!hasDb)('attendance (integration, spec §16 adversarial suite)',
     expect(mine.items.find((x: { id: string }) => x.id === classId)).toMatchObject({ topic: 'Greedy algorithms', teacher: 'Teacher A' });
     expect((await t.app.inject({ method: 'PUT', url: `/v1/teacher/class-sessions/${classId}/topic`, headers: teacher.headers, payload: { topic: '' } })).json().topic).toBeNull();
   });
+  it('classroom Wi-Fi: this room\'s router → no flag; another room → flag; none → flag; clean scans teach routers (ADR-0030)', async () => {
+    const other = { id: uuidv7(), code: 'Classroom 8', wifi_routers: ['e0:c2:50:78:0e', 'e0:c2:50:78:3b'] };
+    await db.insertInto('rooms').values(other).execute();
+    await db.updateTable('rooms').set({ wifi_routers: ['e0:c2:50:76:e0'] }).where('id', '=', c.room.c6.id).execute();
+    await addStudent('s3@college.test', '2102500003', c.b1.id);
+    const ops = await loginAs(t.app, 'ops@college.test');
+    await t.app.inject({ method: 'POST', url: `/v1/admin/sections/${c.section.id}/sync-enrollments`, headers: ops.headers });
+    const s3 = await new Phone(t.app, 's3@college.test').signIn();
+    await s3.bind();
+    const d = await display(await start());
+    const wifi = (bssid: string, ssid = 'SVYASA_STUDENTS') => ({ wifi: { connected: null, seen: [{ bssid, ssid, rssi: -45 }] } });
+
+    const inRoom = (await s1.scan(displayQr(d, t.clock.now), wifi('e0:c2:50:76:e0:a8'))).json();
+    expect(inRoom.reason_codes).not.toContain('wifi_other_room');
+    const nextDoor = (await s2.scan(displayQr(d, t.clock.now), wifi('e0:c2:50:78:0e:a8'))).json();
+    expect(nextDoor.reason_codes).toContain('wifi_other_room');
+    const home = (await s3.scan(displayQr(d, t.clock.now), wifi('aa:bb:cc:dd:ee:ff', 'Home WiFi'))).json();
+    expect(home.reason_codes).toContain('wifi_not_campus');
+
+    // Only the verified in-room scan taught a router; the raw list is never stored.
+    const learned = await db.selectFrom('wifi_observations').selectAll().execute();
+    expect(learned).toEqual([expect.objectContaining({ room_id: c.room.c6.id, router_id: 'e0:c2:50:76:e0', seen: 1 })]);
+    const stored = await db.selectFrom('attendance_attempts').select('signals').execute();
+    expect(JSON.stringify(stored)).not.toContain('e0:c2:50');
+    expect(stored.map((a) => (a.signals as { wifi?: string } | null)?.wifi).sort()).toEqual(['not_campus', 'other_room', 'room']);
+  });
 });

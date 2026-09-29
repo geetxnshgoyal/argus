@@ -3,6 +3,7 @@ import CryptoKit
 import DeviceCheck
 import Flutter
 import LocalAuthentication
+import NetworkExtension
 import Security
 import UIKit
 
@@ -70,6 +71,13 @@ public class ArgusSecurityPlugin: NSObject, FlutterPlugin, CLLocationManagerDele
       case "unlockAttemptKey":
         // iOS asks at every signature; nothing to unlock ahead of time.
         result(true)
+      case "wifiSnapshot":
+        // iPhones can only read the Wi-Fi they are connected to (ADR-0030). Needs the
+        // Access Wi-Fi Information entitlement and location permission; otherwise nil.
+        NEHotspotNetwork.fetchCurrent { network in
+          let connected: [String: Any]? = network.map { ["bssid": $0.bssid, "ssid": $0.ssid] }
+          DispatchQueue.main.async { result(["connected": connected as Any, "seen": [Any]()]) }
+        }
       case "resetAttemptKey":
         deleteKeychain(Self.attemptAccount)
         deleteKeychain(Self.biometryStateAccount)

@@ -16,6 +16,11 @@ const code = z
   .max(30)
   .transform((s) => s.toUpperCase());
 const optUuid = uuid.nullable().optional();
+/** Router ids (first five BSSID octets); a full BSSID is accepted and shortened (ADR-0030). */
+const wifiRouters = z
+  .array(z.string().trim().toLowerCase().regex(/^([0-9a-f]{2}[:-]){4}[0-9a-f]{2}([:-][0-9a-f]{2})?$/, 'Router ids look like e0:c2:50:76:e0'))
+  .max(20)
+  .transform((a) => [...new Set(a.map((s) => s.replace(/-/g, ':').split(':').slice(0, 5).join(':')))]);
 
 /** Group (batch) must belong to the offering's section. */
 async function groupMatchesOffering(tx: AnyTx, row: Record<string, unknown>): Promise<void> {
@@ -126,6 +131,7 @@ export const RESOURCES: ResourceDef[] = [
       capacity: z.number().int().positive().max(5000).nullable().optional(),
       geofence_id: optUuid,
       ble_rssi_threshold: z.number().int().min(-120).max(0).nullable().optional(),
+      wifi_routers: wifiRouters.optional(),
     }),
     update: z
       .object({
@@ -135,6 +141,7 @@ export const RESOURCES: ResourceDef[] = [
         capacity: z.number().int().positive().max(5000).nullable(),
         geofence_id: uuid.nullable(),
         ble_rssi_threshold: z.number().int().min(-120).max(0).nullable(),
+        wifi_routers: wifiRouters,
       })
       .partial(),
     search: ['code', 'building'],

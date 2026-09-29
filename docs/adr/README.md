@@ -35,5 +35,6 @@ the spec, the ADR wins. Status is `Accepted` unless marked otherwise.
 | [0027](0027-od-requests-and-attendance-issues.md) | OD requests (community manager → Acad Ops), `od` status, student attendance issues | M8+ |
 | [0028](0028-verifier-merged-into-acadops.md) | Verifier role merged into Acad Ops; support desk at /admin/support | M8+ |
 | [0029](0029-biometric-bound-attempt-keys.md) | Scans need fingerprint/face; adding one voids the key and re-registration needs Acad Ops | M8+ |
+| [0030](0030-classroom-wifi-routers.md) | Classroom Wi-Fi routers (BSSID prefixes) as signed presence evidence; learned per room | M8+ |
 
 New ADRs: copy the format of any existing one (Context / Decision / Consequences), keep it under a page.

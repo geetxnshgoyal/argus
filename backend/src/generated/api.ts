@@ -292,6 +292,23 @@ export interface paths {
         patch: operations["updateSubject"];
         trace?: never;
     };
+    "/v1/admin/wifi-routers/learned": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Wi-Fi routers seen in verified scans per room, not yet assigned to it (ADR-0030) */
+        get: operations["learnedWifiRouters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/rooms": {
         parameters: {
             query?: never;
@@ -2518,8 +2535,11 @@ export interface components {
             geofence_id?: string | null;
             /** @description Phase 2 hook */
             ble_rssi_threshold?: number | null;
+            /** @description Wi-Fi router ids in this room: first five octets of the BSSID, e.g. e0:c2:50:76:e0 (ADR-0030) */
+            wifi_routers?: string[];
         };
         RoomInput: {
+            wifi_routers?: string[];
             code: string;
             building?: string;
             floor?: number | null;
@@ -4969,6 +4989,40 @@ export interface operations {
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];
             409: components["responses"]["Error409"];
+        };
+    };
+    learnedWifiRouters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            /** Format: uuid */
+                            room_id: string;
+                            room: string;
+                            router_id: string;
+                            seen: number;
+                            /** Format: date-time */
+                            last_seen_at: string;
+                            /** @description Another room that already lists this router */
+                            assigned_to: string | null;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
         };
     };
     listRooms: {

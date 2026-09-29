@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.SystemClock
 import android.provider.Settings
@@ -151,6 +152,7 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                 }
                 "androidId" -> result.success(androidId())
                 "locationFix" -> locationFix((call.argument<Int>("timeoutMs") ?: 10000).toLong(), result)
+                "wifiSnapshot" -> result.success(wifiSnapshot())
                 "integrityToken" -> {
                     val project = (call.argument<Number>("cloudProjectNumber") ?: 0).toLong()
                     val hash = call.argument<String>("requestHash") ?: return result.error("bad_args", "requestHash missing", null)
@@ -315,6 +317,35 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
     /** Stable per app-signing key, user and device; the server stores only a keyed hash (ADR-0009). */
     @SuppressLint("HardwareIds")
     private fun androidId(): String = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: ""
+
+    // ── Classroom Wi-Fi (ADR-0030) ──────────────────────────────────────────────
+    /**
+     * The access points this phone can see: the connected one and the latest scan
+     * results (Android throttles scans, so a slightly older list is fine). Needs the
+     * precise-location permission the app already has for scanning; without it Android
+     * returns nothing and the server treats Wi-Fi as unknown.
+     */
+    @SuppressLint("MissingPermission")
+    private fun wifiSnapshot(): Map<String, Any?> {
+        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (!fine) return mapOf("connected" to null, "seen" to emptyList<Any>())
+        val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        @Suppress("DEPRECATION")
+        try { wm.startScan() } catch (_: Exception) {} // best effort; results below may be from the last scan
+        @Suppress("DEPRECATION")
+        val info = wm.connectionInfo
+        val connected = info?.bssid?.takeIf { it != "02:00:00:00:00:00" && it != "00:00:00:00:00:00" }
+            ?.let { mapOf("bssid" to it, "ssid" to info.ssid?.trim('"')) }
+        val seen = try {
+            wm.scanResults.sortedByDescending { it.level }.take(30).map {
+                @Suppress("DEPRECATION")
+                mapOf("bssid" to it.BSSID, "ssid" to it.SSID, "rssi" to it.level.coerceIn(-127, 0))
+            }
+        } catch (_: SecurityException) {
+            emptyList()
+        }
+        return mapOf("connected" to connected, "seen" to seen)
+    }
 
     // ── Location ─────────────────────────────────────────────────────────────
     private fun locationFix(timeoutMs: Long, result: Result) {

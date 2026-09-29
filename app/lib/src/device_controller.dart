@@ -155,6 +155,8 @@ class AttemptSender {
     bool offlineQueued = false,
   }) async {
     final nonce = List<int>.generate(16, (_) => _random.nextInt(256));
+    // Routers the phone can see, signed with the scan; the server keeps only its verdict (ADR-0030).
+    final wifi = offlineQueued ? null : await security.wifiSnapshot();
     final payload = Uint8List.fromList(canonicalBytes({
       'v': 1,
       'session_id': qr.sessionId,
@@ -175,6 +177,7 @@ class AttemptSender {
               'is_mock': location.isMock,
             },
       'signals': <String, dynamic>{},
+      'wifi': ?wifi,
       'app_version': appVersion,
       'offline_queued': offlineQueued,
     }));

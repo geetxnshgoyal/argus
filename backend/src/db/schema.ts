@@ -101,6 +101,15 @@ export interface RoomsTable extends Timestamps {
   capacity: number | null;
   geofence_id: string | null;
   ble_rssi_threshold: number | null;
+  /** Wi-Fi router ids in this room: first five octets of the BSSID (ADR-0030). */
+  wifi_routers: ColumnType<string[], string[] | undefined, string[]>;
+}
+
+export interface WifiObservationsTable {
+  room_id: string;
+  router_id: string;
+  seen: ColumnType<number, number | undefined, number>;
+  last_seen_at: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
 export interface CampusNetworksTable extends Timestamps {
@@ -376,6 +385,8 @@ export interface AttemptSignals {
   distance_m: number | null;
   is_mock: boolean;
   campus_network: boolean | null;
+  /** Classroom Wi-Fi verdict (ADR-0030); absent on older attempts. */
+  wifi?: 'room' | 'campus' | 'other_room' | 'not_campus' | 'unknown';
   /** bypass: dev build; not_required: pilot mode without Play Integrity (ADR-0021). */
   attestation: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required' | 'unverified';
   app_version: string;
@@ -670,6 +681,7 @@ export interface Database {
   attendance_corrections: AttendanceCorrectionsTable;
   job_runs: JobRunsTable;
   app_settings: AppSettingsTable;
+  wifi_observations: WifiObservationsTable;
   od_requests: OdRequestsTable;
   attendance_issues: AttendanceIssuesTable;
   notices: NoticesTable;

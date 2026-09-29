@@ -90,13 +90,19 @@ export const RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
     title: 'Rooms',
     subtitle: 'Classrooms and labs. The campus area decides where scans count as on campus.',
     singular: 'Room',
-    columns: [{ key: 'code', label: 'Room' }, { key: 'building', label: 'Building' }, { key: 'capacity', label: 'Capacity' }, { key: 'geofence_id', label: 'Campus area' }],
+    columns: [{ key: 'code', label: 'Room' }, { key: 'building', label: 'Building' }, { key: 'capacity', label: 'Capacity' }, { key: 'geofence_id', label: 'Campus area' }, { key: 'wifi_routers', label: 'Wi-Fi routers', render: (r) => (Array.isArray(r.wifi_routers) && r.wifi_routers.length ? r.wifi_routers.join(', ') : '—') }],
     fields: [
       { key: 'code', label: 'Room name', type: 'text', required: true, hint: 'As written in the timetable, e.g. Classroom 6' },
       { key: 'building', label: 'Building', type: 'text' },
       { key: 'floor', label: 'Floor', type: 'number', nullable: true },
       { key: 'capacity', label: 'Capacity', type: 'number', nullable: true },
       { key: 'geofence_id', label: 'Campus area', type: 'ref', nullable: true, ref: { path: 'geofences', label: byName } },
+      {
+        key: 'wifi_routers',
+        label: 'Wi-Fi routers',
+        type: 'lines',
+        hint: 'One router per line, e.g. e0:c2:50:78:0e (the first five parts of its Wi-Fi ID). Scans that see one of these count as "in this room". See Wi-Fi routers for ones learned from scans.',
+      },
     ],
   },
   geofences: {

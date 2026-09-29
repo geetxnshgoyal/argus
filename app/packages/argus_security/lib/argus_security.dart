@@ -120,6 +120,25 @@ class SecurityBridge {
   /// Android: unlock the attempt key ahead of scanning so the scan itself is instant.
   Future<void> unlockAttemptKey({String reason = 'Confirm it\'s you to mark attendance'}) => _channel.invokeMethod<bool>('unlockAttemptKey', {'reason': reason});
 
+  /// Wi-Fi access points this phone can see, for the classroom Wi-Fi check (ADR-0030):
+  /// `{connected: {bssid, ssid}|null, seen: [{bssid, ssid, rssi}]}`. iPhones only report the
+  /// connected one. Returns null when Wi-Fi can't be read (no permission, Wi-Fi off).
+  Future<Map<String, dynamic>?> wifiSnapshot() async {
+    try {
+      final m = await _channel.invokeMethod<Map<Object?, Object?>>('wifiSnapshot').timeout(const Duration(seconds: 2));
+      if (m == null) return null;
+      final connected = m['connected'] as Map<Object?, Object?>?;
+      final seen = ((m['seen'] as List?) ?? const []).cast<Map<Object?, Object?>>();
+      if (connected == null && seen.isEmpty) return null;
+      return {
+        'connected': connected == null ? null : {'bssid': connected['bssid'], 'ssid': connected['ssid']},
+        'seen': [for (final s in seen) {'bssid': s['bssid'], 'ssid': s['ssid'], 'rssi': s['rssi']}],
+      };
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 'none' | 'ok' | 'biometrics_changed' | 'invalidated', without prompting the user.
   Future<String> attemptKeyStatus() async => await _channel.invokeMethod<String>('attemptKeyStatus') ?? 'ok';
 

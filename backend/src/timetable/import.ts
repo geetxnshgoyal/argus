@@ -147,7 +147,7 @@ async function runImport(tx: Tx, ctx: AppContext, actorId: string, input: Import
     if (roomName) {
       let r = rooms.get(roomName.toLowerCase());
       if (!r) {
-        r = { id: uuidv7(), code: roomName, building: '', floor: null, capacity: null, geofence_id: null, ble_rssi_threshold: null, created_at: new Date(), updated_at: new Date() };
+        r = { id: uuidv7(), code: roomName, building: '', floor: null, capacity: null, geofence_id: null, ble_rssi_threshold: null, wifi_routers: [], created_at: new Date(), updated_at: new Date() };
         await tx.insertInto('rooms').values({ id: r.id, code: roomName }).execute();
         rooms.set(roomName.toLowerCase(), r);
         report.create.rooms.push(roomName);

@@ -1,3 +1,4 @@
+import { evaluateWifi, type WifiSnapshot, type WifiVerdict } from '../geo/wifi.ts';
 import ipaddr from 'ipaddr.js';
 import { sql } from 'kysely';
 import { z } from 'zod';
@@ -68,6 +69,14 @@ export const attemptPayload = z.object({
     })
     .nullable(),
   signals: z.record(z.string(), z.unknown()).default({}),
+  // Wi-Fi access points the phone sees (ADR-0030): Android all nearby, iPhone the connected one.
+  wifi: z
+    .object({
+      connected: z.object({ bssid: z.string().max(40), ssid: z.string().max(64).nullable().optional() }).nullable().optional(),
+      seen: z.array(z.object({ bssid: z.string().max(40), ssid: z.string().max(64).nullable().optional(), rssi: z.number().int().min(-127).max(0).nullable().optional() })).max(40).optional(),
+    })
+    .nullable()
+    .optional(),
   app_version: z.string().max(30),
   offline_queued: z.boolean().default(false),
 });
@@ -251,12 +260,14 @@ export async function submitAttempt(ctx: AppContext, studentId: string, body: un
   const cls = await loadClass(ctx.db, session.class_session_id);
   const fences = await geofencesFor(ctx, cls?.room_id ?? null);
   const loc = evaluateLocation(p.location, fences);
+  const wifi = await classroomWifi(ctx, cls?.room_id ?? null, p.wifi);
   const signals: AttemptSignals = {
     location: loc.result,
     accuracy_m: loc.accuracy_m,
     distance_m: loc.distance_m,
     is_mock: loc.is_mock,
     campus_network: await campusNetworkResult(ctx, ip),
+    wifi: wifi.result,
     attestation,
     app_version: p.app_version,
   };
@@ -283,6 +294,7 @@ export async function submitAttempt(ctx: AppContext, studentId: string, body: un
       deviceActivatedAt: device.activated_at,
       attestation,
       biometricOnly: device.biometric_only,
+      wifi: wifi.result,
       recentFlags: Number(recent?.n ?? 0),
       now: new Date(receivedMs),
     },
@@ -353,6 +365,12 @@ export async function submitAttempt(ctx: AppContext, studentId: string, body: un
   });
   if (!outcome) return rejectStored('already_marked', round.id, true, 409);
   ctx.events.publish({ type: 'attempt', sessionId: session.id });
+  // Learn this room's routers from clean scans (ADR-0030): the strongest college router seen.
+  if (decision === 'verified' && !offline && loc.result !== 'outside' && cls?.room_id && wifi.strongest) {
+    await sql`
+      insert into wifi_observations (room_id, router_id, seen, last_seen_at) values (${cls.room_id}, ${wifi.strongest}, 1, ${new Date(receivedMs)})
+      on conflict (room_id, router_id) do update set seen = wifi_observations.seen + 1, last_seen_at = excluded.last_seen_at`.execute(ctx.db);
+  }
 
   return {
     attempt_id: outcome.id,
@@ -364,6 +382,16 @@ export async function submitAttempt(ctx: AppContext, studentId: string, body: un
       : decision === 'verified' ? "You're marked present."
       : "You're marked present. Your teacher may confirm it in class.",
   };
+}
+
+/** The class room's routers, every known college router, and the college Wi-Fi name prefix → a verdict. */
+export async function classroomWifi(ctx: AppContext, roomId: string | null, snap: WifiSnapshot | null | undefined): Promise<WifiVerdict> {
+  if (!snap) return { result: 'unknown', strongest: null };
+  const rooms = await ctx.db.selectFrom('rooms').select(['id', 'wifi_routers']).where(sql<boolean>`cardinality(wifi_routers) > 0`).execute();
+  const room = new Set(rooms.find((r) => r.id === roomId)?.wifi_routers ?? []);
+  const campus = new Set(rooms.flatMap((r) => r.wifi_routers));
+  const prefix = await ctx.db.selectFrom('app_settings').select('value').where('key', '=', 'campus_wifi_ssid_prefix').executeTakeFirst();
+  return evaluateWifi(snap, room, campus, typeof prefix?.value === 'string' ? prefix.value : '');
 }
 
 /** Whether `ip` is on a campus network; null when none are configured (the signal is skipped). */

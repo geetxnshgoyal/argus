@@ -815,6 +815,46 @@ paths:
         '409':
           $ref: '#/components/responses/Error409'
       summary: Delete subject
+  /v1/admin/wifi-routers/learned:
+    get:
+      tags:
+      - admin
+      operationId: learnedWifiRouters
+      summary: "Wi-Fi routers seen in verified scans per room, not yet assigned to it (ADR-0030)"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [room_id, room, router_id, seen, last_seen_at, assigned_to]
+                      properties:
+                        room_id:
+                          type: string
+                          format: uuid
+                        room:
+                          type: string
+                        router_id:
+                          type: string
+                        seen:
+                          type: integer
+                        last_seen_at:
+                          type: string
+                          format: date-time
+                        assigned_to:
+                          type: [string, "null"]
+                          description: Another room that already lists this router
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
   /v1/admin/rooms:
     get:
       tags:
@@ -5505,11 +5545,21 @@ components:
             - integer
             - 'null'
             description: Phase 2 hook
+          wifi_routers:
+            type: array
+            items:
+              type: string
+            description: "Wi-Fi router ids in this room: first five octets of the BSSID, e.g. e0:c2:50:76:e0 (ADR-0030)"
     RoomInput:
       type: object
       required:
       - code
       properties:
+        wifi_routers:
+          type: array
+          maxItems: 20
+          items:
+            type: string
         code:
           type: string
         building:

@@ -137,6 +137,17 @@ export function registerAdminAttendanceRoutes(app: FastifyInstance, ctx: AppCont
   });
 
   // ── Risk settings (ADR-0014) ──────────────────────────────────────────────
+  // Routers students' phones saw most strongly in clean scans, per room, that the room doesn't list yet (ADR-0030).
+  app.get('/v1/admin/wifi-routers/learned', ops, async () => {
+    const rows = await sql<{ room_id: string; room: string; router_id: string; seen: number; last_seen_at: Date; assigned_to: string | null }>`
+      select o.room_id, r.code as room, o.router_id, o.seen, o.last_seen_at,
+        (select r2.code from rooms r2 where o.router_id = any(r2.wifi_routers) limit 1) as assigned_to
+      from wifi_observations o join rooms r on r.id = o.room_id
+      where not (o.router_id = any(r.wifi_routers))
+      order by r.code, o.seen desc`.execute(ctx.db);
+    return { items: rows.rows.map((x) => ({ ...x, last_seen_at: new Date(x.last_seen_at).toISOString() })) };
+  });
+
   app.get('/v1/admin/risk-settings', ops, async () => {
     const rows = await ctx.db
       .selectFrom('risk_settings as r')
