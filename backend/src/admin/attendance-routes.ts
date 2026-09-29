@@ -25,7 +25,7 @@ export function registerAdminAttendanceRoutes(app: FastifyInstance, ctx: AppCont
     const rows = await sessionsView(ctx.db, ctx.config.timeZone)
       .innerJoin('attendance_sessions as a', 'a.class_session_id', 'cs.id')
       .leftJoin('users as sb', 'sb.id', 'a.started_by')
-      .select(['a.id as attendance_session_id', 'a.status as attendance_status', 'a.started_at', 'a.ended_at', 'sb.name as started_by_name'])
+      .select(['a.id as attendance_session_id', 'a.status as attendance_status', 'a.started_at', 'a.ended_at', 'a.shadow', 'sb.name as started_by_name'])
       .where('cs.date', '=', date)
       .execute();
     const counts = rows.length
@@ -47,6 +47,7 @@ export function registerAdminAttendanceRoutes(app: FastifyInstance, ctx: AppCont
           started_at: r.started_at.toISOString(),
           ended_at: r.ended_at?.toISOString() ?? null,
           started_by: r.started_by_name,
+          shadow: r.shadow,
           class: presentSession(r),
           counts: c,
         };

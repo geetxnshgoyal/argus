@@ -1,4 +1,5 @@
 import { sql } from 'kysely';
+import { shadowMode } from '../pilot/service.ts';
 import { appendAudit } from '../audit/audit.ts';
 import type { AppContext } from '../context.ts';
 import type { DbOrTx, Tx } from '../db/index.ts';
@@ -31,6 +32,7 @@ type SessionRow = {
   headcount: number | null;
   started_at: Date;
   ended_at: Date | null;
+  shadow: boolean;
 };
 
 interface ClassInfo {
@@ -118,9 +120,11 @@ export async function startAttendance(ctx: AppContext, classSessionId: string, t
   const ks = generateKs();
   try {
     await ctx.db.transaction().execute(async (tx) => {
+      // The mode is fixed when attendance starts, so switching it later doesn't rewrite history (ADR-0026).
+      const shadow = (await shadowMode(tx)).on;
       await tx
         .insertInto('attendance_sessions')
-        .values({ id, class_session_id: cls.id, started_by: teacherId, t0_ms: now, epoch_ms: DEFAULT_EPOCH_MS, ks_ciphertext: encryptKs(ctx.config.masterKey, id, ks), started_at: new Date(now) })
+        .values({ id, class_session_id: cls.id, started_by: teacherId, t0_ms: now, epoch_ms: DEFAULT_EPOCH_MS, ks_ciphertext: encryptKs(ctx.config.masterKey, id, ks), started_at: new Date(now), shadow })
         .execute();
       await tx.insertInto('attendance_rounds').values({ id: uuidv7(now), session_id: id, round_no: 1, mode: 'full', opened_at: new Date(now), opened_by: teacherId }).execute();
       const upd = await tx
@@ -382,6 +386,7 @@ export async function liveView(ctx: AppContext, sessionId: string, teacherId: st
       started_at: s.started_at.toISOString(),
       ended_at: s.ended_at?.toISOString() ?? null,
       headcount: s.headcount,
+      shadow: s.shadow,
       class: presentSession(cls),
     },
     round: current ? { no: current.round_no, mode: current.mode, opened_at: current.opened_at.toISOString(), closed: Boolean(current.closed_at), targets: current.target_student_ids?.length ?? null } : null,
@@ -529,8 +534,8 @@ export async function recordSpotCheck(ctx: AppContext, sessionId: string, teache
 
 /** Active attendance for classes this student is expected at, with what they need to do. */
 export async function activeForStudent(ctx: AppContext, studentId: string) {
-  const rows = await sql<{ session_id: string; class_session_id: string; round_no: number; mode: RoundMode; target_student_ids: string[] | null }>`
-    select a.id as session_id, a.class_session_id, r.round_no, r.mode, r.target_student_ids
+  const rows = await sql<{ session_id: string; class_session_id: string; round_no: number; mode: RoundMode; target_student_ids: string[] | null; shadow: boolean }>`
+    select a.id as session_id, a.class_session_id, r.round_no, r.mode, r.target_student_ids, a.shadow
     from attendance_sessions a
     join class_sessions cs on cs.id = a.class_session_id
     join enrollments e on e.offering_id = cs.offering_id and e.student_id = ${studentId}
@@ -555,6 +560,7 @@ export async function activeForStudent(ctx: AppContext, studentId: string) {
       class: presentSession(cls),
       round: r.round_no,
       mode: r.mode,
+      shadow: r.shadow,
       // scan: you need to scan now; done: this round is marked; nothing_to_do: a recheck that doesn't include you.
       action: thisRound ? ('done' as const) : targeted ? ('scan' as const) : ('nothing_to_do' as const),
       decision: thisRound?.decision ?? marked[0]?.decision ?? null,
@@ -578,8 +584,9 @@ export async function studentHistory(ctx: AppContext, studentId: string) {
     where ar.student_id = ${studentId} and ar.status <> 'pending'
     group by o.id, s.code, s.name
     order by s.code`.execute(ctx.db);
-  const recent = await sql<{ date: string; code: string; status: string; start: string }>`
-    select cs.date::text as date, s.code, ar.status, to_char(lower(cs.time_range) at time zone ${ctx.config.timeZone}, 'HH24:MI') as start
+  const recent = await sql<{ date: string; code: string; status: string; start: string; shadow: boolean }>`
+    select cs.date::text as date, s.code, ar.status, to_char(lower(cs.time_range) at time zone ${ctx.config.timeZone}, 'HH24:MI') as start,
+      coalesce((select a.shadow from attendance_sessions a where a.id = ar.attendance_session_id), false) as shadow
     from attendance_records ar
     join class_sessions cs on cs.id = ar.class_session_id
     join course_offerings o on o.id = cs.offering_id
@@ -589,5 +596,7 @@ export async function studentHistory(ctx: AppContext, studentId: string) {
   return {
     subjects: rows.rows.map((r) => ({ ...r, percent: r.total ? Math.round((r.attended / r.total) * 1000) / 10 : null })),
     recent: recent.rows,
+    // Pilot (ADR-0026): attendance taken in shadow mode is not official.
+    shadow_mode: (await shadowMode(ctx.db)).on,
   };
 }

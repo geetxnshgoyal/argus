@@ -13,7 +13,7 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  late Future<List<SubjectAttendance>> _data = widget.api.history();
+  late Future<({List<SubjectAttendance> subjects, bool pilot})> _data = widget.api.history();
 
   @override
   Widget build(BuildContext context) {
@@ -22,19 +22,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
       appBar: AppBar(title: const Text('My attendance')),
       body: RefreshIndicator(
         onRefresh: () async => setState(() => _data = widget.api.history()),
-        child: FutureBuilder<List<SubjectAttendance>>(
+        child: FutureBuilder<({List<SubjectAttendance> subjects, bool pilot})>(
           future: _data,
           builder: (context, snap) {
             if (snap.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
             if (snap.hasError) return ListView(children: [Padding(padding: const EdgeInsets.all(24), child: Text('Could not load your attendance.', style: t.bodyLarge))]);
-            final items = snap.data!;
+            final items = snap.data!.subjects;
+            final pilot = snap.data!.pilot;
             if (items.isEmpty) return ListView(children: [Padding(padding: const EdgeInsets.all(24), child: Text('No attendance recorded yet.', style: t.bodyLarge))]);
             return ListView.separated(
               padding: const EdgeInsets.all(20),
-              itemCount: items.length,
+              itemCount: items.length + (pilot ? 1 : 0),
               separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, i) {
-                final s = items[i];
+                if (pilot && i == 0) {
+                  return const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Pilot: attendance in Argus is not official yet. Your official attendance is the usual roll call.', style: TextStyle(color: ArgusColors.warn)),
+                    ),
+                  );
+                }
+                final s = items[i - (pilot ? 1 : 0)];
                 final pct = s.percent ?? 0;
                 final color = pct >= 75 ? ArgusColors.accent : pct >= 65 ? ArgusColors.warn : ArgusColors.bad;
                 return Card(

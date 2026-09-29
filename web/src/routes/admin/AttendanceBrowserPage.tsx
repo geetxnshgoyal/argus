@@ -59,6 +59,7 @@ export function AttendanceBrowserPage() {
                   <td>{r.counts.absent}</td>
                   <td>
                     <span className={`badge ${r.status === 'active' ? 'badge-good' : ''}`}>{r.status === 'active' ? 'Running' : 'Ended'}</span>
+                    {r.shadow && <span className="badge badge-warn" title="Taken in pilot mode">Pilot · not official</span>}
                   </td>
                 </tr>
               ))}

@@ -4347,6 +4347,90 @@ paths:
           $ref: "#/components/responses/Error403"
         "409":
           $ref: "#/components/responses/Error409"
+  /v1/admin/pilot/shadow-mode:
+    get:
+      tags:
+      - admin
+      operationId: shadowMode
+      summary: Whether shadow mode is on (pilot; ADR-0026)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShadowMode"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+    put:
+      tags:
+      - admin
+      operationId: setShadowMode
+      summary: Turn shadow mode on or off (admins only; audited). Applies to attendance started afterwards.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - "on"
+              properties:
+                "on":
+                  type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShadowMode"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/admin/pilot/metrics:
+    get:
+      tags:
+      - admin
+      operationId: pilotMetrics
+      summary: Pilot metrics against the spec §17 targets
+      parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: section_id
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PilotMetrics"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
   /v1/admin/risk-settings:
     get:
       tags:
@@ -7160,9 +7244,13 @@ components:
           - started_at
           - ended_at
           - headcount
+          - shadow
           - class
           properties:
             id: *a2
+            shadow:
+              type: boolean
+              description: "Taken in shadow mode (pilot): computed as usual, not official (ADR-0026)"
             status:
               type: string
               enum:
@@ -7287,7 +7375,11 @@ components:
       - mode
       - action
       - decision
+      - shadow
       properties:
+        shadow:
+          type: boolean
+          description: "Taken in shadow mode (pilot): computed as usual, not official (ADR-0026)"
         attendance_session_id: *a2
         class: *a6
         round: *a5
@@ -7376,7 +7468,11 @@ components:
       required:
       - subjects
       - recent
+      - shadow_mode
       properties:
+        shadow_mode:
+          type: boolean
+          description: Shadow mode is on now (pilot); new attendance is not official
         subjects:
           type: array
           items:
@@ -7411,6 +7507,7 @@ components:
             - code
             - status
             - start
+            - shadow
             properties:
               date:
                 type: string
@@ -7418,6 +7515,9 @@ components:
               code: *a1
               status: *a1
               start: *a1
+              shadow:
+                type: boolean
+                description: "Taken in shadow mode (pilot): computed as usual, not official (ADR-0026)"
     SignedAttestedRequest:
       type: object
       required:
@@ -7746,9 +7846,13 @@ components:
       - started_at
       - ended_at
       - started_by
+      - shadow
       - class
       - counts
       properties:
+        shadow:
+          type: boolean
+          description: "Taken in shadow mode (pilot): computed as usual, not official (ADR-0026)"
         id: *a2
         status: *a1
         started_at: *a4
@@ -8013,6 +8117,180 @@ components:
           type:
           - string
           - "null"
+    ShadowMode:
+      type: object
+      required:
+      - "on"
+      - updated_at
+      - updated_by_name
+      properties:
+        "on":
+          type: boolean
+        updated_at:
+          type:
+          - string
+          - "null"
+          format: date-time
+        updated_by_name:
+          type:
+          - string
+          - "null"
+    CountByCode:
+      type: object
+      required:
+      - code
+      - n
+      properties:
+        code:
+          type: string
+        n:
+          type: integer
+    PilotMetrics:
+      type: object
+      required:
+      - from
+      - to
+      - shadow_mode
+      - totals
+      - targets
+      - decisions
+      - reject_reasons
+      - flag_reasons
+      - spot_checks
+      - risk_flags
+      - days
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        shadow_mode:
+          type: boolean
+        totals:
+          type: object
+          required:
+          - sessions
+          - shadow_sessions
+          - expected_students
+          - marked_present
+          properties:
+            sessions:
+              type: integer
+            shadow_sessions:
+              type: integer
+            expected_students:
+              type: integer
+            marked_present:
+              type: integer
+        targets:
+          type: array
+          items:
+            type: object
+            required:
+            - key
+            - label
+            - value
+            - unit
+            - target
+            - verdict
+            - detail
+            properties:
+              key:
+                type: string
+              label:
+                type: string
+              value:
+                type:
+                - number
+                - "null"
+              unit:
+                type: string
+              target:
+                type: number
+              verdict:
+                type: string
+                enum:
+                - pass
+                - fail
+                - no_data
+              detail:
+                type: string
+        decisions:
+          type: object
+          additionalProperties:
+            type: integer
+        reject_reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountByCode"
+        flag_reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountByCode"
+        spot_checks:
+          type: object
+          required:
+          - recorded
+          - confirmed
+          - absent
+          - no_response
+          - not_recorded
+          - miss_rate
+          properties:
+            recorded:
+              type: integer
+            confirmed:
+              type: integer
+            absent:
+              type: integer
+            no_response:
+              type: integer
+            not_recorded:
+              type: integer
+            miss_rate:
+              type:
+              - number
+              - "null"
+              description: Percent of recorded spot checks where the student was absent or didn't answer
+        risk_flags:
+          type: array
+          items:
+            type: object
+            required:
+            - type
+            - severity
+            - n
+            properties:
+              type:
+                type: string
+              severity:
+                type: string
+              n:
+                type: integer
+        days:
+          type: array
+          items:
+            type: object
+            required:
+            - date
+            - sessions
+            - attempts
+            - rejected
+            - support
+            properties:
+              date:
+                type: string
+                format: date
+              sessions:
+                type: integer
+              attempts:
+                type: integer
+              rejected:
+                type: integer
+              support:
+                type: integer
     RiskSetting:
       type: object
       required:

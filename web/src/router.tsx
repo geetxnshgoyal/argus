@@ -10,6 +10,7 @@ import { AttendanceBrowserPage, AttendanceDetailPage } from './routes/admin/Atte
 import { NoticesPage } from './routes/admin/NoticesPage.tsx';
 import { PhonesPage } from './routes/admin/PhonesPage.tsx';
 import { RiskSettingsPage } from './routes/admin/RiskSettingsPage.tsx';
+import { PilotPage } from './routes/admin/PilotPage.tsx';
 import { RESOURCE_CONFIGS } from './routes/admin/configs.ts';
 import { StudentImportPage } from './routes/admin/StudentImportPage.tsx';
 import { UsersPage } from './routes/admin/UsersPage.tsx';
@@ -145,6 +146,7 @@ function AdminShell() {
           <SideNavLink to="/admin/attendance">Attendance</SideNavLink>
           <SideNavLink to="/admin/phones">Phones</SideNavLink>
           <SideNavLink to="/admin/risk-settings">Anti-proxy checks</SideNavLink>
+          <SideNavLink to="/admin/pilot">Pilot</SideNavLink>
           <div className="section-label">Records</div>
           <SideNavLink to="/admin/audit">Audit log</SideNavLink>
         </nav>
@@ -210,6 +212,7 @@ const adminChildren = [
   createRoute({ getParentRoute: () => adminRoute, path: '/attendance', component: AttendanceBrowserPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/phones', component: PhonesPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/risk-settings', component: RiskSettingsPage }),
+  createRoute({ getParentRoute: () => adminRoute, path: '/pilot', component: PilotPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/notices', component: NoticesPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/timetable', component: TimetablePage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/timetable/import', component: TimetableImportPage }),

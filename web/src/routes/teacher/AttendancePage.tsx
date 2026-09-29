@@ -142,6 +142,9 @@ export function AttendancePage({ sessionId }: { sessionId: string }) {
         )}
       </div>
 
+      {v.session.shadow && (
+        <Notice>Pilot: this attendance is recorded by Argus but is not official yet. Take the usual roll call too.</Notice>
+      )}
       {v.headcount_warning && (
         <Notice tone="warn">
           More students are marked present than you counted. Run a spot check to see who is really here.

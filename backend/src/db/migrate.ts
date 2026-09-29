@@ -12,6 +12,7 @@ import * as m0009 from './migrations/0009_ios_pilot.ts';
 import * as m0010 from './migrations/0010_push_tokens.ts';
 import * as m0011 from './migrations/0011_retention.ts';
 import * as m0012 from './migrations/0012_phone_unverified.ts';
+import * as m0013 from './migrations/0013_pilot.ts';
 
 /**
  * Migrations are listed statically (not read from disk) so they are bundled
@@ -31,6 +32,7 @@ const MIGRATIONS: Record<string, Migration> = {
   '0010_push_tokens': m0010,
   '0011_retention': m0011,
   '0012_phone_unverified': m0012,
+  '0013_pilot': m0013,
 };
 
 const provider: MigrationProvider = {

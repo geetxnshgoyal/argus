@@ -345,6 +345,8 @@ export interface AttendanceSessionsTable extends Timestamps {
   started_at: Timestamp;
   ended_at: Timestamp | null;
   ended_by: string | null;
+  /** Taken in shadow mode (pilot): computed as usual, not official (ADR-0026). */
+  shadow: ColumnType<boolean, boolean | undefined, boolean>;
 }
 
 export type RoundMode = 'full' | 'targeted' | 'end';
@@ -523,6 +525,13 @@ export interface AttendanceCorrectionsTable {
   decided_at: Timestamp | null;
 }
 
+export interface AppSettingsTable {
+  key: string;
+  value: Json;
+  updated_by: string | null;
+  updated_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
 export interface JobRunsTable {
   name: string;
   last_run_at: ColumnType<Date, Date | string | undefined, Date | string>;
@@ -615,6 +624,7 @@ export interface Database {
   support_requests: SupportRequestsTable;
   attendance_corrections: AttendanceCorrectionsTable;
   job_runs: JobRunsTable;
+  app_settings: AppSettingsTable;
   notices: NoticesTable;
   notice_recipients: NoticeRecipientsTable;
   push_tokens: PushTokensTable;

@@ -140,7 +140,7 @@ class DeviceStatus {
 
 /// Mirrors `ActiveAttendance`: attendance running now for one of my classes.
 class ActiveAttendance {
-  const ActiveAttendance({required this.sessionId, required this.cls, required this.round, required this.mode, required this.action, this.decision});
+  const ActiveAttendance({required this.sessionId, required this.cls, required this.round, required this.mode, required this.action, this.decision, this.shadow = false});
 
   final String sessionId;
   final ClassSession cls;
@@ -151,6 +151,9 @@ class ActiveAttendance {
   final String action;
   final String? decision;
 
+  /// Pilot (shadow mode): recorded but not official yet (ADR-0026).
+  final bool shadow;
+
   factory ActiveAttendance.fromJson(Map<String, dynamic> j) => ActiveAttendance(
         sessionId: j['attendance_session_id'] as String,
         cls: ClassSession.fromJson(j['class'] as Map<String, dynamic>),
@@ -158,6 +161,7 @@ class ActiveAttendance {
         mode: j['mode'] as String,
         action: j['action'] as String,
         decision: j['decision'] as String?,
+        shadow: j['shadow'] == true,
       );
 }
 
@@ -353,9 +357,14 @@ class ApiClient {
     await _send('POST', '/v1/me/notices/read', body: {'ids': ?ids});
   }
 
-  Future<List<SubjectAttendance>> history() async {
+  /// Per-subject attendance; `pilot` = some of it was taken in shadow mode (not official, ADR-0026).
+  Future<({List<SubjectAttendance> subjects, bool pilot})> history() async {
     final j = await _send('GET', '/v1/me/attendance');
-    return (j['subjects'] as List).map((e) => SubjectAttendance.fromJson(e as Map<String, dynamic>)).toList();
+    final recent = (j['recent'] as List? ?? const []).cast<Map<String, dynamic>>();
+    return (
+      subjects: (j['subjects'] as List).map((e) => SubjectAttendance.fromJson(e as Map<String, dynamic>)).toList(),
+      pilot: j['shadow_mode'] == true || recent.any((r) => r['shadow'] == true),
+    );
   }
 
   Future<void> acceptPolicy(String version) async {

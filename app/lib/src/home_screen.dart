@@ -491,6 +491,13 @@ class _AttendanceCard extends StatelessWidget {
           body = _Row(icon: Icons.check_circle_outline, title: 'You\'re verified', value: 'Nothing to do in this recheck (${a.cls.subjectCode}).');
         }
     }
+    if (phone.state == PhoneState.active && active.isNotEmpty && active.first.shadow) {
+      body = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        body,
+        const SizedBox(height: 12),
+        const Text('Pilot: this attendance is recorded but not official yet. Your teacher also takes the usual roll call.', style: TextStyle(color: ArgusColors.warn)),
+      ]);
+    }
     return Card(child: Padding(padding: const EdgeInsets.all(20), child: DefaultTextStyle.merge(style: t.bodyMedium, child: body)));
   }
 }

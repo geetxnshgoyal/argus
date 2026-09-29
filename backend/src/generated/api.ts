@@ -1994,6 +1994,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/pilot/shadow-mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether shadow mode is on (pilot; ADR-0026) */
+        get: operations["shadowMode"];
+        /** Turn shadow mode on or off (admins only; audited). Applies to attendance started afterwards. */
+        put: operations["setShadowMode"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/pilot/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pilot metrics against the spec §17 targets */
+        get: operations["pilotMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/risk-settings": {
         parameters: {
             query?: never;
@@ -3155,6 +3190,8 @@ export interface components {
             session: {
                 /** Format: uuid */
                 id: string;
+                /** @description Taken in shadow mode (pilot): computed as usual, not official (ADR-0026) */
+                shadow: boolean;
                 /** @enum {string} */
                 status: "active" | "ended";
                 /** Format: date-time */
@@ -3216,6 +3253,8 @@ export interface components {
             ends_at?: string;
         };
         ActiveAttendance: {
+            /** @description Taken in shadow mode (pilot): computed as usual, not official (ADR-0026) */
+            shadow: boolean;
             /** Format: uuid */
             attendance_session_id: string;
             class: components["schemas"]["ClassSession"];
@@ -3258,6 +3297,8 @@ export interface components {
             message: string;
         };
         AttendanceHistory: {
+            /** @description Shadow mode is on now (pilot); new attendance is not official */
+            shadow_mode: boolean;
             subjects: {
                 /** Format: uuid */
                 offering_id: string;
@@ -3275,6 +3316,8 @@ export interface components {
                 code: string;
                 status: string;
                 start: string;
+                /** @description Taken in shadow mode (pilot): computed as usual, not official (ADR-0026) */
+                shadow: boolean;
             }[];
         };
         SignedAttestedRequest: {
@@ -3412,6 +3455,8 @@ export interface components {
             mine: boolean;
         };
         AdminAttendanceSession: {
+            /** @description Taken in shadow mode (pilot): computed as usual, not official (ADR-0026) */
+            shadow: boolean;
             /** Format: uuid */
             id: string;
             status: string;
@@ -3515,6 +3560,66 @@ export interface components {
             /** Format: date */
             date: string | null;
             resolved_by_name: string | null;
+        };
+        ShadowMode: {
+            on: boolean;
+            /** Format: date-time */
+            updated_at: string | null;
+            updated_by_name: string | null;
+        };
+        CountByCode: {
+            code: string;
+            n: number;
+        };
+        PilotMetrics: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            shadow_mode: boolean;
+            totals: {
+                sessions: number;
+                shadow_sessions: number;
+                expected_students: number;
+                marked_present: number;
+            };
+            targets: {
+                key: string;
+                label: string;
+                value: number | null;
+                unit: string;
+                target: number;
+                /** @enum {string} */
+                verdict: "pass" | "fail" | "no_data";
+                detail: string;
+            }[];
+            decisions: {
+                [key: string]: number;
+            };
+            reject_reasons: components["schemas"]["CountByCode"][];
+            flag_reasons: components["schemas"]["CountByCode"][];
+            spot_checks: {
+                recorded: number;
+                confirmed: number;
+                absent: number;
+                no_response: number;
+                not_recorded: number;
+                /** @description Percent of recorded spot checks where the student was absent or didn't answer */
+                miss_rate: number | null;
+            };
+            risk_flags: {
+                type: string;
+                severity: string;
+                n: number;
+            }[];
+            days: {
+                /** Format: date */
+                date: string;
+                sessions: number;
+                attempts: number;
+                rejected: number;
+                support: number;
+            }[];
         };
         RiskSetting: {
             key: string;
@@ -7940,6 +8045,84 @@ export interface operations {
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
             409: components["responses"]["Error409"];
+        };
+    };
+    shadowMode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShadowMode"];
+                };
+            };
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    setShadowMode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    on: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShadowMode"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    pilotMetrics: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                section_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PilotMetrics"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
         };
     };
     riskSettings: {

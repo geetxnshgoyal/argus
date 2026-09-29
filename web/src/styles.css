@@ -188,3 +188,7 @@ a.brand { color: inherit; text-decoration: none; }
 .screen-options { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); margin-top: 0.75rem; align-items: end; }
 details.card > summary { cursor: pointer; list-style: revert; }
 .card-attention { border-color: rgba(245, 176, 76, 0.5); }
+
+/* ── Pilot (M8) ──────────────────────────────────────────────────────────── */
+.pilot-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); margin-top: 1.5rem; align-items: start; }
+.pilot-grid > .card + .card { margin-top: 0; }
