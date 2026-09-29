@@ -254,6 +254,8 @@ export interface TermCalendarDaysTable {
 export type ClassSessionStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 
 export interface ClassSessionsTable extends Timestamps {
+  /** Set by the teacher: what this class covers. */
+  topic: string | null;
   id: string;
   term_id: string;
   offering_id: string;

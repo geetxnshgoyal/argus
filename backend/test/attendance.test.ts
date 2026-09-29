@@ -408,4 +408,13 @@ describe.skipIf(!hasDb)('attendance (integration, spec §16 adversarial suite)',
     expect(res.json().reason_codes).toContain('no_biometric_lock');
     expect((await s2.scan(displayQr(d, t.clock.now))).json().reason_codes).not.toContain('no_biometric_lock');
   });
+  it('topic: the class teacher sets it, students see it; other teachers cannot', async () => {
+    const set = await t.app.inject({ method: 'PUT', url: `/v1/teacher/class-sessions/${classId}/topic`, headers: teacher.headers, payload: { topic: '  Greedy algorithms ' } });
+    expect(set.json()).toEqual({ ok: true, topic: 'Greedy algorithms' });
+    const other = await loginAs(t.app, c.tB.email);
+    expect((await t.app.inject({ method: 'PUT', url: `/v1/teacher/class-sessions/${classId}/topic`, headers: other.headers, payload: { topic: 'x' } })).statusCode).toBe(404);
+    const mine = (await t.app.inject({ url: '/v1/me/timetable?from=2026-09-21&to=2026-09-21', headers: s1.auth })).json();
+    expect(mine.items.find((x: { id: string }) => x.id === classId)).toMatchObject({ topic: 'Greedy algorithms', teacher: 'Teacher A' });
+    expect((await t.app.inject({ method: 'PUT', url: `/v1/teacher/class-sessions/${classId}/topic`, headers: teacher.headers, payload: { topic: '' } })).json().topic).toBeNull();
+  });
 });

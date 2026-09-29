@@ -193,7 +193,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// Home tab: greeting, new notices, the scan card, and today's classes.
+  DateTime _now() => widget.today ?? DateTime.now();
+
+  /// Home tab: greeting, new notices, the class on now, the scan card, and today's classes.
   Widget _homeTab() {
     final me = widget.auth.me!;
     final text = Theme.of(context).textTheme;
@@ -225,6 +227,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 Align(alignment: Alignment.centerRight, child: TextButton(onPressed: _openNotices, child: Text('${unread.length - 1} more new notice${unread.length > 2 ? 's' : ''}'))),
               const SizedBox(height: 16),
             ],
+            FutureBuilder<List<ClassSession>>(
+              future: _classes,
+              builder: (context, snap) => snap.hasData ? _NowNext(classes: snap.data!, now: _now()) : const SizedBox.shrink(),
+            ),
             ListenableBuilder(
               listenable: _phone,
               builder: (context, _) => _AttendanceCard(phone: _phone, active: _active, support: _supportStatus, onScan: _scan, onAskHelp: (a) => _askHelp(context, a)),
@@ -250,6 +256,63 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The class on right now (or the next one): subject, topic, time, room, teacher.
+class _NowNext extends StatelessWidget {
+  const _NowNext({required this.classes, required this.now});
+  final List<ClassSession> classes;
+  final DateTime now;
+
+  String _when(ClassSession c) {
+    final mins = c.startsAt.difference(now).inMinutes;
+    if (isoDate(c.startsAt) == isoDate(now)) return mins < 60 ? 'Next · in $mins min' : 'Next · at ${c.start}';
+    return 'Next · ${dayLabel(c.date, now)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final live = classes.where((c) => !c.cancelled && !c.startsAt.isAfter(now) && now.isBefore(c.endsAt)).firstOrNull;
+    final c = live ?? classes.where((c) => !c.cancelled && c.startsAt.isAfter(now)).firstOrNull;
+    if (c == null) return const SizedBox.shrink();
+    Widget line(IconData icon, String text) => Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(children: [
+            Icon(icon, size: 18, color: ArgusColors.fg2),
+            const SizedBox(width: 10),
+            Expanded(child: Text(text, style: t.bodyMedium?.copyWith(color: ArgusColors.fg))),
+          ]),
+        );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            StatusBadge(live != null ? 'Now · until ${c.end}' : _when(c), live != null ? ArgusColors.accent : ArgusColors.fg2),
+            const SizedBox(height: 10),
+            Text(c.subjectName, style: t.titleLarge),
+            if (c.subjectName != c.subjectCode) Text(c.subjectCode, style: t.bodySmall),
+            if (c.topic != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(color: ArgusColors.surface2, borderRadius: BorderRadius.circular(10)),
+                child: Text('Topic: ${c.topic}', style: t.bodyMedium?.copyWith(color: ArgusColors.fg)),
+              ),
+            ],
+            const SizedBox(height: 4),
+            line(Icons.schedule, '${c.start}–${c.end}'),
+            line(Icons.meeting_room_outlined, c.room ?? 'Room not set'),
+            line(Icons.person_outline, c.teacher ?? 'Teacher not set'),
+            if (c.batch != null) line(Icons.groups_outlined, c.batch!),
+          ]),
         ),
       ),
     );

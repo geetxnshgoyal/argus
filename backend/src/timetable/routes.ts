@@ -499,6 +499,18 @@ export function registerTimetableRoutes(app: FastifyInstance, ctx: AppContext): 
     return { from, to, items: rows.map(presentSession) };
   });
 
+  // The class's teacher says what it covers; students see it on Home and Timetable.
+  app.put('/v1/teacher/class-sessions/:id/topic', { preHandler: needAuth('teacher') }, async (req) => {
+    const u = currentUser(req);
+    const { id } = parse(idParams, req.params);
+    const b = parse(z.object({ topic: z.string().trim().max(200).nullable() }), req.body);
+    const topic = b.topic ? b.topic : null;
+    const r = await ctx.db.updateTable('class_sessions').set({ topic }).where('id', '=', id).where('teacher_id', '=', u.id).returning('id').executeTakeFirst();
+    if (!r) throw new ApiError(404, 'not_found', 'Class not found');
+    await ctx.db.transaction().execute((tx) => appendAudit(tx, { actorId: u.id, action: 'class.topic', entityType: 'class_session', entityId: id, after: { topic }, ip: req.ip }, new Date(ctx.now())));
+    return { ok: true, topic };
+  });
+
   app.get('/v1/teacher/class-sessions/:id', { preHandler: needAuth('teacher') }, async (req) => {
     const u = currentUser(req);
     const { id } = parse(idParams, req.params);

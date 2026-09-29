@@ -56,7 +56,7 @@ class FakeServer {
               'items': [
                 {
                   'id': 's1', 'date': today, 'start': '09:30', 'end': '11:00', 'starts_at': '', 'ends_at': '', 'status': 'scheduled', 'changed': false,
-                  'entry_id': 'e1', 'subject': {'code': 'ADA', 'name': 'Analysis and Design of Algorithms', 'kind': 'lecture'},
+                  'entry_id': 'e1', 'subject': {'code': 'ADA', 'name': 'Analysis and Design of Algorithms', 'kind': 'lecture'}, 'topic': 'Greedy algorithms',
                   'section': {'id': 'x', 'name': '2nd Year 3rd Sem'}, 'batch': null, 'room': 'Classroom 6', 'teacher': 'Teacher A',
                 },
                 {
@@ -163,9 +163,11 @@ void main() {
     expect(find.text('Hi, Asha'), findsOneWidget);
     expect(find.textContaining('2102500001'), findsOneWidget);
     expect(find.textContaining('Batch 1'), findsWidgets);
-    // Today's timetable, with the cancelled lab marked.
+    // Today's timetable (below the class-on-now card), with the cancelled lab marked.
+    await tester.scrollUntilVisible(find.text('Cancelled'), 200, scrollable: find.byType(Scrollable).first);
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('ADA · Analysis and Design of Algorithms'), findsOneWidget);
+    expect(find.text('Topic: Greedy algorithms'), findsWidgets); // the teacher's topic reaches students
     expect(find.text('Cancelled'), findsOneWidget);
   });
 

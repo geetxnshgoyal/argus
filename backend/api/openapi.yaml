@@ -2665,6 +2665,51 @@ paths:
           type: string
           format: date
         description: 'Defaults: today .. today+6; max 31 days'
+  /v1/teacher/class-sessions/{id}/topic:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    put:
+      tags:
+      - teacher
+      operationId: setClassTopic
+      summary: "Set what the class covers (students see it); null clears it"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [topic]
+              properties:
+                topic:
+                  type: [string, "null"]
+                  maxLength: 200
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, topic]
+                properties:
+                  ok:
+                    type: boolean
+                  topic:
+                    type: [string, "null"]
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
   /v1/teacher/class-sessions/{id}:
     parameters:
     - $ref: '#/components/parameters/Id'
@@ -7163,6 +7208,7 @@ components:
       - status
       - changed
       - has_attendance
+      - topic
       - subject
       - section
       - batch
@@ -7201,6 +7247,9 @@ components:
         has_attendance:
           type: boolean
           description: Attendance was taken, so the timetable can no longer remove or move this class
+        topic:
+          type: [string, "null"]
+          description: What the class covers, set by its teacher
         subject:
           type: object
           required:

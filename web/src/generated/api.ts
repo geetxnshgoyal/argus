@@ -1066,6 +1066,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/teacher/class-sessions/{id}/topic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Set what the class covers (students see it); null clears it */
+        put: operations["setClassTopic"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/teacher/class-sessions/{id}": {
         parameters: {
             query?: never;
@@ -3190,6 +3209,8 @@ export interface components {
             changed: boolean;
             /** @description Attendance was taken, so the timetable can no longer remove or move this class */
             has_attendance: boolean;
+            /** @description What the class covers, set by its teacher */
+            topic: string | null;
             subject: {
                 code: string;
                 name: string;
@@ -6807,6 +6828,41 @@ export interface operations {
             400: components["responses"]["Error400"];
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
+        };
+    };
+    setClassTopic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    topic: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        topic: string | null;
+                    };
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
         };
     };
     teacherClassSession: {

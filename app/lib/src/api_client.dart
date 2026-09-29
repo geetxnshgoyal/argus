@@ -77,6 +77,7 @@ class ClassSession {
     this.batch,
     this.room,
     this.teacher,
+    this.topic,
   });
 
   final String id;
@@ -91,7 +92,14 @@ class ClassSession {
   final String? room;
   final String? teacher;
 
+  /// What the class covers, if the teacher added it.
+  final String? topic;
+
   bool get cancelled => status == 'cancelled';
+
+  /// Start and end on the phone's clock (the college and phone share a time zone).
+  DateTime get startsAt => DateTime.parse('${date}T$start:00');
+  DateTime get endsAt => DateTime.parse('${date}T$end:00');
 
   factory ClassSession.fromJson(Map<String, dynamic> j) {
     final subject = j['subject'] as Map<String, dynamic>;
@@ -107,6 +115,7 @@ class ClassSession {
       batch: j['batch'] as String?,
       room: j['room'] as String?,
       teacher: j['teacher'] as String?,
+      topic: j['topic'] as String?,
     );
   }
 }

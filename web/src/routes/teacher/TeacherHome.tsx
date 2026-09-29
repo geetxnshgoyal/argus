@@ -129,6 +129,7 @@ function CurrentClass({ session: s, attendance, canStart, now }: { session: Sess
             {s.start}–{s.end} · {s.section.name}
             {s.batch ? `, ${s.batch}` : ''} · {s.room ?? 'No room'} · {s.expected} students expected
           </p>
+          <TopicEditor session={s} />
           <ErrorNotice error={start.error} />
           {attendance ? (
             <a className="btn btn-primary btn-lg" href={`/teacher/session/${attendance.id}`}>
@@ -195,5 +196,39 @@ function IssueRow({ i }: { i: Issue }) {
       </div>
       <ErrorNotice error={answer.error} />
     </li>
+  );
+}
+
+/** What this class covers today; students see it on their Home and Timetable. */
+function TopicEditor({ session: s }: { session: Session }) {
+  const qc = useQueryClient();
+  const [topic, setTopic] = useState(s.topic ?? '');
+  const save = useMutation({
+    mutationFn: () => apiSend('PUT', `/v1/teacher/class-sessions/${s.id}/topic`, { topic: topic.trim() || null }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['teacher'] }),
+  });
+  const changed = topic.trim() !== (s.topic ?? '');
+  const id = `topic-${s.id}`;
+  return (
+    <form
+      className="btn-row"
+      style={{ margin: '0.25rem 0 1rem' }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (changed) save.mutate();
+      }}
+    >
+      <label htmlFor={id} className="muted small" style={{ width: '100%' }}>
+        Today's topic (students see it)
+      </label>
+      <input id={id} value={topic} maxLength={200} placeholder="e.g. Dijkstra's algorithm" onChange={(e) => setTopic(e.target.value)} style={{ flex: 1, minWidth: '12rem' }} />
+      {changed && (
+        <button className="btn" type="submit" disabled={save.isPending}>
+          {save.isPending ? 'Saving…' : 'Save topic'}
+        </button>
+      )}
+      {save.isSuccess && !changed && <span className="muted small">Saved</span>}
+      <ErrorNotice error={save.error} />
+    </form>
   );
 }

@@ -248,6 +248,7 @@ export function sessionsView(db: DbOrTx, timeZone: string) {
       sql<string>`upper(cs.time_range)`.as('ends_at'),
       sql<boolean>`cs.source_override_id is not null`.as('changed'),
       'cs.attendance_locked',
+      'cs.topic',
     ])
     .orderBy('cs.date')
     .orderBy(sql`lower(cs.time_range)`);
@@ -266,6 +267,7 @@ export function presentSession(s: SessionRow) {
     status: s.status,
     changed: s.changed,
     has_attendance: s.attendance_locked,
+    topic: s.topic,
     entry_id: s.source_entry_id,
     override_id: s.source_override_id,
     subject: { code: s.subject_code, name: s.subject_name, kind: s.subject_kind },

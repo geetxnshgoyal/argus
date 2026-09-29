@@ -82,12 +82,19 @@ class ClassTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 92, child: Text('${c.start}–${c.end}', style: t.bodyMedium?.merge(muted))),
+          SizedBox(
+            width: 64,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(c.start, style: t.titleSmall?.merge(muted)),
+              Text(c.end, style: t.bodySmall?.copyWith(color: ArgusColors.fg3).merge(muted)),
+            ]),
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(c.subjectName == c.subjectCode ? c.subjectCode : '${c.subjectCode} · ${c.subjectName}', style: t.titleSmall?.merge(muted)),
+                if (c.topic != null && !c.cancelled) Text('Topic: ${c.topic}', style: t.bodySmall?.copyWith(color: ArgusColors.fg)),
                 Text([c.room ?? 'Room TBA', if (c.batch != null) c.batch!, if (c.teacher != null) c.teacher!].join(' · '), style: t.bodySmall?.copyWith(color: ArgusColors.fg2)),
                 if (c.cancelled) const StatusBadge('Cancelled', ArgusColors.bad) else if (c.changed) const StatusBadge('Changed', ArgusColors.warn),
               ],
