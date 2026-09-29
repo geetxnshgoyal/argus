@@ -40,7 +40,7 @@ they are worked out from the outline.
 numbers → paste as centre latitude and longitude. Radius: right-click →
 **Measure distance** to the farthest building, then add 50 m.
 
-Current area (Tower C, RV Vidyaniketan, 2026-09-28), outline including the
+Current area (Tower C, RV Vidyaniketan, set up 2026-09-29), outline including the
 25 m margin:
 
 ```
