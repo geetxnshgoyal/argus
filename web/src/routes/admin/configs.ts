@@ -104,13 +104,33 @@ export const RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
     title: 'Campus areas',
     subtitle: 'Where the campus is. A scan clearly outside every area (with a good location fix) is refused.',
     singular: 'Campus area',
-    columns: [{ key: 'name', label: 'Name' }, { key: 'center_lat', label: 'Latitude' }, { key: 'center_lon', label: 'Longitude' }, { key: 'radius_m', label: 'Radius (m)' }],
+    columns: [
+      { key: 'name', label: 'Name' },
+      { key: 'polygon', label: 'Shape', render: (r) => (Array.isArray(r.polygon) && r.polygon.length >= 3 ? `Outline, ${r.polygon.length} corners` : `Circle, ${r.radius_m} m`) },
+      { key: 'center_lat', label: 'Centre', render: (r) => `${r.center_lat}, ${r.center_lon}` },
+    ],
     fields: [
       { key: 'name', label: 'Name', type: 'text', required: true },
-      { key: 'center_lat', label: 'Centre latitude', type: 'number', required: true, hint: 'From Google Maps: right-click the campus centre' },
-      { key: 'center_lon', label: 'Centre longitude', type: 'number', required: true },
-      { key: 'radius_m', label: 'Radius in metres', type: 'number', required: true, hint: 'Large enough to cover the whole campus' },
+      {
+        key: 'polygon',
+        label: 'Building outline',
+        type: 'polygon',
+        nullable: true,
+        hint: 'One corner per line: latitude, longitude (Google Maps: right-click a corner, click the numbers to copy). Leave empty to use a circle instead. Add ~25 m around the walls: indoor GPS drifts.',
+      },
+      { key: 'center_lat', label: 'Centre latitude', type: 'number', hint: 'Only for a circle; worked out from the outline otherwise' },
+      { key: 'center_lon', label: 'Centre longitude', type: 'number' },
+      { key: 'radius_m', label: 'Radius in metres', type: 'number', hint: 'Only for a circle: large enough to cover the whole campus' },
     ],
+    // With an outline, the centre and radius are derived from it (the server still stores them).
+    prepare: (body) => {
+      const poly = body.polygon as [number, number][] | null | undefined;
+      if (!poly || poly.length < 3) return body;
+      const lat = poly.reduce((a, p) => a + p[0], 0) / poly.length;
+      const lon = poly.reduce((a, p) => a + p[1], 0) / poly.length;
+      const m = (a: [number, number]) => Math.hypot((a[0] - lat) * 111_195, (a[1] - lon) * 111_195 * Math.cos((lat * Math.PI) / 180));
+      return { ...body, center_lat: Math.round(lat * 1e6) / 1e6, center_lon: Math.round(lon * 1e6) / 1e6, radius_m: Math.ceil(Math.max(...poly.map(m))) };
+    },
   },
   'teaching-assignments': {
     path: 'teaching-assignments',

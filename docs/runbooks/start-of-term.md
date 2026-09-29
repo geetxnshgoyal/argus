@@ -30,11 +30,25 @@ Do the steps in order; each one needs the previous.
 
 ## Campus area from Google Maps
 
-Right-click the middle of the campus in Google Maps → click the numbers at the
-top of the menu (copies them) → paste the first as latitude, the second as
-longitude. Radius: right-click → **Measure distance** to the farthest building,
-then add 50 m. Consider a separate, smaller area around the hostels so scans
-from there can be told apart.
+**One building (recommended):** in Google Maps satellite view, right-click each
+corner of the building a little *outside* the walls (about 25 m out: indoor GPS
+drifts), click the numbers at the top of the menu to copy them, and paste one
+corner per line into **Building outline**. Leave the centre and radius empty;
+they are worked out from the outline.
+
+**Whole campus (circle):** right-click the middle of the campus → copy the
+numbers → paste as centre latitude and longitude. Radius: right-click →
+**Measure distance** to the farthest building, then add 50 m.
+
+Current area (Tower C, RV Vidyaniketan, 2026-09-28), outline including the
+25 m margin:
+
+```
+12.920986, 77.500767
+12.92143, 77.501498
+12.920196, 77.502288
+12.919752, 77.501558
+```
 
 ## If something goes wrong
 

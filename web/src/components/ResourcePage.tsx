@@ -11,7 +11,8 @@ type Row = Record<string, any> & { id: string };
 export interface FieldDef {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'select' | 'ref';
+  /** 'polygon': [[lat, lon], …] edited as one "lat, lon" corner per line. */
+  type: 'text' | 'number' | 'date' | 'select' | 'ref' | 'polygon';
   required?: boolean;
   hint?: string;
   options?: { value: string; label: string }[];
@@ -31,6 +32,24 @@ export interface ResourceConfig {
   fields: FieldDef[];
   /** Fixed filters (e.g. section_id) applied to list and create. */
   fixed?: Record<string, string>;
+  /** Fills in derived fields before saving (e.g. a campus area's centre from its outline). */
+  prepare?: (body: Record<string, unknown>) => Record<string, unknown>;
+}
+
+/** "12.92, 77.50" lines → [[12.92, 77.50], …]; null when empty. Throws a readable message when malformed. */
+export function parsePolygon(text: string): [number, number][] | null {
+  const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return null;
+  const pts = lines.map((l, i) => {
+    const m = /^(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)$/.exec(l);
+    if (!m) throw new Error(`Line ${i + 1}: write it as "latitude, longitude", e.g. 12.92063, 77.50159`);
+    const lat = Number(m[1]);
+    const lon = Number(m[2]);
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) throw new Error(`Line ${i + 1}: that is not a valid position`);
+    return [lat, lon] as [number, number];
+  });
+  if (pts.length < 3) throw new Error('An outline needs at least 3 corners (one per line).');
+  return pts;
 }
 
 type RefMaps = Record<string, Map<string, Row>>;
@@ -152,25 +171,45 @@ function ResourceForm(props: { config: ResourceConfig; refs: RefMaps; row: Row |
   const { config, refs, row } = props;
   const fields = config.fields.filter((f) => !(row && f.createOnly));
   const [values, setValues] = useState<Record<string, string>>(() =>
-    Object.fromEntries(fields.map((f) => [f.key, row?.[f.key] === null || row?.[f.key] === undefined ? '' : String(row[f.key])])),
+    Object.fromEntries(
+      fields.map((f) => {
+        const v = row?.[f.key];
+        if (v === null || v === undefined) return [f.key, ''];
+        if (f.type === 'polygon') return [f.key, (v as [number, number][]).map(([a, b]) => `${a}, ${b}`).join('\n')];
+        return [f.key, String(v)];
+      }),
+    ),
   );
+  const [localError, setLocalError] = useState<Record<string, string>>({});
   const save = useMutation({
     mutationFn: () => {
       const body: Record<string, unknown> = { ...(row ? {} : (config.fixed ?? {})) };
+      const problems: Record<string, string> = {};
       for (const f of fields) {
         const v = values[f.key] ?? '';
-        if (v === '') {
+        if (v.trim() === '') {
           if (row && (f.nullable || !f.required)) body[f.key] = f.type === 'text' ? '' : null;
           if (!row && f.nullable) body[f.key] = null;
           continue;
         }
+        if (f.type === 'polygon') {
+          try {
+            body[f.key] = parsePolygon(v);
+          } catch (e) {
+            problems[f.key] = (e as Error).message;
+          }
+          continue;
+        }
         body[f.key] = f.type === 'number' ? Number(v) : v;
       }
-      return row ? apiSend('PATCH', `/v1/admin/${config.path}/${row.id}`, body) : apiSend('POST', `/v1/admin/${config.path}`, body);
+      setLocalError(problems);
+      if (Object.keys(problems).length) return Promise.reject(new Error('Please fix the highlighted fields.'));
+      const final = config.prepare ? config.prepare(body) : body;
+      return row ? apiSend('PATCH', `/v1/admin/${config.path}/${row.id}`, final) : apiSend('POST', `/v1/admin/${config.path}`, final);
     },
     onSuccess: props.onSaved,
   });
-  const fieldErrors = save.error instanceof ApiRequestError ? save.error.fields : {};
+  const fieldErrors = { ...(save.error instanceof ApiRequestError ? save.error.fields : {}), ...localError };
 
   return (
     <Dialog
@@ -214,6 +253,14 @@ function ResourceForm(props: { config: ResourceConfig; refs: RefMaps; row: Row |
                   </option>
                 ))}
               </select>
+            ) : f.type === 'polygon' ? (
+              <textarea
+                rows={5}
+                value={values[f.key]}
+                placeholder={'12.92112, 77.50142\n12.92027, 77.50197\n…'}
+                aria-invalid={Boolean(fieldErrors[f.key])}
+                onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
+              />
             ) : (
               <input
                 type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
