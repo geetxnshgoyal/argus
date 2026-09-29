@@ -4,6 +4,7 @@ import 'dart:io' show SocketException;
 import 'package:argus/main.dart';
 import 'package:argus/src/api_client.dart';
 import 'package:argus/src/auth_controller.dart';
+import 'package:argus/src/screens/profile_screen.dart';
 import 'package:argus/src/screens/requests_screen.dart';
 import 'package:argus/src/theme.dart';
 import 'package:argus_security/argus_security.dart';
@@ -215,6 +216,36 @@ void main() {
     await tester.pumpAndSettle();
     expect(server.lastOdBody, {'kind': 'classes', 'class_session_ids': ['s1'], 'event': 'Inter-college hackathon', 'reason': 'Representing the college'});
     expect(find.text('OD & attendance issues'), findsOneWidget); // back on the list
+  });
+
+  testWidgets('tabs: timetable shows the day\'s classes, profile shows details and sign out', (tester) async {
+    final server = FakeServer()..policyAccepted = true;
+    final (app, auth, _) = build(server);
+    await tester.pumpWidget(app);
+    await auth.start();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign in as this student'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hi, Asha'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+
+    await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Timetable')));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'Timetable'), findsOneWidget);
+    expect(find.text('ADA · Analysis and Design of Algorithms'), findsOneWidget);
+    expect(find.byTooltip('Next week'), findsOneWidget);
+
+    await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Profile')));
+    await tester.pumpAndSettle();
+    expect(find.text('asha@college.test'), findsOneWidget);
+    expect(find.text('2102500001'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Sign out'), 200, scrollable: find.descendant(of: find.byType(ProfileScreen), matching: find.byType(Scrollable)).first);
+    await tester.tap(find.text('Sign out'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sign out?'), findsOneWidget); // asks first
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sign out?'), findsNothing);
   });
 
   testWidgets('explains SSO errors in plain language', (tester) async {

@@ -7,14 +7,18 @@ import 'api_client.dart';
 import 'auth_controller.dart';
 import 'device_controller.dart';
 import 'screens/history_screen.dart';
-import 'screens/requests_screen.dart';
 import 'screens/notices_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/requests_screen.dart';
+import 'screens/timetable_screen.dart';
 import 'screens/scan_screen.dart';
 import 'screens/support_sheet.dart';
 import 'theme.dart';
+import 'widgets.dart';
 
-/// Signed-in home: attendance (register this phone, scan when a class is running),
-/// my classes for the coming week, and phone/server status.
+/// Signed-in shell with five tabs: Home (scan + today), Timetable, Attendance,
+/// Requests (OD & issues) and Profile. Home owns the phone registration and the
+/// polling for running attendance, so they keep working whichever tab is open.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.auth, required this.security, this.today});
 
@@ -29,8 +33,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  late Future<Health> _health;
-  late Future<PlatformSecurityInfo> _device;
   late Future<List<ClassSession>> _classes;
   late final DeviceController _phone = DeviceController(widget.auth.api, widget.security);
   late final AttemptSender _sender = AttemptSender(widget.auth.api, widget.security);
@@ -42,6 +44,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _ticks = 0;
 
   PhoneState? _lastPhoneState;
+  int _tab = 0;
+  // Tabs are built the first time they are opened, then kept.
+  final Set<int> _visited = {0};
 
   @override
   void initState() {
@@ -134,8 +139,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _refresh() {
     setState(() {
-      _health = widget.auth.api.health();
-      _device = widget.security.platformInfo();
       _classes = widget.auth.api.timetable();
     });
     unawaited(_phone.load().then((_) => _loadActive()));
@@ -156,6 +159,42 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final unread = _notices.where((n) => !n.read).length;
+    final tabs = <Widget Function()>[
+      _homeTab,
+      () => TimetableScreen(api: widget.auth.api, today: widget.today),
+      () => HistoryScreen(api: widget.auth.api),
+      () => RequestsScreen(api: widget.auth.api),
+      () => ProfileScreen(auth: widget.auth, security: widget.security, phone: _phone, unreadNotices: unread, onOpenNotices: _openNotices),
+    ];
+    return Scaffold(
+      body: IndexedStack(
+        index: _tab,
+        children: [for (var i = 0; i < tabs.length; i++) _visited.contains(i) ? tabs[i]() : const SizedBox.shrink()],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _tab,
+        onDestinationSelected: (i) => setState(() {
+          _tab = i;
+          _visited.add(i);
+        }),
+        destinations: [
+          const NavigationDestination(icon: Icon(Icons.qr_code_scanner), label: 'Home'),
+          const NavigationDestination(icon: Icon(Icons.calendar_month_outlined), selectedIcon: Icon(Icons.calendar_month), label: 'Timetable'),
+          const NavigationDestination(icon: Icon(Icons.insights_outlined), selectedIcon: Icon(Icons.insights), label: 'Attendance'),
+          const NavigationDestination(icon: Icon(Icons.badge_outlined), selectedIcon: Icon(Icons.badge), label: 'Requests'),
+          NavigationDestination(
+            icon: Badge(isLabelVisible: unread > 0, label: Text('$unread'), backgroundColor: ArgusColors.accent, child: const Icon(Icons.person_outline)),
+            selectedIcon: const Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Home tab: greeting, new notices, the scan card, and today's classes.
+  Widget _homeTab() {
     final me = widget.auth.me!;
     final text = Theme.of(context).textTheme;
     final unread = _notices.where((n) => !n.read).toList();
@@ -168,7 +207,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             onPressed: _openNotices,
             icon: Badge(isLabelVisible: unread.isNotEmpty, label: Text('${unread.length}'), backgroundColor: ArgusColors.accent, child: const Icon(Icons.notifications_outlined)),
           ),
-          IconButton(tooltip: 'Sign out', onPressed: widget.auth.signOut, icon: const Icon(Icons.logout)),
         ],
       ),
       body: RefreshIndicator(
@@ -192,87 +230,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               builder: (context, _) => _AttendanceCard(phone: _phone, active: _active, support: _supportStatus, onScan: _scan, onAskHelp: (a) => _askHelp(context, a)),
             ),
             const SizedBox(height: 16),
-            Card(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => HistoryScreen(api: widget.auth.api))),
-                child: const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Row(children: [
-                    Expanded(child: _Row(icon: Icons.insights_outlined, title: 'My attendance', value: 'Percentage per subject')),
-                    Icon(Icons.chevron_right, color: ArgusColors.fg3),
-                  ]),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => RequestsScreen(api: widget.auth.api))),
-                child: const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Row(children: [
-                    Expanded(child: _Row(icon: Icons.badge_outlined, title: 'OD & attendance issues', value: 'Request on-duty, or report a wrong record')),
-                    Icon(Icons.chevron_right, color: ArgusColors.fg3),
-                  ]),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
             FutureBuilder<List<ClassSession>>(
               future: _classes,
               builder: (context, snap) {
                 if (snap.connectionState != ConnectionState.done) {
-                  return const Card(child: Padding(padding: EdgeInsets.all(20), child: _Row(icon: Icons.calendar_today, title: 'Your classes', value: 'Loading…')));
+                  return const Card(child: Padding(padding: EdgeInsets.all(20), child: InfoRow(icon: Icons.calendar_today, title: 'Today', value: 'Loading…')));
                 }
                 if (snap.hasError) {
-                  return const Card(
-                    child: Padding(padding: EdgeInsets.all(20), child: _Row(icon: Icons.calendar_today, tone: TileTone.bad, title: 'Your classes', value: 'Could not load your timetable.')),
-                  );
+                  return const Card(child: Padding(padding: EdgeInsets.all(20), child: InfoRow(icon: Icons.calendar_today, tone: TileTone.bad, title: 'Today', value: 'Could not load your timetable.')));
                 }
-                return _Timetable(classes: snap.data!, today: widget.today ?? DateTime.now());
+                return _Today(
+                  classes: snap.data!,
+                  today: widget.today ?? DateTime.now(),
+                  onOpenTimetable: () => setState(() {
+                    _tab = 1;
+                    _visited.add(1);
+                  }),
+                );
               },
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(children: [
-                  FutureBuilder<Health>(
-                    future: _health,
-                    builder: (context, s) => _Row(
-                      icon: Icons.cloud_done_outlined,
-                      tone: s.hasError || (s.hasData && !s.data!.ok) ? TileTone.bad : TileTone.good,
-                      title: 'Server',
-                      value: s.connectionState != ConnectionState.done
-                          ? 'Checking…'
-                          : s.hasError
-                              ? 'Unreachable'
-                              : s.data!.ok
-                                  ? 'Connected (v${s.data!.version})'
-                                  : 'Database unavailable',
-                    ),
-                  ),
-                  const _Gap(),
-                  FutureBuilder<PlatformSecurityInfo>(
-                    future: _device,
-                    builder: (context, s) {
-                      final d = s.data;
-                      // Android keys live in StrongBox when the phone has that chip, otherwise in the
-                      // processor's secure area (TEE). Both are hardware and both are accepted.
-                      final ios = d?.platform == 'ios';
-                      final store = ios ? (d!.hardwareKeyStore ? 'Secure Enclave' : 'no Secure Enclave') : (d?.hardwareKeyStore ?? false) ? 'StrongBox secure chip' : 'Secure hardware (TEE)';
-                      return _Row(
-                        icon: Icons.phonelink_lock_outlined,
-                        tone: d != null && ios && !d.hardwareKeyStore ? TileTone.warn : TileTone.good,
-                        title: 'This phone',
-                        value: d == null ? 'Checking…' : '${d.model} · $store',
-                      );
-                    },
-                  ),
-                ]),
-              ),
             ),
           ],
         ),
@@ -281,132 +256,50 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 }
 
-String _iso(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-
-const _weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-class _Timetable extends StatelessWidget {
-  const _Timetable({required this.classes, required this.today});
+/// Today's classes on Home, or the next day with classes; the full week is on the Timetable tab.
+class _Today extends StatelessWidget {
+  const _Today({required this.classes, required this.today, required this.onOpenTimetable});
 
   final List<ClassSession> classes;
   final DateTime today;
-
-  String _dayLabel(String date) {
-    final todayIso = _iso(today);
-    if (date == todayIso) return 'Today';
-    if (date == _iso(today.add(const Duration(days: 1)))) return 'Tomorrow';
-    final d = DateTime.parse(date);
-    return '${_weekdays[d.weekday - 1]}, ${d.day} ${_months[d.month - 1]}';
-  }
+  final VoidCallback onOpenTimetable;
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    if (classes.isEmpty) {
-      return const Card(child: Padding(padding: EdgeInsets.all(20), child: _Row(icon: Icons.calendar_today, title: 'Your classes', value: 'No classes in the next 7 days.')));
-    }
-    final byDate = <String, List<ClassSession>>{};
-    for (final c in classes) {
-      byDate.putIfAbsent(c.date, () => []).add(c);
-    }
+    final todayIso = isoDate(today);
+    final todays = classes.where((c) => c.date == todayIso).toList();
+    final next = todays.isEmpty ? classes.where((c) => c.date.compareTo(todayIso) > 0 && !c.cancelled).toList() : <ClassSession>[];
+    final nextDate = next.isEmpty ? null : next.first.date;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(children: [IconTile(Icons.calendar_today, size: 40), SizedBox(width: 14), Text('Your classes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))]),
-            for (final entry in byDate.entries) ...[
-              const SizedBox(height: 18),
-              Text(_dayLabel(entry.key), style: t.titleSmall?.copyWith(color: ArgusColors.accent, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              for (final c in entry.value) _ClassTile(c),
+            Row(children: [
+              const IconTile(Icons.calendar_today, size: 40),
+              const SizedBox(width: 14),
+              Expanded(child: Text('Today', style: t.titleMedium)),
+              TextButton(onPressed: onOpenTimetable, child: const Text('Full timetable')),
+            ]),
+            const SizedBox(height: 8),
+            if (todays.isNotEmpty)
+              for (final c in todays) ClassTile(c)
+            else ...[
+              Text('No classes today.', style: t.bodyMedium),
+              if (nextDate != null) ...[
+                const SizedBox(height: 14),
+                Text('Next: ${dayLabel(nextDate, today)}', style: t.titleSmall?.copyWith(color: ArgusColors.accent, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                for (final c in next.where((c) => c.date == nextDate)) ClassTile(c),
+              ],
             ],
           ],
         ),
       ),
     );
   }
-}
-
-class _ClassTile extends StatelessWidget {
-  const _ClassTile(this.c);
-  final ClassSession c;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
-    final muted = c.cancelled ? const TextStyle(decoration: TextDecoration.lineThrough, color: ArgusColors.fg3) : null;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 92, child: Text('${c.start}–${c.end}', style: t.bodyMedium?.merge(muted))),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(c.subjectName == c.subjectCode ? c.subjectCode : '${c.subjectCode} · ${c.subjectName}', style: t.titleSmall?.merge(muted)),
-                Text([c.room ?? 'Room TBA', if (c.batch != null) c.batch!, if (c.teacher != null) c.teacher!].join(' · '), style: t.bodySmall?.copyWith(color: ArgusColors.fg2)),
-                if (c.cancelled) const _Badge('Cancelled', ArgusColors.bad) else if (c.changed) const _Badge('Changed', ArgusColors.warn),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  const _Badge(this.text, this.color);
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(99), border: Border.all(color: color.withValues(alpha: 0.5))),
-          child: Text(text, style: TextStyle(color: color, fontSize: 12)),
-        ),
-      );
-}
-
-class _Row extends StatelessWidget {
-  const _Row({required this.icon, required this.title, required this.value, this.tone = TileTone.good});
-
-  final IconData icon;
-  final String title;
-  final String value;
-  final TileTone tone;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
-    return Row(
-      children: [
-        IconTile(icon, tone: tone, size: 40),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: t.titleMedium),
-            const SizedBox(height: 2),
-            Text(value, style: t.bodyMedium),
-          ]),
-        ),
-      ],
-    );
-  }
-}
-
-class _Gap extends StatelessWidget {
-  const _Gap();
-  @override
-  Widget build(BuildContext context) => const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Divider());
 }
 
 /// The main attendance card: register this phone, then "Scan now" whenever a teacher starts attendance.
@@ -430,7 +323,7 @@ class _AttendanceCard extends StatelessWidget {
   String _when(DateTime? d) {
     if (d == null) return 'soon';
     final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
-    return '${d.day} ${_months[d.month - 1]}, $h:${d.minute.toString().padLeft(2, '0')} ${d.hour < 12 ? 'AM' : 'PM'}';
+    return '${d.day} ${kMonths[d.month - 1]}, $h:${d.minute.toString().padLeft(2, '0')} ${d.hour < 12 ? 'AM' : 'PM'}';
   }
 
   @override
@@ -439,10 +332,10 @@ class _AttendanceCard extends StatelessWidget {
     Widget body;
     switch (phone.state) {
       case PhoneState.loading:
-        body = const _Row(icon: Icons.qr_code_scanner, title: 'Mark attendance', value: 'Checking this phone…');
+        body = const InfoRow(icon: Icons.qr_code_scanner, title: 'Mark attendance', value: 'Checking this phone…');
       case PhoneState.error:
         body = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _Row(icon: Icons.qr_code_scanner, tone: TileTone.bad, title: 'Mark attendance', value: phone.error ?? 'Could not check this phone.'),
+          InfoRow(icon: Icons.qr_code_scanner, tone: TileTone.bad, title: 'Mark attendance', value: phone.error ?? 'Could not check this phone.'),
           const SizedBox(height: 12),
           OutlinedButton(onPressed: phone.load, child: const Text('Try again')),
         ]);
@@ -450,7 +343,7 @@ class _AttendanceCard extends StatelessWidget {
       case PhoneState.otherPhoneActive:
         final other = phone.state == PhoneState.otherPhoneActive;
         body = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _Row(
+          InfoRow(
             icon: Icons.phonelink_lock_outlined,
             tone: TileTone.warn,
             title: other ? 'Attendance is on another phone' : 'Register this phone',
@@ -468,7 +361,7 @@ class _AttendanceCard extends StatelessWidget {
         ]);
       case PhoneState.pending:
         final s = phone.status;
-        body = _Row(
+        body = InfoRow(
           icon: Icons.hourglass_top,
           tone: TileTone.warn,
           title: 'This phone is waiting',
@@ -479,10 +372,10 @@ class _AttendanceCard extends StatelessWidget {
       case PhoneState.active:
         final a = active.isEmpty ? null : active.first;
         if (a == null) {
-          body = const _Row(icon: Icons.qr_code_scanner, title: 'Mark attendance', value: 'Nothing to scan right now. When your teacher starts attendance, a Scan button appears here.');
+          body = const InfoRow(icon: Icons.qr_code_scanner, title: 'Mark attendance', value: 'Nothing to scan right now. When your teacher starts attendance, a Scan button appears here.');
         } else if (a.action == 'scan') {
           body = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _Row(icon: Icons.qr_code_scanner, title: a.round > 1 ? 'Recheck: scan again' : 'Attendance is open', value: '${a.cls.subjectName} · ${a.cls.room ?? 'Room TBA'}'),
+            InfoRow(icon: Icons.qr_code_scanner, title: a.round > 1 ? 'Recheck: scan again' : 'Attendance is open', value: '${a.cls.subjectName} · ${a.cls.room ?? 'Room TBA'}'),
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
@@ -496,14 +389,14 @@ class _AttendanceCard extends StatelessWidget {
           ]);
         } else if (a.action == 'done') {
           final flagged = a.decision == 'flagged' || a.decision == 'flagged_high';
-          body = _Row(
+          body = InfoRow(
             icon: Icons.check_circle_outline,
             tone: flagged ? TileTone.warn : TileTone.good,
             title: flagged ? 'Marked, teacher may confirm' : 'You\'re marked present',
             value: '${a.cls.subjectName}${a.round > 1 ? ' · round ${a.round}' : ''}',
           );
         } else {
-          body = _Row(icon: Icons.check_circle_outline, title: 'You\'re verified', value: 'Nothing to do in this recheck (${a.cls.subjectCode}).');
+          body = InfoRow(icon: Icons.check_circle_outline, title: 'You\'re verified', value: 'Nothing to do in this recheck (${a.cls.subjectCode}).');
         }
     }
     if (phone.state == PhoneState.active && active.isNotEmpty && active.first.shadow) {
