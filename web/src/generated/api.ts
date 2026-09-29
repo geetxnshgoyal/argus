@@ -1994,6 +1994,224 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/od-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My on-duty (OD) requests (ADR-0027) */
+        get: operations["myOdRequests"];
+        put?: never;
+        /** Ask for OD for whole days or specific classes; goes to a community manager, then Acad Ops */
+        post: operations["createOdRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/od-requests/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw an OD request that is still waiting */
+        post: operations["cancelOdRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/attendance-issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Issues I raised about past classes */
+        get: operations["myAttendanceIssues"];
+        put?: never;
+        /** Raise an issue about a past class's attendance; the class's teacher answers first */
+        post: operations["raiseAttendanceIssue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/attendance-issues/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw an issue the teacher has not answered yet */
+        post: operations["cancelAttendanceIssue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/community/od-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** OD requests for the community manager (default: waiting for them) */
+        get: operations["communityOdQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/community/od-requests/{id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm the duty (sends it to Acad Ops) or reject it with a note */
+        post: operations["communityOdDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/od-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** OD requests for Acad Ops (default: waiting for final approval) */
+        get: operations["adminOdQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/od-requests/{id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Final OD approval (a different person from the community manager) or rejection; approval marks the classes OD */
+        post: operations["adminOdDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/attendance-issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Student attendance issues (default: waiting for Acad Ops) */
+        get: operations["adminAttendanceIssues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/attendance-issues/{id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** For issues with no teacher: file a correction (someone else approves it) or decline */
+        post: operations["adminIssueDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/attendance-issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Issues students raised about my classes (default: waiting for me) */
+        get: operations["teacherAttendanceIssues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/teacher/attendance-issues/{id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm (files a correction for Acad Ops) or decline with a note */
+        post: operations["answerAttendanceIssue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/pilot/shadow-mode": {
         parameters: {
             query?: never;
@@ -2504,7 +2722,7 @@ export interface components {
             text: string;
         };
         /** @enum {string} */
-        Role: "student" | "teacher" | "acadops" | "verifier" | "admin";
+        Role: "student" | "teacher" | "acadops" | "verifier" | "admin" | "community_manager";
         Me: {
             user: {
                 /** Format: uuid */
@@ -3165,6 +3383,7 @@ export interface components {
             absent: number;
             excused: number;
             pending: number;
+            od?: number;
         };
         LiveStudent: {
             /** Format: uuid */
@@ -3173,7 +3392,7 @@ export interface components {
             usn: string | null;
             batch: string | null;
             /** @enum {string} */
-            state: "verified" | "flagged" | "flagged_high" | "pending" | "confirmed" | "unmarked" | "absent" | "late" | "excused";
+            state: "verified" | "flagged" | "flagged_high" | "pending" | "confirmed" | "unmarked" | "absent" | "late" | "excused" | "od";
             record: string | null;
             late: boolean;
             score: number | null;
@@ -3218,6 +3437,7 @@ export interface components {
                 pending: number;
                 unmarked: number;
                 absent: number;
+                od?: number;
             };
             headcount_warning: boolean;
             students: components["schemas"]["LiveStudent"][];
@@ -3472,6 +3692,7 @@ export interface components {
                 absent: number;
                 excused: number;
                 pending: number;
+                od?: number;
             };
         };
         AdminAttendanceDetail: {
@@ -3560,6 +3781,105 @@ export interface components {
             /** Format: date */
             date: string | null;
             resolved_by_name: string | null;
+        };
+        OkResult: {
+            ok: boolean;
+        };
+        OdCreated: {
+            /** Format: uuid */
+            id: string;
+            status: string;
+            /** @description Classes of yours the request covers today (future classes in range are covered too once they exist) */
+            classes: number;
+        };
+        OdDecided: {
+            ok: boolean;
+            status: string;
+            records_changed: number;
+        };
+        IssueCreated: {
+            /** Format: uuid */
+            id: string;
+            status: string;
+        };
+        IssueDecided: {
+            status: string;
+            /** Format: uuid */
+            correction_id?: string;
+        };
+        OdRequest: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "days" | "classes";
+            dates: string[];
+            classes: {
+                /** Format: uuid */
+                id: string;
+                /** Format: date */
+                date: string;
+                start: string;
+                code: string;
+            }[];
+            event: string;
+            reason: string;
+            /** @enum {string} */
+            status: "pending_cm" | "pending_ops" | "approved" | "rejected" | "cancelled";
+            /** @enum {string|null} */
+            rejected_by_role: "community_manager" | "acadops" | null;
+            /** Format: date-time */
+            created_at: string;
+            student: {
+                name: string;
+                usn: string | null;
+                section: string | null;
+            };
+            community_manager: components["schemas"]["OdStep"];
+            acadops: components["schemas"]["OdStep"];
+        };
+        OdStep: {
+            name: string;
+            note: string | null;
+            /** Format: date-time */
+            at: string | null;
+        } | null;
+        OdRequestList: {
+            items: components["schemas"]["OdRequest"][];
+        };
+        AttendanceIssue: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            reason: "marked_absent_but_present" | "marked_late_but_on_time" | "wrong_record" | "other";
+            note: string;
+            /** @enum {string} */
+            status: "pending_teacher" | "pending_ops" | "resolved" | "declined" | "cancelled";
+            teacher_note: string | null;
+            /** Format: uuid */
+            correction_id: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            resolved_at: string | null;
+            /** @description The student's current record for the class */
+            record_status: string | null;
+            student: {
+                name: string;
+                usn: string | null;
+            };
+            teacher: string | null;
+            class: {
+                /** Format: uuid */
+                id: string;
+                /** Format: date */
+                date: string;
+                start: string;
+                code: string;
+                name: string;
+            };
+        };
+        AttendanceIssueList: {
+            items: components["schemas"]["AttendanceIssue"][];
         };
         ShadowMode: {
             on: boolean;
@@ -8044,6 +8364,421 @@ export interface operations {
             400: components["responses"]["Error400"];
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    myOdRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OdRequestList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    createOdRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    kind: "days" | "classes";
+                    dates?: string[];
+                    class_session_ids?: string[];
+                    event: string;
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OdCreated"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    cancelOdRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResult"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    myAttendanceIssues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceIssueList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    raiseAttendanceIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    class_session_id: string;
+                    /** @enum {string} */
+                    reason: "marked_absent_but_present" | "marked_late_but_on_time" | "wrong_record" | "other";
+                    note: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueCreated"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    cancelAttendanceIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkResult"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    communityOdQueue: {
+        parameters: {
+            query?: {
+                status?: "pending_cm" | "pending_ops" | "approved" | "rejected" | "cancelled" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OdRequestList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    communityOdDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    decision: "approve" | "reject";
+                    note?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OdDecided"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    adminOdQueue: {
+        parameters: {
+            query?: {
+                status?: "pending_cm" | "pending_ops" | "approved" | "rejected" | "cancelled" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OdRequestList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    adminOdDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    decision: "approve" | "reject";
+                    note?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OdDecided"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    adminAttendanceIssues: {
+        parameters: {
+            query?: {
+                status?: "pending_teacher" | "pending_ops" | "resolved" | "declined" | "cancelled" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceIssueList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    adminIssueDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    decision: "correct" | "decline";
+                    /** @enum {string} */
+                    new_status?: "present" | "late" | "absent" | "excused";
+                    note?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueDecided"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    teacherAttendanceIssues: {
+        parameters: {
+            query?: {
+                status?: "pending_teacher" | "pending_ops" | "resolved" | "declined" | "cancelled" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceIssueList"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    answerAttendanceIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    decision: "confirm" | "decline";
+                    /** @enum {string} */
+                    new_status?: "present" | "late" | "absent" | "excused";
+                    note?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueDecided"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
             409: components["responses"]["Error409"];
         };
     };

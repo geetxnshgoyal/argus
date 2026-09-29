@@ -357,6 +357,22 @@ class ApiClient {
     await _send('POST', '/v1/me/notices/read', body: {'ids': ?ids});
   }
 
+  // ── OD requests and attendance issues (ADR-0027) ─────────────────────────
+  Future<List<Map<String, dynamic>>> odRequests() async => ((await _send('GET', '/v1/me/od-requests'))['items'] as List).cast<Map<String, dynamic>>();
+
+  /// kind: 'days' with [dates] (yyyy-mm-dd), or 'classes' with [classIds].
+  Future<Map<String, dynamic>> requestOd({required String kind, List<String>? dates, List<String>? classIds, required String event, required String reason}) =>
+      _send('POST', '/v1/me/od-requests', body: {'kind': kind, 'dates': ?dates, 'class_session_ids': ?classIds, 'event': event, 'reason': reason});
+
+  Future<void> cancelOd(String id) async => _send('POST', '/v1/me/od-requests/$id/cancel');
+
+  Future<List<Map<String, dynamic>>> attendanceIssues() async => ((await _send('GET', '/v1/me/attendance-issues'))['items'] as List).cast<Map<String, dynamic>>();
+
+  Future<Map<String, dynamic>> raiseIssue({required String classId, required String reason, required String note}) =>
+      _send('POST', '/v1/me/attendance-issues', body: {'class_session_id': classId, 'reason': reason, 'note': note});
+
+  Future<void> cancelIssue(String id) async => _send('POST', '/v1/me/attendance-issues/$id/cancel');
+
   /// Per-subject attendance; `pilot` = some of it was taken in shadow mode (not official, ADR-0026).
   Future<({List<SubjectAttendance> subjects, bool pilot})> history() async {
     final j = await _send('GET', '/v1/me/attendance');

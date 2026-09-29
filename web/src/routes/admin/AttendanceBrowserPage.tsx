@@ -35,6 +35,7 @@ export function AttendanceBrowserPage() {
                 <th>Present</th>
                 <th>Late</th>
                 <th>Absent</th>
+                <th>OD</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -57,6 +58,7 @@ export function AttendanceBrowserPage() {
                   <td>{r.counts.present}</td>
                   <td>{r.counts.late}</td>
                   <td>{r.counts.absent}</td>
+                  <td>{r.counts.od ?? 0}</td>
                   <td>
                     <span className={`badge ${r.status === 'active' ? 'badge-good' : ''}`}>{r.status === 'active' ? 'Running' : 'Ended'}</span>
                     {r.shadow && <span className="badge badge-warn" title="Taken in pilot mode">Pilot · not official</span>}
@@ -71,7 +73,8 @@ export function AttendanceBrowserPage() {
   );
 }
 
-const BASIS: Record<string, string> = { system: 'scan', teacher: 'teacher', verifier: 'verifier', correction: 'correction' };
+const RECORD_LABEL: Record<string, string> = { present: 'Present', late: 'Late', absent: 'Absent', excused: 'Excused', pending: 'Offline scan', od: 'On duty (OD)' };
+const BASIS: Record<string, string> = { system: 'scan', teacher: 'teacher', verifier: 'verifier', correction: 'correction', od: 'OD request' };
 
 export function AttendanceDetailPage({ sessionId }: { sessionId: string }) {
   const qc = useQueryClient();
@@ -118,7 +121,7 @@ export function AttendanceDetailPage({ sessionId }: { sessionId: string }) {
                 <td>
                   {s.record ? (
                     <>
-                      <span className={`badge ${s.record.status === 'present' ? 'badge-good' : s.record.status === 'absent' ? 'badge-bad' : 'badge-warn'}`}>{s.record.status}</span>
+                      <span className={`badge ${s.record.status === 'present' ? 'badge-good' : s.record.status === 'absent' ? 'badge-bad' : 'badge-warn'}`}>{RECORD_LABEL[s.record.status] ?? s.record.status}</span>
                       <div className="muted small">
                         by {BASIS[s.record.basis] ?? s.record.basis}
                         {s.record.updated_by ? ` (${s.record.updated_by})` : ''}

@@ -39,7 +39,7 @@ export function registerAdminAttendanceRoutes(app: FastifyInstance, ctx: AppCont
     return {
       date,
       items: rows.map((r) => {
-        const c: Record<string, number> = { present: 0, late: 0, absent: 0, excused: 0, pending: 0 };
+        const c: Record<string, number> = { present: 0, late: 0, absent: 0, excused: 0, pending: 0, od: 0 };
         for (const x of counts.filter((k) => k.class_session_id === r.id)) c[x.status] = Number(x.n);
         return {
           id: r.attendance_session_id,

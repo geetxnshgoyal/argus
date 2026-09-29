@@ -13,7 +13,9 @@ use it**.
 | [Suspected proxy attendance](suspected-proxy.md) | Acad Ops, admin | A report or a pattern of cheating |
 | [Backup and restore](backup-and-restore.md) | Developer (monthly), admin | Monthly check, or after data loss |
 
-Who can do what: **Admin** = everything, plus staff accounts and the
-anti-proxy check settings. **Acad Ops** = students, teachers, timetable,
-phones, notices, corrections. **Verifier** = support requests only.
-Corrections always need two people.
+Who can do what: **Admin** = everything, plus staff accounts, the
+anti-proxy check settings and pilot mode. **Acad Ops** = students, teachers,
+timetable, phones, notices, and final approval of OD requests, student issues
+and corrections (Admin → Requests). **Community manager** = first check of OD
+requests only. **Verifier** = "can't scan" support requests only.
+Corrections and OD always need two different people.

@@ -7,6 +7,7 @@ import 'api_client.dart';
 import 'auth_controller.dart';
 import 'device_controller.dart';
 import 'screens/history_screen.dart';
+import 'screens/requests_screen.dart';
 import 'screens/notices_screen.dart';
 import 'screens/scan_screen.dart';
 import 'screens/support_sheet.dart';
@@ -199,6 +200,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   padding: EdgeInsets.all(20),
                   child: Row(children: [
                     Expanded(child: _Row(icon: Icons.insights_outlined, title: 'My attendance', value: 'Percentage per subject')),
+                    Icon(Icons.chevron_right, color: ArgusColors.fg3),
+                  ]),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => RequestsScreen(api: widget.auth.api))),
+                child: const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Row(children: [
+                    Expanded(child: _Row(icon: Icons.badge_outlined, title: 'OD & attendance issues', value: 'Request on-duty, or report a wrong record')),
                     Icon(Icons.chevron_right, color: ArgusColors.fg3),
                   ]),
                 ),

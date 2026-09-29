@@ -1,4 +1,5 @@
 import { sql } from 'kysely';
+import { approvedOdStudents } from '../od/service.ts';
 import { shadowMode } from '../pilot/service.ts';
 import { appendAudit } from '../audit/audit.ts';
 import type { AppContext } from '../context.ts';
@@ -237,18 +238,24 @@ export async function endAttendance(ctx: AppContext, sessionId: string, actor: {
       .executeTakeFirst();
     if (ended.numUpdatedRows === 0n) throw new ApiError(409, 'session_ended', 'Attendance has already ended.');
     await closeRound(tx, ctx, sessionId, now);
-    // Everyone expected without a record is absent (spec §6 End).
+    // Everyone expected without a record is absent (spec §6 End), or on duty with an approved OD (ADR-0027).
     const absent = await sql<{ n: number }>`
-      with ins as (
+      with od as (
+        select distinct o.student_id from od_requests o, class_sessions c
+        where c.id = ${s.class_session_id} and o.status = 'approved'
+          and ((o.kind = 'days' and c.date = any(o.dates)) or (o.kind = 'classes' and c.id = any(o.class_session_ids)))),
+      ins as (
         insert into attendance_records (student_id, class_session_id, attendance_session_id, status, basis)
-        select e.student_id, cs.id, ${sessionId}, 'absent', 'system'
+        select e.student_id, cs.id, ${sessionId},
+          case when e.student_id in (select student_id from od) then 'od' else 'absent' end,
+          case when e.student_id in (select student_id from od) then 'od' else 'system' end
         from class_sessions cs
         join enrollments e on e.offering_id = cs.offering_id
         join users u on u.id = e.student_id and u.status = 'active'
         where cs.id = ${s.class_session_id} and (cs.group_id is null or e.group_id = cs.group_id)
         on conflict (student_id, class_session_id) do nothing
-        returning 1)
-      select count(*)::int as n from ins`.execute(tx);
+        returning status)
+      select count(*) filter (where status = 'absent')::int as n from ins`.execute(tx);
     await tx.updateTable('class_sessions').set({ status: 'completed' }).where('id', '=', s.class_session_id).execute();
     const counts = await recordCounts(tx, s.class_session_id);
     await appendAudit(tx, { actorId, action: actor === 'system' ? 'attendance.auto_end' : 'attendance.end', entityType: 'attendance_session', entityId: sessionId, after: { ...counts, marked_absent: absent.rows[0]?.n ?? 0 }, ip }, now);
@@ -260,7 +267,7 @@ export async function endAttendance(ctx: AppContext, sessionId: string, actor: {
 
 async function recordCounts(db: DbOrTx, classSessionId: string): Promise<Record<RecordStatus, number>> {
   const rows = await db.selectFrom('attendance_records').select(['status', (eb) => eb.fn.countAll<string>().as('n')]).where('class_session_id', '=', classSessionId).groupBy('status').execute();
-  const out: Record<RecordStatus, number> = { present: 0, late: 0, absent: 0, excused: 0, pending: 0 };
+  const out: Record<RecordStatus, number> = { present: 0, late: 0, absent: 0, excused: 0, pending: 0, od: 0 };
   for (const r of rows) out[r.status] = Number(r.n);
   return out;
 }
@@ -320,7 +327,7 @@ export async function displayState(ctx: AppContext, sessionId: string) {
 
 // ── Live panel ───────────────────────────────────────────────────────────────
 
-export type StudentState = 'verified' | 'flagged' | 'flagged_high' | 'pending' | 'confirmed' | 'unmarked' | 'absent' | 'late' | 'excused';
+export type StudentState = 'verified' | 'flagged' | 'flagged_high' | 'pending' | 'confirmed' | 'unmarked' | 'absent' | 'late' | 'excused' | 'od';
 
 export async function liveView(ctx: AppContext, sessionId: string, teacherId: string) {
   const s = await mySession(ctx.db, sessionId, teacherId);
@@ -342,6 +349,7 @@ export async function liveView(ctx: AppContext, sessionId: string, teacherId: st
   ]);
   const current = rounds.find((r) => !r.closed_at) ?? rounds[rounds.length - 1];
   const recordBy = new Map(records.map((r) => [r.student_id, r]));
+  const onDuty = await approvedOdStudents(ctx.db, s.class_session_id);
 
   const students = expected.map((e) => {
     const mine = attempts.filter((a) => a.student_id === e.id);
@@ -352,12 +360,13 @@ export async function liveView(ctx: AppContext, sessionId: string, teacherId: st
     const record = recordBy.get(e.id);
     let state: StudentState = 'unmarked';
     if (record?.basis === 'teacher' || record?.basis === 'verifier' || record?.basis === 'correction') {
-      state = record.status === 'absent' ? 'absent' : record.status === 'excused' ? 'excused' : 'confirmed';
+      state = record.status === 'absent' ? 'absent' : record.status === 'excused' ? 'excused' : record.status === 'od' ? 'od' : 'confirmed';
     } else if (record?.status === 'pending') state = 'pending';
     else if (latest) {
       state = latest.decision as StudentState;
       if (openFlags.some((f) => f.severity === 'high')) state = 'flagged_high';
-    } else if (record?.status === 'absent') state = 'absent';
+    } else if (record?.status === 'od' || onDuty.has(e.id)) state = 'od';
+    else if (record?.status === 'absent') state = 'absent';
     const reasons = new Set<string>();
     for (const a of accepted) for (const c of a.reason_codes) reasons.add(c);
     for (const f of openFlags) reasons.add(f.type);
@@ -398,6 +407,7 @@ export async function liveView(ctx: AppContext, sessionId: string, teacherId: st
       pending: students.filter((st) => st.state === 'pending').length,
       unmarked: students.filter((st) => st.state === 'unmarked').length,
       absent: students.filter((st) => st.state === 'absent').length,
+      od: students.filter((st) => st.state === 'od').length,
     },
     headcount_warning: s.headcount !== null && present > s.headcount + tolerance,
     students,
@@ -571,10 +581,11 @@ export async function activeForStudent(ctx: AppContext, studentId: string) {
 
 /** Per-subject attendance with percentages (spec §11 student history). */
 export async function studentHistory(ctx: AppContext, studentId: string) {
-  const rows = await sql<{ offering_id: string; code: string; name: string; total: number; attended: number; late: number; absent: number }>`
+  const rows = await sql<{ offering_id: string; code: string; name: string; total: number; attended: number; late: number; absent: number; od: number }>`
     select o.id as offering_id, s.code, s.name,
       count(ar.*)::int as total,
-      count(*) filter (where ar.status in ('present','late','excused'))::int as attended,
+      count(*) filter (where ar.status in ('present','late','excused','od'))::int as attended,
+      count(*) filter (where ar.status = 'od')::int as od,
       count(*) filter (where ar.status = 'late')::int as late,
       count(*) filter (where ar.status = 'absent')::int as absent
     from attendance_records ar

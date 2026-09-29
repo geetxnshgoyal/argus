@@ -40,6 +40,20 @@ reasons in the class's attendance. If one signal is misbehaving everywhere,
 an **admin** can lower it or switch it off on **Anti-proxy checks**, without
 a developer. Every change is in the audit log.
 
+## On duty (OD)
+
+Students request OD in the app (**OD & attendance issues → Request OD**) for
+whole days or specific classes. The **community manager** confirms it on their
+page; then someone in Acad Ops approves it on **Requests → OD requests** (it
+must be a different person). Approved classes show as **On duty (OD)** and
+count as attended.
+
+## A student says their record is wrong
+
+Students use **Raise an issue** in the app for a past class (up to 30 days).
+Their teacher sees it on the teacher home page and confirms or declines. If
+confirmed, approve it on **Requests → Corrections**.
+
 ## Offline scans ("pending")
 
 When the classroom internet drops, scans are queued on the phone and marked

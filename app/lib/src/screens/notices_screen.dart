@@ -31,7 +31,9 @@ class _NoticesScreenState extends State<NoticesScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Notices')),
       body: RefreshIndicator(
-        onRefresh: () async => setState(() => _data = _load()),
+        onRefresh: () async => setState(() {
+          _data = _load();
+        }),
         child: FutureBuilder<List<AppNotice>>(
           future: _data,
           builder: (context, snap) {

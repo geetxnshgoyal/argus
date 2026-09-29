@@ -21,7 +21,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('My attendance')),
       body: RefreshIndicator(
-        onRefresh: () async => setState(() => _data = widget.api.history()),
+        onRefresh: () async => setState(() {
+          _data = widget.api.history();
+        }),
         child: FutureBuilder<({List<SubjectAttendance> subjects, bool pilot})>(
           future: _data,
           builder: (context, snap) {

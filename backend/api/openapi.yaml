@@ -24,6 +24,8 @@ tags:
 - name: dev
 - name: timetable
 - name: teacher
+- name: community
+  description: Community managers (OD requests, ADR-0027)
 - name: student
 paths:
   /v1/health:
@@ -4347,6 +4349,501 @@ paths:
           $ref: "#/components/responses/Error403"
         "409":
           $ref: "#/components/responses/Error409"
+  /v1/me/od-requests:
+    get:
+      tags:
+      - student
+      operationId: myOdRequests
+      summary: "My on-duty (OD) requests (ADR-0027)"
+      security:
+      - bearer: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OdRequestList"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+    post:
+      tags:
+      - student
+      operationId: createOdRequest
+      summary: "Ask for OD for whole days or specific classes; goes to a community manager, then Acad Ops"
+      security:
+      - bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - kind
+              - event
+              - reason
+              properties:
+                kind:
+                  type: string
+                  enum: [days, classes]
+                dates:
+                  type: array
+                  items: {type: string, format: date}
+                  maxItems: 31
+                class_session_ids:
+                  type: array
+                  items: {type: string, format: uuid}
+                  maxItems: 60
+                event:
+                  type: string
+                  minLength: 3
+                  maxLength: 120
+                reason:
+                  type: string
+                  minLength: 3
+                  maxLength: 500
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OdCreated"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/me/od-requests/{id}/cancel:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - student
+      operationId: cancelOdRequest
+      summary: "Withdraw an OD request that is still waiting"
+      security:
+      - bearer: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResult"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/me/attendance-issues:
+    get:
+      tags:
+      - student
+      operationId: myAttendanceIssues
+      summary: "Issues I raised about past classes"
+      security:
+      - bearer: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceIssueList"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+    post:
+      tags:
+      - student
+      operationId: raiseAttendanceIssue
+      summary: "Raise an issue about a past class's attendance; the class's teacher answers first"
+      security:
+      - bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - class_session_id
+              - reason
+              - note
+              properties:
+                class_session_id:
+                  type: string
+                  format: uuid
+                reason:
+                  type: string
+                  enum: [marked_absent_but_present, marked_late_but_on_time, wrong_record, other]
+                note:
+                  type: string
+                  minLength: 3
+                  maxLength: 500
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssueCreated"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/me/attendance-issues/{id}/cancel:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - student
+      operationId: cancelAttendanceIssue
+      summary: "Withdraw an issue the teacher has not answered yet"
+      security:
+      - bearer: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResult"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/community/od-requests:
+    get:
+      tags:
+      - community
+      operationId: communityOdQueue
+      summary: "OD requests for the community manager (default: waiting for them)"
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [pending_cm, pending_ops, approved, rejected, cancelled, all]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OdRequestList"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/community/od-requests/{id}/decision:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - community
+      operationId: communityOdDecision
+      summary: "Confirm the duty (sends it to Acad Ops) or reject it with a note"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - decision
+              properties:
+                decision:
+                  type: string
+                  enum: [approve, reject]
+                note:
+                  type: [string, "null"]
+                  maxLength: 500
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OdDecided"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/admin/od-requests:
+    get:
+      tags:
+      - admin
+      operationId: adminOdQueue
+      summary: "OD requests for Acad Ops (default: waiting for final approval)"
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [pending_cm, pending_ops, approved, rejected, cancelled, all]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OdRequestList"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/admin/od-requests/{id}/decision:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - admin
+      operationId: adminOdDecision
+      summary: "Final OD approval (a different person from the community manager) or rejection; approval marks the classes OD"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - decision
+              properties:
+                decision:
+                  type: string
+                  enum: [approve, reject]
+                note:
+                  type: [string, "null"]
+                  maxLength: 500
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OdDecided"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/admin/attendance-issues:
+    get:
+      tags:
+      - admin
+      operationId: adminAttendanceIssues
+      summary: "Student attendance issues (default: waiting for Acad Ops)"
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [pending_teacher, pending_ops, resolved, declined, cancelled, all]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceIssueList"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/admin/attendance-issues/{id}/decision:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - admin
+      operationId: adminIssueDecision
+      summary: "For issues with no teacher: file a correction (someone else approves it) or decline"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - decision
+              properties:
+                decision:
+                  type: string
+                  enum: [correct, decline]
+                new_status:
+                  type: string
+                  enum: [present, late, absent, excused]
+                note:
+                  type: [string, "null"]
+                  maxLength: 500
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssueDecided"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/teacher/attendance-issues:
+    get:
+      tags:
+      - teacher
+      operationId: teacherAttendanceIssues
+      summary: "Issues students raised about my classes (default: waiting for me)"
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [pending_teacher, pending_ops, resolved, declined, cancelled, all]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceIssueList"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+  /v1/teacher/attendance-issues/{id}/answer:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - teacher
+      operationId: answerAttendanceIssue
+      summary: "Confirm (files a correction for Acad Ops) or decline with a note"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - decision
+              properties:
+                decision:
+                  type: string
+                  enum: [confirm, decline]
+                new_status:
+                  type: string
+                  enum: [present, late, absent, excused]
+                note:
+                  type: [string, "null"]
+                  maxLength: 500
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssueDecided"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
   /v1/admin/pilot/shadow-mode:
     get:
       tags:
@@ -5474,6 +5971,7 @@ components:
       - acadops
       - verifier
       - admin
+      - community_manager
     Me:
       type: object
       required:
@@ -7164,6 +7662,7 @@ components:
         absent: *a5
         excused: *a5
         pending: *a5
+        od: *a5
     LiveStudent:
       type: object
       required:
@@ -7202,6 +7701,7 @@ components:
           - absent
           - late
           - excused
+          - od
         record:
           type:
           - string
@@ -7310,6 +7810,7 @@ components:
             pending: *a5
             unmarked: *a5
             absent: *a5
+            od: *a5
         headcount_warning: *a4
         students:
           type: array
@@ -7881,6 +8382,7 @@ components:
             absent: *a5
             excused: *a5
             pending: *a5
+            od: *a5
     AdminAttendanceDetail:
       type: object
       required:
@@ -8117,6 +8619,192 @@ components:
           type:
           - string
           - "null"
+    OkResult:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+    OdCreated:
+      type: object
+      required: [id, status, classes]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        classes:
+          type: integer
+          description: Classes of yours the request covers today (future classes in range are covered too once they exist)
+    OdDecided:
+      type: object
+      required: [ok, status, records_changed]
+      properties:
+        ok:
+          type: boolean
+        status:
+          type: string
+        records_changed:
+          type: integer
+    IssueCreated:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+    IssueDecided:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+        correction_id:
+          type: string
+          format: uuid
+    OdRequest:
+      type: object
+      required: [id, kind, dates, classes, event, reason, status, rejected_by_role, created_at, student, community_manager, acadops]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [days, classes]
+        dates:
+          type: array
+          items:
+            type: string
+            format: date
+        classes:
+          type: array
+          items:
+            type: object
+            required: [id, date, start, code]
+            properties:
+              id:
+                type: string
+                format: uuid
+              date:
+                type: string
+                format: date
+              start:
+                type: string
+              code:
+                type: string
+        event:
+          type: string
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [pending_cm, pending_ops, approved, rejected, cancelled]
+        rejected_by_role:
+          type: [string, "null"]
+          enum: [community_manager, acadops, null]
+        created_at:
+          type: string
+          format: date-time
+        student:
+          type: object
+          required: [name, usn, section]
+          properties:
+            name:
+              type: string
+            usn:
+              type: [string, "null"]
+            section:
+              type: [string, "null"]
+        community_manager:
+          $ref: "#/components/schemas/OdStep"
+        acadops:
+          $ref: "#/components/schemas/OdStep"
+    OdStep:
+      type: [object, "null"]
+      required: [name, note, at]
+      properties:
+        name:
+          type: string
+        note:
+          type: [string, "null"]
+        at:
+          type: [string, "null"]
+          format: date-time
+    OdRequestList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OdRequest"
+    AttendanceIssue:
+      type: object
+      required: [id, reason, note, status, teacher_note, correction_id, created_at, resolved_at, record_status, student, teacher, class]
+      properties:
+        id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          enum: [marked_absent_but_present, marked_late_but_on_time, wrong_record, other]
+        note:
+          type: string
+        status:
+          type: string
+          enum: [pending_teacher, pending_ops, resolved, declined, cancelled]
+        teacher_note:
+          type: [string, "null"]
+        correction_id:
+          type: [string, "null"]
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: [string, "null"]
+          format: date-time
+        record_status:
+          type: [string, "null"]
+          description: The student's current record for the class
+        student:
+          type: object
+          required: [name, usn]
+          properties:
+            name:
+              type: string
+            usn:
+              type: [string, "null"]
+        teacher:
+          type: [string, "null"]
+        class:
+          type: object
+          required: [id, date, start, code, name]
+          properties:
+            id:
+              type: string
+              format: uuid
+            date:
+              type: string
+              format: date
+            start:
+              type: string
+            code:
+              type: string
+            name:
+              type: string
+    AttendanceIssueList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceIssue"
     ShadowMode:
       type: object
       required:

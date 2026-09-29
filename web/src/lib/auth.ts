@@ -52,4 +52,5 @@ export const ROLE_LABELS: Record<Role, string> = {
   acadops: 'Academic Operations',
   verifier: 'Verifier',
   admin: 'Administrator',
+  community_manager: 'Community manager',
 };

@@ -211,7 +211,7 @@ async function snapshotEvidence(
       .execute(),
     sql<{ total: number; attended: number; absent: number }>`
       select count(*)::int as total,
-        count(*) filter (where ar.status in ('present','late','excused'))::int as attended,
+        count(*) filter (where ar.status in ('present','late','excused','od'))::int as attended,
         count(*) filter (where ar.status = 'absent')::int as absent
       from attendance_records ar join class_sessions cs on cs.id = ar.class_session_id
       where ar.student_id = ${x.studentId} and cs.date >= ${new Date(ctx.now() - 30 * 24 * 3600_000).toISOString().slice(0, 10)}

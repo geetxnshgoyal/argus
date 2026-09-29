@@ -32,7 +32,7 @@ pnpm install
 pnpm dev
 ```
 
-Then `pnpm seed:dev` (once) adds test accounts: `admin@`, `acadops@`, `verifier@`
+Then `pnpm seed:dev` (once) adds test accounts: `admin@`, `acadops@`, `verifier@`, `community@`
 and `student@svyasa-sas.edu.in`, and the teacher `dev.teacher@newtonschool.co`
 (teachers sign in with their `firstname.lastname@newtonschool.co` Google account). Pass a roster export to load real
 students locally, e.g. `pnpm seed:dev /path/to/students.json`; only USN, name,

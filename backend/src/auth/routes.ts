@@ -23,6 +23,8 @@ export function roleHome(role: Role): string {
       return '/admin';
     case 'verifier':
       return '/verify';
+    case 'community_manager':
+      return '/community';
     case 'student':
       return '/student';
   }

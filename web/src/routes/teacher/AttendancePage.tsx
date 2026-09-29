@@ -27,6 +27,7 @@ const STATE_LABEL: Record<Student['state'], string> = {
   absent: 'Absent',
   late: 'Late',
   excused: 'Excused',
+  od: 'On duty (OD)',
 };
 
 /**

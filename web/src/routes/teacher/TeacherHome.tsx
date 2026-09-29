@@ -1,4 +1,5 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { NoticesCard } from '../../components/NoticesCard.tsx';
 import { ErrorNotice, IconTile, Notice, PageHead } from '../../components/ui.tsx';
@@ -45,6 +46,7 @@ export function TeacherHome() {
         </Notice>
       )}
       <NoticesCard />
+      <StudentIssues />
       {today.isSuccess && items.length === 0 && <Notice>No classes today.</Notice>}
       {focus && <CurrentClass session={focus} attendance={byClass.get(focus.id)} canStart={focus === current || focus === running} now={now} />}
       {items.length > 0 && (
@@ -141,5 +143,57 @@ function CurrentClass({ session: s, attendance, canStart, now }: { session: Sess
         </div>
       </div>
     </div>
+  );
+}
+
+type Issue = Schemas['AttendanceIssue'];
+const ISSUE_REASON: Record<Issue['reason'], string> = {
+  marked_absent_but_present: 'Marked absent but was there',
+  marked_late_but_on_time: 'Marked late but was on time',
+  wrong_record: 'Wrong record',
+  other: 'Other',
+};
+
+/** Students disputing a past class of yours (ADR-0027): confirm sends a correction to Acad Ops. */
+function StudentIssues() {
+  const list = useQuery({ queryKey: ['teacher', 'issues'], queryFn: () => apiGet<{ items: Issue[] }>('/v1/teacher/attendance-issues'), refetchInterval: 60_000 });
+  const items = list.data?.items ?? [];
+  if (!items.length) return null;
+  return (
+    <div className="card">
+      <h3>Students asking about their attendance</h3>
+      <p className="muted small">Confirm if the student was in your class; Academic Operations then approves the fix.</p>
+      <ul className="issue-list" style={{ marginTop: '0.75rem', display: 'grid', gap: '0.75rem' }}>
+        {items.map((i) => (
+          <IssueRow key={i.id} i={i} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function IssueRow({ i }: { i: Issue }) {
+  const qc = useQueryClient();
+  const [note, setNote] = useState('');
+  const answer = useMutation({
+    mutationFn: (decision: 'confirm' | 'decline') => apiSend('POST', `/v1/teacher/attendance-issues/${i.id}/answer`, { decision, note: note.trim() || null }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['teacher', 'issues'] }),
+  });
+  return (
+    <li style={{ display: 'block' }}>
+      <strong>{i.student.name}</strong> <span className="muted">· {i.student.usn ?? ''}</span>
+      <div className="small">
+        {i.class.code} · {formatDate(i.class.date)} {i.class.start} · recorded {i.record_status ?? 'nothing'}
+      </div>
+      <div className="small">
+        <strong>{ISSUE_REASON[i.reason]}:</strong> {i.note}
+      </div>
+      <div className="btn-row" style={{ marginTop: '0.4rem' }}>
+        <input aria-label={`Note for ${i.student.name}`} placeholder="Note (required to decline)" value={note} onChange={(e) => setNote(e.target.value)} style={{ flex: 1, minWidth: '10rem' }} />
+        <button className="btn btn-primary" disabled={answer.isPending} onClick={() => answer.mutate('confirm')}>Yes, was in class</button>
+        <button className="btn btn-danger" disabled={answer.isPending || note.trim().length < 3} onClick={() => answer.mutate('decline')}>Decline</button>
+      </div>
+      <ErrorNotice error={answer.error} />
+    </li>
   );
 }

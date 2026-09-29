@@ -11,6 +11,8 @@ import { NoticesPage } from './routes/admin/NoticesPage.tsx';
 import { PhonesPage } from './routes/admin/PhonesPage.tsx';
 import { RiskSettingsPage } from './routes/admin/RiskSettingsPage.tsx';
 import { PilotPage } from './routes/admin/PilotPage.tsx';
+import { RequestsPage } from './routes/admin/RequestsPage.tsx';
+import { CommunityPage } from './routes/community/CommunityPage.tsx';
 import { RESOURCE_CONFIGS } from './routes/admin/configs.ts';
 import { StudentImportPage } from './routes/admin/StudentImportPage.tsx';
 import { UsersPage } from './routes/admin/UsersPage.tsx';
@@ -102,6 +104,16 @@ const teacherPairRoute = createRoute({
 });
 
 
+const communityRoute = createRoute({
+  getParentRoute: () => frameRoute,
+  path: '/community',
+  component: () => (
+    <RequireRole roles={['community_manager', 'admin']}>
+      <CommunityPage />
+    </RequireRole>
+  ),
+});
+
 const verifyRoute = createRoute({
   getParentRoute: () => frameRoute,
   path: '/verify',
@@ -120,6 +132,7 @@ function AdminShell() {
         <nav className="sidenav" aria-label="Admin">
           <SideNavLink to="/admin">Overview</SideNavLink>
           <SideNavLink to="/admin/notices">Notices</SideNavLink>
+          <SideNavLink to="/admin/requests">Requests</SideNavLink>
           <div className="section-label">People</div>
           <SideNavLink to="/admin/students">Students</SideNavLink>
           <SideNavLink to="/admin/students/import">Import students</SideNavLink>
@@ -160,6 +173,7 @@ function AdminShell() {
 const adminRoute = createRoute({ getParentRoute: () => frameRoute, path: '/admin', component: AdminShell });
 
 const OVERVIEW = [
+  { to: '/admin/requests', icon: 'shield', title: 'Requests', text: 'On-duty requests, students’ attendance issues and corrections to approve.' },
   { to: '/admin/notices', icon: 'bell', title: 'Notices', text: 'Tell students and teachers about room changes, holidays and more.' },
   { to: '/admin/students/import', icon: 'upload', title: 'Import students', text: 'Add or update the student list from a file.' },
   { to: '/admin/students', icon: 'users', title: 'Students', text: 'Search students, fix details, move batches.' },
@@ -213,6 +227,7 @@ const adminChildren = [
   createRoute({ getParentRoute: () => adminRoute, path: '/phones', component: PhonesPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/risk-settings', component: RiskSettingsPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/pilot', component: PilotPage }),
+  createRoute({ getParentRoute: () => adminRoute, path: '/requests', component: RequestsPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/notices', component: NoticesPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/timetable', component: TimetablePage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/timetable/import', component: TimetableImportPage }),
@@ -227,7 +242,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   privacyRoute,
   termsRoute,
-  frameRoute.addChildren([indexRoute, studentRoute, teacherRoute, teacherSessionRoute, teacherPairRoute, verifyRoute, adminRoute.addChildren(adminChildren)]),
+  frameRoute.addChildren([indexRoute, studentRoute, teacherRoute, teacherSessionRoute, teacherPairRoute, verifyRoute, communityRoute, adminRoute.addChildren(adminChildren)]),
 ]);
 
 export const router = createRouter({ routeTree });

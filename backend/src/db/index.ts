@@ -7,6 +7,8 @@ export type Db = Kysely<Database>;
 // DATE columns stay 'YYYY-MM-DD' strings; converting them to JS Dates would
 // shift them across time zones. (OID 1082 = date.)
 pg.types.setTypeParser(1082, (v: string) => v);
+// date[] (OID 1182), e.g. od_requests.dates: '{2026-10-03,2026-10-04}' → ['2026-10-03', '2026-10-04'].
+pg.types.setTypeParser(1182 as Parameters<typeof pg.types.setTypeParser>[0], (v: string) => (v === '{}' ? [] : v.slice(1, -1).split(',')));
 
 export function createDb(databaseUrl: string, opts: { max?: number; onPool?: (pool: pg.Pool) => void } = {}): Db {
   const pool = new pg.Pool({

@@ -5,6 +5,7 @@ import type { Role } from '../db/schema.ts';
 import { isExpected, loadClass } from '../attendance/service.ts';
 import { ApiError } from '../errors.ts';
 import { uuidv7 } from '../platform/ids.ts';
+import { closeIssueForCorrection } from '../od/issues.ts';
 
 /**
  * Attendance corrections after class (spec §7, §9): a request (by the class's
@@ -61,10 +62,12 @@ export async function decideCorrection(ctx: AppContext, actorId: string, id: str
         .onConflict((oc) => oc.columns(['student_id', 'class_session_id']).doUpdateSet({ status: c.new_status, basis: 'correction', updated_by: actorId, note: c.reason }))
         .execute();
       await tx.updateTable('attendance_corrections').set({ status: 'approved', approved_by: actorId, decided_at: now, decision_note: note }).where('id', '=', id).execute();
+      await closeIssueForCorrection(tx, id, true, now);
       await appendAudit(tx, { actorId, action: 'correction.approve', entityType: 'attendance_record', entityId: `${c.student_id}:${c.class_session_id}`, before: before ? { status: before.status, basis: before.basis } : null, after: { status: c.new_status, correction_id: id, requested_by: c.requested_by, note }, ip }, now);
     } else {
       if (!note || note.trim().length < 3) throw new ApiError(400, 'validation_failed', 'Please give a reason.', { fields: { note: 'Required' } });
       await tx.updateTable('attendance_corrections').set({ status: 'rejected', approved_by: c.requested_by === actorId ? null : actorId, decided_at: now, decision_note: note }).where('id', '=', id).execute();
+      await closeIssueForCorrection(tx, id, false, now);
       await appendAudit(tx, { actorId, action: 'correction.reject', entityType: 'attendance_correction', entityId: id, after: { note }, ip }, now);
     }
     return { ok: true as const };

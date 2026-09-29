@@ -16,8 +16,8 @@ interface Timestamps {
   updated_at: Timestamp;
 }
 
-export type Role = 'student' | 'teacher' | 'acadops' | 'verifier' | 'admin';
-export const ROLES: readonly Role[] = ['student', 'teacher', 'acadops', 'verifier', 'admin'];
+export type Role = 'student' | 'teacher' | 'acadops' | 'verifier' | 'admin' | 'community_manager';
+export const ROLES: readonly Role[] = ['student', 'teacher', 'acadops', 'verifier', 'admin', 'community_manager'];
 
 export interface UsersTable extends Timestamps {
   id: string;
@@ -398,8 +398,9 @@ export interface AttendanceAttemptsTable {
   created_at: CreatedAt;
 }
 
-export type RecordStatus = 'present' | 'late' | 'absent' | 'excused' | 'pending';
-export type RecordBasis = 'system' | 'teacher' | 'verifier' | 'correction';
+/** 'od': away on college duty (approved OD request, ADR-0027); counts as attended. */
+export type RecordStatus = 'present' | 'late' | 'absent' | 'excused' | 'pending' | 'od';
+export type RecordBasis = 'system' | 'teacher' | 'verifier' | 'correction' | 'od';
 
 export interface AttendanceRecordsTable extends Timestamps {
   student_id: string;
@@ -525,6 +526,45 @@ export interface AttendanceCorrectionsTable {
   decided_at: Timestamp | null;
 }
 
+export type OdStatus = 'pending_cm' | 'pending_ops' | 'approved' | 'rejected' | 'cancelled';
+
+export interface OdRequestsTable {
+  id: string;
+  student_id: string;
+  kind: 'days' | 'classes';
+  dates: ColumnType<string[], string[] | undefined, string[]>;
+  class_session_ids: ColumnType<string[], string[] | undefined, string[]>;
+  event: string;
+  reason: string;
+  status: ColumnType<OdStatus, OdStatus | undefined, OdStatus>;
+  cm_id: string | null;
+  cm_decided_at: Timestamp | null;
+  cm_note: string | null;
+  ops_id: string | null;
+  ops_decided_at: Timestamp | null;
+  ops_note: string | null;
+  rejected_by_role: 'community_manager' | 'acadops' | null;
+  created_at: CreatedAt;
+}
+
+export type IssueStatus = 'pending_teacher' | 'pending_ops' | 'resolved' | 'declined' | 'cancelled';
+export type IssueReason = 'marked_absent_but_present' | 'marked_late_but_on_time' | 'wrong_record' | 'other';
+
+export interface AttendanceIssuesTable {
+  id: string;
+  student_id: string;
+  class_session_id: string;
+  reason: IssueReason;
+  note: string;
+  status: ColumnType<IssueStatus, IssueStatus | undefined, IssueStatus>;
+  teacher_id: string | null;
+  teacher_note: string | null;
+  teacher_decided_at: Timestamp | null;
+  correction_id: string | null;
+  created_at: CreatedAt;
+  resolved_at: Timestamp | null;
+}
+
 export interface AppSettingsTable {
   key: string;
   value: Json;
@@ -625,6 +665,8 @@ export interface Database {
   attendance_corrections: AttendanceCorrectionsTable;
   job_runs: JobRunsTable;
   app_settings: AppSettingsTable;
+  od_requests: OdRequestsTable;
+  attendance_issues: AttendanceIssuesTable;
   notices: NoticesTable;
   notice_recipients: NoticeRecipientsTable;
   push_tokens: PushTokensTable;

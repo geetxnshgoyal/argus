@@ -12,7 +12,7 @@ import { ApiError } from '../errors.ts';
 import { uuidv7 } from '../platform/ids.ts';
 import { idParams, parse, uuid } from '../validation.ts';
 
-const STAFF_ROLES: Role[] = ['acadops', 'verifier', 'admin'];
+const STAFF_ROLES: Role[] = ['acadops', 'verifier', 'admin', 'community_manager'];
 
 const studentProfile = z.object({
   usn: z.string().trim().min(3).max(30),

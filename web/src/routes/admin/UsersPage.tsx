@@ -11,7 +11,7 @@ type User = Schemas['User'];
 type Ref = { id: string; code?: string; name: string; section_id?: string };
 
 type Kind = 'students' | 'teachers' | 'staff';
-const KIND_ROLES: Record<Kind, Role[]> = { students: ['student'], teachers: ['teacher'], staff: ['acadops', 'verifier', 'admin'] };
+const KIND_ROLES: Record<Kind, Role[]> = { students: ['student'], teachers: ['teacher'], staff: ['acadops', 'verifier', 'admin', 'community_manager'] };
 
 function useRefList(path: string) {
   return useQuery({
@@ -303,7 +303,7 @@ function UserForm(props: {
           {kind === 'staff' && (
             <Field label="Role">
               <select value={v.role} onChange={set('role')}>
-                {(['acadops', 'verifier', 'admin'] as Role[]).map((r) => (
+                {(['acadops', 'verifier', 'community_manager', 'admin'] as Role[]).map((r) => (
                   <option key={r} value={r}>
                     {ROLE_LABELS[r]}
                   </option>

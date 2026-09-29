@@ -32,5 +32,6 @@ the spec, the ADR wins. Status is `Accepted` unless marked otherwise.
 | [0024](0024-iphone-pilot-mode.md) | iPhone pilot mode: iPhones without App Attest (free Apple account), pilots only | Hosting |
 | [0025](0025-phone-notifications.md) | Phone notifications via Firebase Cloud Messaging (Android); iPhone push needs a paid account | M6+ |
 | [0026](0026-pilot-shadow-mode-and-metrics.md) | Pilot shadow mode (not official, fixed per class) and the §17 metrics | M8 |
+| [0027](0027-od-requests-and-attendance-issues.md) | OD requests (community manager → Acad Ops), `od` status, student attendance issues | M8+ |
 
 New ADRs: copy the format of any existing one (Context / Decision / Consequences), keep it under a page.

@@ -4,6 +4,8 @@ import 'dart:io' show SocketException;
 import 'package:argus/main.dart';
 import 'package:argus/src/api_client.dart';
 import 'package:argus/src/auth_controller.dart';
+import 'package:argus/src/screens/requests_screen.dart';
+import 'package:argus/src/theme.dart';
 import 'package:argus_security/argus_security.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +20,7 @@ class FakeServer {
   String? lastSignedMessage;
   bool expireAccess = false;
   final requests = <String>[];
+  Map<String, dynamic>? lastOdBody;
 
   http.Client client() => MockClient((req) async {
         requests.add('${req.method} ${req.url.path}');
@@ -59,6 +62,29 @@ class FakeServer {
                   'id': 's2', 'date': today, 'start': '15:30', 'end': '17:00', 'starts_at': '', 'ends_at': '', 'status': 'cancelled', 'changed': true,
                   'entry_id': 'e2', 'subject': {'code': 'ADA LAB', 'name': 'ADA LAB', 'kind': 'lab'},
                   'section': {'id': 'x', 'name': '2nd Year 3rd Sem'}, 'batch': 'Batch 1', 'room': 'Concept Room', 'teacher': null,
+                },
+              ],
+            });
+          case 'GET /v1/me/od-requests':
+            return _json(200, {
+              'items': [
+                {
+                  'id': 'od1', 'kind': 'days', 'dates': ['2026-10-03'], 'classes': [], 'event': 'Hackathon', 'reason': 'Team', 'status': 'pending_cm',
+                  'rejected_by_role': null, 'created_at': '2026-09-29T04:00:00Z', 'student': {'name': 'Asha', 'usn': 'x', 'section': null},
+                  'community_manager': null, 'acadops': null,
+                },
+              ],
+            });
+          case 'POST /v1/me/od-requests':
+            lastOdBody = body;
+            return _json(201, {'id': 'od2', 'status': 'pending_cm', 'classes': 1});
+          case 'GET /v1/me/attendance-issues':
+            return _json(200, {
+              'items': [
+                {
+                  'id': 'i1', 'reason': 'marked_absent_but_present', 'note': 'Camera broke', 'status': 'resolved', 'teacher_note': 'Was there',
+                  'correction_id': 'c1', 'created_at': '2026-09-29T04:00:00Z', 'resolved_at': null, 'record_status': 'present',
+                  'student': {'name': 'Asha', 'usn': 'x'}, 'teacher': 'T', 'class': {'id': 's1', 'date': '2026-09-28', 'start': '09:30', 'code': 'ADA', 'name': 'ADA'},
                 },
               ],
             });
@@ -164,6 +190,31 @@ void main() {
     await tester.pumpAndSettle();
     await check('home');
     semantics.dispose();
+  });
+
+  testWidgets('OD & issues: shows status; an OD for a specific class is sent for approval', (tester) async {
+    final server = FakeServer();
+    final api = ApiClient(baseUrl: 'http://test', security: SecurityBridge(), store: MemoryTokenStore(), client: server.client());
+    await api.devLogin('asha@college.test');
+    await tester.pumpWidget(MaterialApp(theme: argusTheme(), home: RequestsScreen(api: api)));
+    await tester.pumpAndSettle();
+    expect(find.text('Waiting for community manager'), findsOneWidget);
+    expect(find.text('Withdraw'), findsOneWidget);
+    expect(find.text('Fixed'), findsOneWidget);
+    expect(find.text('Teacher: Was there'), findsOneWidget);
+
+    await tester.tap(find.text('Request OD'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Specific classes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(CheckboxListTile).first);
+    await tester.enterText(find.widgetWithText(TextField, 'Event or duty'), 'Inter-college hackathon');
+    await tester.enterText(find.widgetWithText(TextField, 'Details'), 'Representing the college');
+    await tester.pump();
+    await tester.tap(find.text('Send for approval'));
+    await tester.pumpAndSettle();
+    expect(server.lastOdBody, {'kind': 'classes', 'class_session_ids': ['s1'], 'event': 'Inter-college hackathon', 'reason': 'Representing the college'});
+    expect(find.text('OD & attendance issues'), findsOneWidget); // back on the list
   });
 
   testWidgets('explains SSO errors in plain language', (tester) async {
