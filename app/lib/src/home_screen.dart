@@ -359,6 +359,23 @@ class _AttendanceCard extends StatelessWidget {
             label: Text(other ? 'Use this phone instead' : 'Register this phone'),
           ),
         ]);
+      case PhoneState.biometricsChanged:
+        body = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const InfoRow(
+            icon: Icons.fingerprint,
+            tone: TileTone.warn,
+            title: 'Register this phone again',
+            value: 'A face or fingerprint was added or removed on this phone, so its attendance key stopped working. '
+                'Register again; Academic Operations will check it is still you before it works.',
+          ),
+          if (phone.error != null) ...[const SizedBox(height: 10), Text(phone.error!, style: const TextStyle(color: ArgusColors.bad))],
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: phone.busy ? null : () => phone.register(reason: 'biometrics_changed'),
+            icon: const Icon(Icons.verified_user_outlined),
+            label: const Text('Register again'),
+          ),
+        ]);
       case PhoneState.pending:
         final s = phone.status;
         body = InfoRow(

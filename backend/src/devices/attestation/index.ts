@@ -32,6 +32,8 @@ export interface BindResult {
   appAttest?: { keyId: string; publicKeySpki: string };
   /** iOS: DeviceCheck bit0 was already set (phone bound to an Argus account before). */
   deviceCheckSeen?: boolean;
+  /** Android: the attested authenticators of the attempt key (see AndroidKeyResult). */
+  userAuthType?: number | null;
 }
 
 export type RequestAttestation = { result: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required' | 'unverified'; newCounter?: number };
@@ -155,7 +157,7 @@ export class AttestationService {
           nowMs: this.now(),
         });
       }
-      return { level: r.securityLevel };
+      return { level: r.securityLevel, userAuthType: r.userAuthType };
     }
 
     if (evidence.kind !== 'ios') throw new AttestationFailed('iOS evidence expected');

@@ -39,6 +39,10 @@ export const bindPayloadSchema = z.object({
   os_version: z.string().max(50).default(''),
   app_version: z.string().max(30).default(''),
   android_id: z.string().max(64).optional(),
+  // ADR-0029: the attempt key accepts only fingerprint/face (the app says; Android attestation proves it).
+  attempt_biometric: z.boolean().optional(),
+  // Why this phone registers again: its fingerprints/faces changed, which voided the key.
+  reason: z.enum(['biometrics_changed']).optional(),
 });
 
 export const bindEvidenceSchema: z.ZodType<BindEvidence> = z.discriminatedUnion('kind', [
@@ -230,6 +234,11 @@ export async function bindDevice(ctx: AppContext, user: { id: string; tokenFamil
     if (att.deviceCheckSeen && !mine.some((d) => d.platform === 'ios')) {
       approvalReason = 'This iPhone was registered to an Argus account before.';
     }
+    // ADR-0029: a face or fingerprint was added on this phone (the old key died). Someone
+    // may have added a friend's finger to mark attendance for them, so a person checks.
+    if (p.reason === 'biometrics_changed') {
+      approvalReason = 'A face or fingerprint was added or removed on this phone. Academic Operations must check it is still you.';
+    }
     // iPhone pilot mode (ADR-0024): without App Attest a script on a laptop could pose as an
     // iPhone, so a person checks the student and the phone before it can mark attendance.
     if (att.level === 'unattested') {
@@ -268,6 +277,8 @@ export async function bindDevice(ctx: AppContext, user: { id: string; tokenFamil
         session_key_spki: p.session_pub,
         attempt_key_spki: p.attempt_pub,
         attestation_level: att.level,
+        // Android: trust the attested key properties, not the app's claim (2 = biometric only).
+        biometric_only: p.platform === 'android' && att.level !== 'dev_bypass' ? att.userAuthType === 2 : Boolean(p.attempt_biometric),
         hardware_id_hash: hwHash,
         app_attest_key_id: att.appAttest?.keyId ?? null,
         app_attest_public_key: att.appAttest?.publicKeySpki ?? null,

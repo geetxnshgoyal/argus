@@ -120,6 +120,7 @@ describe('risk scoring (spec §6 soft signals, ADR-0010, ADR-0014)', () => {
     campusNetwork: true,
     lateInWindow: false,
     deviceActivatedAt: new Date('2026-01-01'),
+    biometricOnly: true,
     attestation: 'ok' as const,
     recentFlags: 0,
     now: new Date('2026-09-21'),

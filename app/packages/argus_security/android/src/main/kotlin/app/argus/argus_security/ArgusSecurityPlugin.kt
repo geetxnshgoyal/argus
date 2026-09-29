@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.SystemClock
 import android.provider.Settings
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.security.keystore.StrongBoxUnavailableException
 import android.security.keystore.UserNotAuthenticatedException
@@ -143,6 +144,7 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                         if (ok) result.success(true) else result.error("auth_cancelled", err ?: "Unlock cancelled", null)
                     }
                 }
+                "attemptKeyStatus" -> result.success(attemptKeyStatus())
                 "resetAttemptKey" -> {
                     keyStore().deleteEntry(ATTEMPT_ALIAS)
                     result.success(null)
@@ -198,22 +200,58 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
         return generate(SESSION_ALIAS) {}
     }
 
+    /** A strong fingerprint/face is enrolled and usable for keys (Android 11+). */
+    private fun biometricAvailable(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS
+
+    private fun prefs() = context.getSharedPreferences("argus_security", Context.MODE_PRIVATE)
+    private fun attemptIsBiometric(): Boolean = prefs().getBoolean(PREF_ATTEMPT_BIOMETRIC, false)
+
+    /**
+     * The attempt key. With a fingerprint/face enrolled it accepts only those (no PIN
+     * fallback) and is destroyed by Android when a fingerprint or face is added, so a
+     * friend's finger added later can't mark attendance (ADR-0029). Without biometrics it
+     * falls back to the screen lock; the server scores that as a weaker phone.
+     */
     private fun createAttemptKey(challenge: ByteArray, result: Result) {
         if (!deviceSecure()) return result.error("no_screen_lock", "Set a screen lock (PIN, pattern or password) to use Argus.", null)
         keyStore().deleteEntry(ATTEMPT_ALIAS)
+        val biometric = biometricAvailable()
         generate(ATTEMPT_ALIAS) { b ->
             b.setUserAuthenticationRequired(true)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                b.setUserAuthenticationParameters(AUTH_WINDOW_S, KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL)
+                if (biometric) {
+                    b.setUserAuthenticationParameters(AUTH_WINDOW_S, KeyProperties.AUTH_BIOMETRIC_STRONG)
+                    b.setInvalidatedByBiometricEnrollment(true)
+                } else {
+                    b.setUserAuthenticationParameters(AUTH_WINDOW_S, KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL)
+                }
             } else {
                 @Suppress("DEPRECATION")
                 b.setUserAuthenticationValidityDurationSeconds(AUTH_WINDOW_S)
             }
             b.setAttestationChallenge(challenge)
         }
+        prefs().edit().putBoolean(PREF_ATTEMPT_BIOMETRIC, biometric).apply()
         val chain = keyStore().getCertificateChain(ATTEMPT_ALIAS)?.map { Base64.encodeToString(it.encoded, Base64.NO_WRAP) } ?: emptyList()
         val pub = keyStore().getCertificate(ATTEMPT_ALIAS).publicKey.encoded
-        result.success(mapOf("publicKey" to b64url(pub), "chain" to chain))
+        result.success(mapOf("publicKey" to b64url(pub), "chain" to chain, "biometric" to biometric))
+    }
+
+    /** none | ok | biometrics_changed | invalidated — checked without prompting the user. */
+    private fun attemptKeyStatus(): String {
+        if (!keyStore().containsAlias(ATTEMPT_ALIAS)) return "none"
+        return try {
+            sign(ATTEMPT_ALIAS, byteArrayOf(0))
+            "ok"
+        } catch (e: UserNotAuthenticatedException) {
+            "ok" // usable once the student confirms
+        } catch (e: KeyPermanentlyInvalidatedException) {
+            if (attemptIsBiometric()) "biometrics_changed" else "invalidated"
+        } catch (e: Exception) {
+            "invalidated"
+        }
     }
 
     /** Signs with the attempt key, asking the user to unlock first if the auth window has passed. */
@@ -228,6 +266,12 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                 } catch (e2: Exception) {
                     result.error("keystore_error", e2.message ?: e2.javaClass.simpleName, null)
                 }
+            }
+        } catch (e: KeyPermanentlyInvalidatedException) {
+            if (attemptIsBiometric()) {
+                result.error("biometrics_changed", "A fingerprint or face was added or removed on this phone. Register the phone again.", null)
+            } else {
+                result.error("key_invalidated", "This phone's attendance key is no longer valid. Register the phone again.", null)
             }
         } catch (e: java.security.InvalidKeyException) {
             // The key was invalidated (e.g. screen lock removed): the phone must be registered again.
@@ -249,7 +293,11 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
             override fun onAuthenticationError(code: Int, msg: CharSequence) = done(false, msg.toString())
         })
         val info = BiometricPrompt.PromptInfo.Builder().setTitle("Argus").setSubtitle(reason)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && attemptIsBiometric()) {
+            // Fingerprint/face only: the key doesn't accept the PIN (ADR-0029).
+            info.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+            info.setNegativeButtonText("Cancel")
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             info.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
         } else {
             @Suppress("DEPRECATION")
@@ -359,6 +407,7 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
         const val SESSION_ALIAS = "argus_session_v1"
         const val ATTEMPT_ALIAS = "argus_attempt_v1"
         const val AUTH_WINDOW_S = 60
+        const val PREF_ATTEMPT_BIOMETRIC = "attempt_biometric"
         const val REQ_LOCATION = 0x4152
         const val REQ_NOTIFY = 0x4153
     }

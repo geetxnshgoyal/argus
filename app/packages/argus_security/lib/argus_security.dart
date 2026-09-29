@@ -60,9 +60,13 @@ class LocationFix {
 /// A newly generated attempt key: public key (SPKI DER, base64url) and, on
 /// Android, its key-attestation certificate chain (standard base64 DER, leaf first).
 class AttemptKey {
-  const AttemptKey(this.publicKey, this.chain);
+  const AttemptKey(this.publicKey, this.chain, {this.biometric = false});
   final String publicKey;
   final List<String> chain;
+
+  /// Fingerprint/face only, and void once a face or finger is added (ADR-0029);
+  /// false = the phone has no biometrics, so the screen lock is used.
+  final bool biometric;
 }
 
 class SecurityBridge {
@@ -101,7 +105,7 @@ class SecurityBridge {
   Future<AttemptKey> createAttemptKey(Uint8List challenge) async {
     final m = await _channel.invokeMethod<Map<Object?, Object?>>('createAttemptKey', {'challenge': challenge});
     if (m == null) throw PlatformException(code: 'no_result', message: 'no attempt key');
-    return AttemptKey(m['publicKey'] as String, ((m['chain'] as List?) ?? const []).cast<String>());
+    return AttemptKey(m['publicKey'] as String, ((m['chain'] as List?) ?? const []).cast<String>(), biometric: m['biometric'] == true);
   }
 
   Future<String?> attemptPublicKey() => _channel.invokeMethod<String>('attemptPublicKey');
@@ -115,6 +119,9 @@ class SecurityBridge {
 
   /// Android: unlock the attempt key ahead of scanning so the scan itself is instant.
   Future<void> unlockAttemptKey({String reason = 'Confirm it\'s you to mark attendance'}) => _channel.invokeMethod<bool>('unlockAttemptKey', {'reason': reason});
+
+  /// 'none' | 'ok' | 'biometrics_changed' | 'invalidated', without prompting the user.
+  Future<String> attemptKeyStatus() async => await _channel.invokeMethod<String>('attemptKeyStatus') ?? 'ok';
 
   Future<void> resetAttemptKey() => _channel.invokeMethod<void>('resetAttemptKey');
 

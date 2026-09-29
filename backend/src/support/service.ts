@@ -136,7 +136,7 @@ export async function createSupportRequest(ctx: AppContext, studentId: string, b
     .where((eb) => eb.or([eb('resolution', 'is', null), eb('resolution', '<>', 'confirmed_present')]))
     .executeTakeFirst();
   const a = assess(
-    { location: loc, campusNetwork, lateInWindow: false, deviceActivatedAt: device.activated_at, attestation, recentFlags: Number(recentFlags?.n ?? 0), now: new Date(now) },
+    { location: loc, campusNetwork, lateInWindow: false, deviceActivatedAt: device.activated_at, attestation, biometricOnly: device.biometric_only, recentFlags: Number(recentFlags?.n ?? 0), now: new Date(now) },
     settings,
   );
   const validTag = await ctx.db

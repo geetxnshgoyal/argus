@@ -31,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         PhoneState.pending => 'Waiting to become your attendance phone',
         PhoneState.unregistered => 'Not registered yet (see Home)',
         PhoneState.otherPhoneActive => 'Another phone is your attendance phone',
+        PhoneState.biometricsChanged => 'Face or fingerprint changed: register again (see Home)',
         PhoneState.error => 'Could not check',
       };
 

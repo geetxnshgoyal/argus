@@ -385,4 +385,27 @@ describe.skipIf(!hasDb)('attendance (integration, spec §16 adversarial suite)',
     const listed = await t.app.inject({ url: `/v1/admin/class-sessions?section_id=${c.section.id}&from=2026-09-21&to=2026-09-21`, headers: ops2.headers });
     expect(listed.json().items.find((x: { id: string }) => x.id === extra.id)).toMatchObject({ has_attendance: true, changed: true });
   });
+  it('biometrics: a new face/finger voids the key; registering again needs Acad Ops; no-biometric phones are flagged (ADR-0029)', async () => {
+    // Same phone (same session key), new attempt key after the old one died.
+    Object.assign(s1, { attempt: deviceKey() });
+    const again = await s1.bind({ reason: 'biometrics_changed' });
+    expect(again.json()).toMatchObject({ state: 'pending', needs_approval: true });
+    expect(again.json().message).toMatch(/face or fingerprint/);
+    const req = await db.selectFrom('device_rebind_requests').select(['approval_reason', 'eligible_at']).executeTakeFirstOrThrow();
+    expect(req).toMatchObject({ eligible_at: null });
+
+    // A phone without fingerprint/face: scans still work, with a small risk signal.
+    const s3u = await createUser(db, 'student', 's3@college.test', 's3');
+    await db.insertInto('students').values({ user_id: s3u.id, usn: '2102500003', program_id: c.program.id, section_id: c.section.id, group_id: c.b1.id, admission_year: 2025 }).execute();
+    const ops = await loginAs(t.app, 'ops@college.test');
+    await t.app.inject({ method: 'POST', url: `/v1/admin/sections/${c.section.id}/sync-enrollments`, headers: ops.headers });
+    const s3 = await new Phone(t.app, 's3@college.test').signIn();
+    await s3.bind({ biometric: false });
+    expect((await db.selectFrom('devices').select('biometric_only').where('user_id', '=', s3u.id).executeTakeFirstOrThrow()).biometric_only).toBe(false);
+    const d = await display(await start());
+    const res = await s3.scan(displayQr(d, t.clock.now));
+    expect(res.statusCode).toBe(200);
+    expect(res.json().reason_codes).toContain('no_biometric_lock');
+    expect((await s2.scan(displayQr(d, t.clock.now))).json().reason_codes).not.toContain('no_biometric_lock');
+  });
 });

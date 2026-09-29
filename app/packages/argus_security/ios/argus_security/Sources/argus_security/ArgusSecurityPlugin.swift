@@ -19,6 +19,8 @@ public class ArgusSecurityPlugin: NSObject, FlutterPlugin, CLLocationManagerDele
   static let sessionAccount = "argus_session_v1"
   static let attemptAccount = "argus_attempt_v1"
   static let appAttestAccount = "argus_appattest_v1"
+  /// Face ID / Touch ID enrollment state when the attempt key was made (empty = no biometrics).
+  static let biometryStateAccount = "argus_attempt_biometry_v1"
 
   private var locationManager: CLLocationManager?
   private var locationResult: FlutterResult?
@@ -55,7 +57,10 @@ public class ArgusSecurityPlugin: NSObject, FlutterPlugin, CLLocationManagerDele
         deleteKeychain(Self.sessionAccount)
         result(nil)
       case "createAttemptKey":
-        result(["publicKey": b64url(try createAttemptKey().publicKey.derRepresentation), "chain": [String]()])
+        let (key, biometric) = try createAttemptKey()
+        result(["publicKey": b64url(key.publicKey.derRepresentation), "chain": [String](), "biometric": biometric])
+      case "attemptKeyStatus":
+        result(attemptKeyStatus())
       case "attemptPublicKey":
         result(try attemptKey().map { b64url($0.publicKey.derRepresentation) })
       case "signWithAttemptKey":
@@ -67,6 +72,7 @@ public class ArgusSecurityPlugin: NSObject, FlutterPlugin, CLLocationManagerDele
         result(true)
       case "resetAttemptKey":
         deleteKeychain(Self.attemptAccount)
+        deleteKeychain(Self.biometryStateAccount)
         deleteKeychain(Self.appAttestAccount)
         result(nil)
       case "appAttestKey":
@@ -116,18 +122,40 @@ public class ArgusSecurityPlugin: NSObject, FlutterPlugin, CLLocationManagerDele
     return try simulatorKey(Self.sessionAccount)
   }
 
-  private func createAttemptKey() throws -> Signer {
+  /// Current Face ID / Touch ID enrollment fingerprint; changes when a face or finger is added or removed.
+  private func biometryState() -> Data? {
+    let ctx = LAContext()
+    guard ctx.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) else { return nil }
+    return ctx.evaluatedPolicyDomainState
+  }
+
+  /// The attempt key. With Face ID / Touch ID set up it accepts only those (no passcode)
+  /// and belongs to the current set of faces/fingers (.biometryCurrentSet): adding one
+  /// makes it unusable, so a friend's face added later can't mark attendance (ADR-0029).
+  /// Without biometrics it falls back to the passcode; the server scores that as weaker.
+  private func createAttemptKey() throws -> (Signer, Bool) {
     deleteKeychain(Self.attemptAccount)
+    deleteKeychain(Self.biometryStateAccount)
     if SecureEnclave.isAvailable {
+      let state = biometryState()
+      let flags: SecAccessControlCreateFlags = state != nil ? [.privateKeyUsage, .biometryCurrentSet] : [.privateKeyUsage, .userPresence]
       var error: Unmanaged<CFError>?
-      guard let access = SecAccessControlCreateWithFlags(nil, kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly, [.privateKeyUsage, .userPresence], &error) else {
+      guard let access = SecAccessControlCreateWithFlags(nil, kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly, flags, &error) else {
         throw NSError(domain: "argus", code: 2, userInfo: [NSLocalizedDescriptionKey: "Set a passcode on this iPhone to use Argus."])
       }
       let key = try SecureEnclave.P256.Signing.PrivateKey(accessControl: access)
       try writeKeychain(Self.attemptAccount, key.dataRepresentation)
-      return Signer(publicKey: key.publicKey, signFn: { try key.signature(for: $0) })
+      if let state = state { try writeKeychain(Self.biometryStateAccount, state) }
+      return (Signer(publicKey: key.publicKey, signFn: { try key.signature(for: $0) }), state != nil)
     }
-    return try simulatorKey(Self.attemptAccount)
+    return (try simulatorKey(Self.attemptAccount), false)
+  }
+
+  /// none | ok | biometrics_changed, without prompting.
+  private func attemptKeyStatus() -> String {
+    guard readKeychain(Self.attemptAccount) != nil else { return "none" }
+    guard let saved = readKeychain(Self.biometryStateAccount) else { return "ok" }
+    return biometryState() == saved ? "ok" : "biometrics_changed"
   }
 
   private func attemptKey(context: LAContext? = nil) throws -> Signer? {
@@ -139,8 +167,11 @@ public class ArgusSecurityPlugin: NSObject, FlutterPlugin, CLLocationManagerDele
     return try simulatorKey(Self.attemptAccount)
   }
 
-  /// Signing asks for Face ID / Touch ID / passcode (userPresence). Runs off the main thread.
+  /// Signing asks for Face ID / Touch ID (or the passcode on iPhones without them). Runs off the main thread.
   private func signWithAttempt(_ data: Data, reason: String, result: @escaping FlutterResult) {
+    if attemptKeyStatus() == "biometrics_changed" {
+      return result(FlutterError(code: "biometrics_changed", message: "A face or fingerprint was added or removed on this iPhone. Register the phone again.", details: nil))
+    }
     let context = LAContext()
     context.localizedReason = reason
     DispatchQueue.global(qos: .userInitiated).async {

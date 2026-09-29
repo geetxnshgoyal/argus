@@ -10,7 +10,8 @@ import 'api_client.dart';
 import 'config.dart';
 import 'jcs.dart';
 
-enum PhoneState { loading, unregistered, otherPhoneActive, pending, active, error }
+/// biometricsChanged: a face or fingerprint was added/removed, so the attempt key is void (ADR-0029).
+enum PhoneState { loading, unregistered, otherPhoneActive, pending, active, biometricsChanged, error }
 
 /// This phone's registration for attendance (protocol §4, ADR-0007/0008).
 class DeviceController extends ChangeNotifier {
@@ -31,7 +32,17 @@ class DeviceController extends ChangeNotifier {
     try {
       final s = await api.devices();
       status = s;
-      state = s.thisIsActive
+      var keyStatus = 'ok';
+      if (s.thisIsActive) {
+        try {
+          keyStatus = await security.attemptKeyStatus();
+        } catch (_) {
+          // Older plugin or no answer: assume usable; signing will say otherwise.
+        }
+      }
+      state = s.thisIsActive && keyStatus == 'biometrics_changed'
+          ? PhoneState.biometricsChanged
+          : s.thisIsActive
           ? PhoneState.active
           : s.thisIsPending
               ? PhoneState.pending
@@ -48,7 +59,9 @@ class DeviceController extends ChangeNotifier {
 
   /// Registers this phone: fresh challenge → attempt key generated in hardware with that
   /// challenge → payload signed by both keys → platform attestation → server decides.
-  Future<void> register() async {
+  /// [reason] 'biometrics_changed' tells the server why this phone registers again,
+  /// which then needs Academic Operations to approve it (ADR-0029).
+  Future<void> register({String? reason}) async {
     busy = true;
     error = null;
     message = null;
@@ -56,14 +69,14 @@ class DeviceController extends ChangeNotifier {
     try {
       Map<String, dynamic> result;
       try {
-        result = await _bind(devBypass: false);
+        result = await _bind(devBypass: false, reason: reason);
       } on ApiException catch (e) {
         // Development builds only: fall back to the dev attestation bypass (refused by servers outside dev).
         if (!devBuild || (e.code != 'attestation_failed' && e.code != 'attestation_unavailable')) rethrow;
-        result = await _bind(devBypass: true);
+        result = await _bind(devBypass: true, reason: reason);
       } on PlatformException catch (e) {
         if (!devBuild || (e.code != 'attest_unsupported' && e.code != 'attest_failed')) rethrow;
-        result = await _bind(devBypass: true);
+        result = await _bind(devBypass: true, reason: reason);
       }
       message = result['message'] as String?;
       await load();
@@ -72,7 +85,7 @@ class DeviceController extends ChangeNotifier {
     } on PlatformException catch (e) {
       error = switch (e.code) {
         'no_screen_lock' => 'Set a screen lock (PIN, pattern or password) on this phone first, then try again.',
-        'auth_cancelled' => 'Registration needs you to confirm with your fingerprint, face or PIN.',
+        'auth_cancelled' => 'Registration needs you to confirm with your fingerprint or face (or PIN if the phone has neither).',
         _ => e.message ?? 'This phone could not be registered.',
       };
     } finally {
@@ -81,7 +94,7 @@ class DeviceController extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> _bind({required bool devBypass}) async {
+  Future<Map<String, dynamic>> _bind({required bool devBypass, String? reason}) async {
     final challenge = await api.bindChallenge();
     final key = await security.createAttemptKey(Uint8List.fromList(b64urlDecode(challenge)));
     final info = await security.platformInfo();
@@ -95,6 +108,8 @@ class DeviceController extends ChangeNotifier {
       'os_version': info.osVersion,
       'app_version': appVersion,
       if (Platform.isAndroid) 'android_id': await security.androidId(),
+      'attempt_biometric': key.biometric,
+      'reason': ?reason,
     }));
     final sessionSig = await security.signWithSessionKey(payload);
     final attemptSig = await security.signWithAttemptKey(payload, reason: 'Confirm it\'s you to register this phone for attendance');

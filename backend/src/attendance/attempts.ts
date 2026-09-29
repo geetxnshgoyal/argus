@@ -282,6 +282,7 @@ export async function submitAttempt(ctx: AppContext, studentId: string, body: un
       lateInWindow: window.lateInWindow,
       deviceActivatedAt: device.activated_at,
       attestation,
+      biometricOnly: device.biometric_only,
       recentFlags: Number(recent?.n ?? 0),
       now: new Date(receivedMs),
     },

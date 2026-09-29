@@ -18,7 +18,10 @@ All of this is on Admin → Attendance → **Phones**.
 
 This happens when:
 - the phone was registered to **another student** in the last 6 months, or
-- it's an **iPhone that Apple couldn't verify** (pilot mode).
+- it's an **iPhone that Apple couldn't verify** (pilot mode), or
+- a **face or fingerprint was added or removed** on the phone. Scans need the
+  student's own face or finger, so check it is really them (a friend's finger
+  added to the phone is the proxy trick this catches).
 
 Ask the student to come to the office with their **ID card and the phone**,
 with the Argus app open. Check the name in the app matches the ID, then

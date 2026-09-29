@@ -75,7 +75,7 @@ class _ScanScreenState extends State<ScanScreen> {
       await widget.security.unlockAttemptKey(reason: 'Confirm it\'s you to mark attendance');
     } on PlatformException {
       if (!mounted) return;
-      return _fail('auth_cancelled', 'Attendance needs your fingerprint, face or PIN. Tap Try again.');
+      return _fail('auth_cancelled', 'Attendance needs your fingerprint or face. Tap Try again.');
     }
     if (!mounted) return;
     setState(() => _phase = _Phase.scanning);
@@ -147,7 +147,14 @@ class _ScanScreenState extends State<ScanScreen> {
     } on PlatformException catch (e) {
       if (!mounted) return;
       unawaited(_camera.stop());
-      _fail(e.code, e.code == 'auth_cancelled' ? 'Attendance needs your fingerprint, face or PIN. Tap Try again.' : (e.message ?? 'Something went wrong.'));
+      _fail(
+        e.code,
+        switch (e.code) {
+          'auth_cancelled' => 'Attendance needs your fingerprint or face. Tap Try again.',
+          'biometrics_changed' => 'A face or fingerprint was added or removed on this phone, so it must be registered again. Go back to Home.',
+          _ => e.message ?? 'Something went wrong.',
+        },
+      );
     }
   }
 

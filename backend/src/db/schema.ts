@@ -298,6 +298,8 @@ export interface DevicesTable extends Timestamps {
   app_attest_public_key: string | null;
   app_attest_counter: ColumnType<string, number | string | undefined, number | string>;
   devicecheck_marked: ColumnType<boolean, boolean | undefined, boolean>;
+  /** Attempt key accepts only fingerprint/face and dies when one is added (ADR-0029). */
+  biometric_only: ColumnType<boolean, boolean | undefined, boolean>;
   bound_at: Timestamp;
   activated_at: Timestamp | null;
   revoked_at: Timestamp | null;

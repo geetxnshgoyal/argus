@@ -63,6 +63,8 @@ export interface AndroidKeyPolicy {
 
 export interface AndroidKeyResult {
   securityLevel: 'tee' | 'strongbox';
+  /** Hardware-enforced authenticators for the key: 1 = PIN/password, 2 = fingerprint/face, 3 = either. */
+  userAuthType: number | null;
   attestationVersion: number;
   osPatchLevel: number | null;
 }
@@ -176,7 +178,9 @@ export function verifyAndroidKeyAttestation(input: AndroidKeyInput): AndroidKeyR
     checkApplicationId(asOctets(appIdNode), input.policy);
 
     const osPatch = hw.get(TAG_OS_PATCH_LEVEL);
+    const authType = hw.get(TAG_USER_AUTH_TYPE);
     return {
+      userAuthType: authType ? asInt(authType) : null,
       securityLevel: SECURITY_LEVEL[Math.min(attestationLevel, keymintLevel)] === 'strongbox' ? 'strongbox' : 'tee',
       attestationVersion,
       osPatchLevel: osPatch ? asInt(osPatch) : null,

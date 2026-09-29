@@ -40,7 +40,7 @@ export class Phone {
   }
 
   /** Binds with the dev attestation bypass (or the given evidence); returns the raw response. */
-  async bind(overrides: { androidId?: string; platform?: 'android' | 'ios'; evidence?: Record<string, unknown> } = {}) {
+  async bind(overrides: { androidId?: string; platform?: 'android' | 'ios'; evidence?: Record<string, unknown>; biometric?: boolean; reason?: string } = {}) {
     const ch = await this.app.inject({ method: 'POST', url: '/v1/devices/bind/challenge', headers: this.auth });
     if (ch.statusCode !== 200) throw new Error(`challenge failed: ${ch.body}`);
     const payload = Buffer.from(
@@ -54,6 +54,8 @@ export class Phone {
         os_version: '16',
         app_version: '1.0.0',
         ...(overrides.platform === 'ios' ? {} : { android_id: overrides.androidId ?? this.androidId }),
+        attempt_biometric: overrides.biometric ?? true,
+        ...(overrides.reason ? { reason: overrides.reason } : {}),
       }),
     );
     const res = await this.app.inject({

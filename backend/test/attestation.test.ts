@@ -27,7 +27,8 @@ describe('Android key attestation (spec §16 #7)', () => {
   };
 
   it('accepts a genuine phone: hardware key, locked bootloader, verified OS, our app', () => {
-    expect(attest()).toMatchObject({ securityLevel: 'tee', attestationVersion: 300, osPatchLevel: 202609 });
+    // userAuthType 2 = fingerprint/face only (ADR-0029), read from the hardware-enforced list.
+    expect(attest()).toMatchObject({ securityLevel: 'tee', attestationVersion: 300, osPatchLevel: 202609, userAuthType: 2 });
     expect(attest({ securityLevel: 2 }).securityLevel).toBe('strongbox');
   });
 

@@ -22,6 +22,7 @@ export const RISK_META: Record<string, { kind: 'scorer' | 'threshold' | 'setting
   device_recently_rebound: { kind: 'scorer', value: 15, description: 'The phone was registered in the last 7 days.' },
   attestation_unavailable: { kind: 'scorer', value: 20, description: 'Google/Apple could not be reached to check the app.' },
   attestation_missing: { kind: 'scorer', value: 35, description: 'The app could not produce an integrity token.' },
+  no_biometric_lock: { kind: 'scorer', value: 10, description: 'The phone has no fingerprint or face set up, so its screen lock (PIN) confirms scans.' },
   phone_unverified: { kind: 'scorer', value: 30, description: 'iPhone registered in pilot mode: Apple could not confirm the genuine app on a real iPhone.' },
   recent_flag_history: { kind: 'scorer', value: 10, description: 'Points per unresolved flag in the last 14 days.' },
   recent_flag_history_cap: { kind: 'setting', value: 30, description: 'Maximum points from recent flags.' },
