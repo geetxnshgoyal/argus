@@ -74,7 +74,7 @@ export function AttendanceBrowserPage() {
 }
 
 const RECORD_LABEL: Record<string, string> = { present: 'Present', late: 'Late', absent: 'Absent', excused: 'Excused', pending: 'Offline scan', od: 'On duty (OD)' };
-const BASIS: Record<string, string> = { system: 'scan', teacher: 'teacher', verifier: 'verifier', correction: 'correction', od: 'OD request' };
+const BASIS: Record<string, string> = { system: 'scan', teacher: 'teacher', verifier: 'support request', correction: 'correction', od: 'OD request' };
 
 export function AttendanceDetailPage({ sessionId }: { sessionId: string }) {
   const qc = useQueryClient();

@@ -14,6 +14,7 @@ import * as m0011 from './migrations/0011_retention.ts';
 import * as m0012 from './migrations/0012_phone_unverified.ts';
 import * as m0013 from './migrations/0013_pilot.ts';
 import * as m0014 from './migrations/0014_od_and_issues.ts';
+import * as m0015 from './migrations/0015_merge_verifier.ts';
 
 /**
  * Migrations are listed statically (not read from disk) so they are bundled
@@ -35,6 +36,7 @@ const MIGRATIONS: Record<string, Migration> = {
   '0012_phone_unverified': m0012,
   '0013_pilot': m0013,
   '0014_od_and_issues': m0014,
+  '0015_merge_verifier': m0015,
 };
 
 const provider: MigrationProvider = {

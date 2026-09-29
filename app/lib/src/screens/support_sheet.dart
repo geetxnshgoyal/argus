@@ -5,7 +5,7 @@ import '../api_client.dart';
 import '../device_controller.dart';
 import '../theme.dart';
 
-/// "Can't mark attendance?" (spec §7). A verifier checks the evidence; if the phone never
+/// "Can't mark attendance?" (spec §7). Academic Operations checks the evidence; if the phone never
 /// scanned a valid code in class, the teacher is asked whether the student is in the room.
 Future<void> showSupportSheet(BuildContext context, {required SupportSender sender, required String attendanceSessionId, required String deviceId}) {
   return showModalBottomSheet<void>(
@@ -76,7 +76,7 @@ class _SupportSheetState extends State<_SupportSheet> {
           : Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text("Can't mark attendance?", style: t.titleLarge),
               const SizedBox(height: 6),
-              Text('A verifier will check. Your teacher may be asked if you are in the room. Only ask if you are in class.', style: t.bodyMedium),
+              Text('Academic Operations will check. Your teacher may be asked if you are in the room. Only ask if you are in class.', style: t.bodyMedium),
               const SizedBox(height: 12),
               RadioGroup<String>(
                 groupValue: _reason,

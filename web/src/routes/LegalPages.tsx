@@ -61,7 +61,7 @@ export function PrivacyPage() {
       <p>Details of individual scan attempts are deleted after 90 days. Attendance records are kept for as long as university rules require.</p>
       <h2>Who can see it</h2>
       <p>
-        Only you and authorised college staff (your teachers, Academic Operations and attendance verifiers), and every access to attendance evidence is logged. Argus
+        Only you and authorised college staff (your teachers and Academic Operations), and every access to attendance evidence is logged. Argus
         does not sell data, show advertising or share data with anyone else. Hosting providers store it on the college's behalf: Vercel runs the service and Neon
         provides the database.
       </p>

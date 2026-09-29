@@ -55,7 +55,8 @@ for (const g of ['Batch 1', 'Batch 2']) groups[g.toLowerCase()] = await one('sec
 
 await user('admin', `admin@${DOMAIN}`, 'Dev Admin');
 await user('acadops', `acadops@${DOMAIN}`, 'Dev Acad Ops');
-await user('verifier', `verifier@${DOMAIN}`, 'Dev Verifier');
+// A second Acad Ops account, for trying two-person approvals (verifiers merged into Acad Ops, ADR-0028).
+await user('acadops', `acadops2@${DOMAIN}`, 'Dev Acad Ops 2');
 await user('community_manager', `community@${DOMAIN}`, 'Dev Community Manager');
 const teacherId = await user('teacher', `dev.teacher@${TEACHER_DOMAIN}`, 'Dev Teacher');
 await db.insertInto('teachers').values({ user_id: teacherId, faculty_id: 'DEV-T1', department_id: dept }).onConflict((oc) => oc.doNothing()).execute();
@@ -86,5 +87,5 @@ if (file) {
   }
 }
 
-console.log(`Seeded dev data. Staff: admin@, acadops@, verifier@, community@, student@${DOMAIN}; teacher: dev.teacher@${TEACHER_DOMAIN}. Students imported: ${imported}.`);
+console.log(`Seeded dev data. Staff: admin@, acadops@, acadops2@, community@, student@${DOMAIN}; teacher: dev.teacher@${TEACHER_DOMAIN}. Students imported: ${imported}.`);
 await db.destroy();

@@ -420,7 +420,7 @@ class _AttendanceCard extends StatelessWidget {
   final Future<void> Function(ActiveAttendance) onAskHelp;
 
   static String _supportText(Map<String, dynamic> r) => switch (r['status']) {
-        'pending' => 'Help requested: a verifier is checking.',
+        'pending' => 'Help requested: Academic Operations is checking.',
         'asked_teacher' => 'Help requested: your teacher is being asked to confirm you are here.',
         'approved' => 'Your help request was approved: you are marked present.',
         'rejected' => 'Help request not approved${r['decision_reason'] != null ? ': ${r['decision_reason']}' : '.'}',

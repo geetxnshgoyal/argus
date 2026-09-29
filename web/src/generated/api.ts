@@ -2721,8 +2721,11 @@ export interface components {
             /** @description Markdown */
             text: string;
         };
-        /** @enum {string} */
-        Role: "student" | "teacher" | "acadops" | "verifier" | "admin" | "community_manager";
+        /**
+         * @description Verifiers were merged into acadops (ADR-0028)
+         * @enum {string}
+         */
+        Role: "student" | "teacher" | "acadops" | "admin" | "community_manager";
         Me: {
             user: {
                 /** Format: uuid */

@@ -180,7 +180,7 @@ class AttemptSender {
   }
 }
 
-/// Sends "I couldn't mark attendance" to a verifier (spec §7), signed by the attempt key
+/// Sends "I couldn't mark attendance" to Academic Operations (spec §7), signed by the attempt key
 /// like an attempt. Only works from the registered phone while the class is on.
 class SupportSender {
   SupportSender(this.api, this.security);
@@ -194,7 +194,7 @@ class SupportSender {
     try {
       fix = await security.locationFix(timeoutMs: 8000);
     } on PlatformException {
-      fix = null; // the verifier sees "no location"; not a reason to refuse the request
+      fix = null; // Acad Ops sees "no location"; not a reason to refuse the request
     }
     final nonce = List<int>.generate(16, (_) => _random.nextInt(256));
     final payload = Uint8List.fromList(canonicalBytes({

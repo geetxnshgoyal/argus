@@ -14,6 +14,7 @@ servers:
 tags:
 - name: support
 - name: verifier
+  description: Support-request console, used by Academic Operations (ADR-0028)
 - name: devices
 - name: display
 - name: system
@@ -5965,11 +5966,11 @@ components:
           description: Markdown
     Role:
       type: string
+      description: Verifiers were merged into acadops (ADR-0028)
       enum:
       - student
       - teacher
       - acadops
-      - verifier
       - admin
       - community_manager
     Me:

@@ -50,7 +50,7 @@ export function LoginPage() {
             <IconTile name="shield" />
             <div style={{ flex: 1 }}>
               <h2>Sign in</h2>
-              <p className="muted">Teachers, Academic Operations and verifiers sign in with their college Google account.</p>
+              <p className="muted">Teachers, Academic Operations and community managers sign in with their college Google account.</p>
               {error && <Notice tone="bad">{ERRORS[error] ?? 'Sign-in failed. Please try again.'}</Notice>}
               {ssoOff && !error && <Notice tone="warn">{ERRORS.sso_not_configured}</Notice>}
               {ssoOff ? (

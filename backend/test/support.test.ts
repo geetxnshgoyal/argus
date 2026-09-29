@@ -34,7 +34,7 @@ describe.skipIf(!hasDb)('support requests and corrections (integration, spec §7
     t = await makeApp({ db, now: T0, config: { env: 'dev', attestationBypass: true } });
     await createUser(db, 'acadops', 'ops@college.test', 'Ops One');
     await createUser(db, 'acadops', 'ops2@college.test', 'Ops Two');
-    await createUser(db, 'verifier', 'ver@college.test', 'Vera');
+    await createUser(db, 'acadops', 'ver@college.test', 'Vera'); // support desk = Acad Ops (ADR-0028)
     ops = await loginAs(t.app, 'ops@college.test');
     ops2 = await loginAs(t.app, 'ops2@college.test');
     verifier = await loginAs(t.app, 'ver@college.test');

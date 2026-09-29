@@ -21,8 +21,6 @@ export function roleHome(role: Role): string {
     case 'acadops':
     case 'admin':
       return '/admin';
-    case 'verifier':
-      return '/verify';
     case 'community_manager':
       return '/community';
     case 'student':

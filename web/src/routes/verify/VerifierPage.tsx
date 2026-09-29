@@ -28,7 +28,7 @@ export function VerifierPage() {
   const current = selected ?? items.find((i) => i.status === 'pending')?.id ?? null;
 
   return (
-    <div className="content verifier">
+    <div className="verifier">
       <PageHead
         title="Support requests"
         subtitle="Students who could not mark attendance in class. Approve only with good evidence; otherwise ask the teacher."

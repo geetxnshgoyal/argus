@@ -1,4 +1,4 @@
-import { createRootRoute, createRoute, createRouter, Navigate, Outlet } from '@tanstack/react-router';
+import { createRootRoute, createRoute, createRouter, Navigate, Outlet, redirect } from '@tanstack/react-router';
 import { AppFrame, RequireRole, SideNavLink } from './components/Layout.tsx';
 import { ResourcePage } from './components/ResourcePage.tsx';
 import { IconTile, PageHead } from './components/ui.tsx';
@@ -114,14 +114,13 @@ const communityRoute = createRoute({
   ),
 });
 
+// Verifiers were merged into Acad Ops (ADR-0028): the support console lives at /admin/support.
 const verifyRoute = createRoute({
   getParentRoute: () => frameRoute,
   path: '/verify',
-  component: () => (
-    <RequireRole roles={['verifier']}>
-      <VerifierPage />
-    </RequireRole>
-  ),
+  beforeLoad: () => {
+    throw redirect({ to: '/admin/support' });
+  },
 });
 
 // ── Acad Ops / admin ─────────────────────────────────────────────────────────
@@ -133,6 +132,7 @@ function AdminShell() {
           <SideNavLink to="/admin">Overview</SideNavLink>
           <SideNavLink to="/admin/notices">Notices</SideNavLink>
           <SideNavLink to="/admin/requests">Requests</SideNavLink>
+          <SideNavLink to="/admin/support">Support requests</SideNavLink>
           <div className="section-label">People</div>
           <SideNavLink to="/admin/students">Students</SideNavLink>
           <SideNavLink to="/admin/students/import">Import students</SideNavLink>
@@ -228,6 +228,7 @@ const adminChildren = [
   createRoute({ getParentRoute: () => adminRoute, path: '/risk-settings', component: RiskSettingsPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/pilot', component: PilotPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/requests', component: RequestsPage }),
+  createRoute({ getParentRoute: () => adminRoute, path: '/support', component: VerifierPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/notices', component: NoticesPage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/timetable', component: TimetablePage }),
   createRoute({ getParentRoute: () => adminRoute, path: '/timetable/import', component: TimetableImportPage }),

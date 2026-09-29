@@ -41,7 +41,7 @@ export function TeacherHome() {
       <ErrorNotice error={today.error ?? week.error} />
       {(questions.data?.items ?? []).length > 0 && (
         <Notice tone="warn">
-          A verifier is asking whether {questions.data!.items.length === 1 ? `${questions.data!.items[0]!.name} is` : `${questions.data!.items.length} students are`} in your class.{' '}
+          Academic Operations is asking whether {questions.data!.items.length === 1 ? `${questions.data!.items[0]!.name} is` : `${questions.data!.items.length} students are`} in your class.{' '}
           <a href={`/teacher/session/${questions.data!.items[0]!.attendance_session_id}`}>Answer now</a>
         </Notice>
       )}

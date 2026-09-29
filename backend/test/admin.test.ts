@@ -110,7 +110,7 @@ describe.skipIf(!hasDb)('admin (integration)', () => {
       const { dept } = await orgFixture();
       const teacher = await post('/v1/admin/users', { role: 'teacher', name: 'Dr T', email: 'drt@college.test', teacher: { faculty_id: 'F001', department_id: dept.id } });
       expect(teacher.statusCode).toBe(201);
-      const verifier = await post('/v1/admin/users', { role: 'verifier', name: 'V', email: 'v@college.test' });
+      const verifier = await post('/v1/admin/users', { role: 'community_manager', name: 'V', email: 'v@college.test' });
       expect(verifier.statusCode).toBe(403);
     });
 
@@ -123,9 +123,9 @@ describe.skipIf(!hasDb)('admin (integration)', () => {
     it('admins can grant staff roles only with a recent sign-in', async () => {
       await createUser(db, 'admin', 'admin@college.test');
       const admin = await loginAs(t.app, 'admin@college.test');
-      expect((await post('/v1/admin/users', { role: 'verifier', name: 'V', email: 'v@college.test' }, admin.headers)).statusCode).toBe(201);
+      expect((await post('/v1/admin/users', { role: 'community_manager', name: 'V', email: 'v@college.test' }, admin.headers)).statusCode).toBe(201);
       t.clock.now += 16 * 60 * 1000;
-      const late = await post('/v1/admin/users', { role: 'verifier', name: 'W', email: 'w@college.test' }, admin.headers);
+      const late = await post('/v1/admin/users', { role: 'community_manager', name: 'W', email: 'w@college.test' }, admin.headers);
       expect(late.statusCode).toBe(401);
       expect(late.json().code).toBe('reauth_required');
     });

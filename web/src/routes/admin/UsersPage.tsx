@@ -11,7 +11,7 @@ type User = Schemas['User'];
 type Ref = { id: string; code?: string; name: string; section_id?: string };
 
 type Kind = 'students' | 'teachers' | 'staff';
-const KIND_ROLES: Record<Kind, Role[]> = { students: ['student'], teachers: ['teacher'], staff: ['acadops', 'verifier', 'admin', 'community_manager'] };
+const KIND_ROLES: Record<Kind, Role[]> = { students: ['student'], teachers: ['teacher'], staff: ['acadops', 'admin', 'community_manager'] };
 
 function useRefList(path: string) {
   return useQuery({
@@ -86,7 +86,7 @@ export function UsersPage({ kind }: { kind: Kind }) {
             ? 'Students sign in to the Argus app with their college Google account.'
             : kind === 'teachers'
               ? 'Teachers run attendance from the Argus website.'
-              : 'Academic Operations, verifiers and administrators. Only administrators can change staff roles.'
+              : 'Academic Operations, community managers and administrators. Only administrators can change staff roles.'
         }
         actions={
           kind !== 'staff' || canEditStaff ? (
@@ -303,7 +303,7 @@ function UserForm(props: {
           {kind === 'staff' && (
             <Field label="Role">
               <select value={v.role} onChange={set('role')}>
-                {(['acadops', 'verifier', 'community_manager', 'admin'] as Role[]).map((r) => (
+                {(['acadops', 'community_manager', 'admin'] as Role[]).map((r) => (
                   <option key={r} value={r}>
                     {ROLE_LABELS[r]}
                   </option>

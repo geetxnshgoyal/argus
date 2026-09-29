@@ -5,7 +5,7 @@
 The student taps **Request support** in the app during or right after the
 class (until 15 minutes after it ends).
 
-**Verifier** (Support requests page): open the request.
+**Acad Ops** (Admin → **Support requests**): open the request.
 - **Approve** is allowed only when the phone scanned a valid classroom code
   and the evidence score is low. Otherwise the button explains why not.
 - **Ask teacher**: the teacher gets a question ("Was this student here?")

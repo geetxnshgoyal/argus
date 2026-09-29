@@ -2,7 +2,7 @@
 
 College attendance that resists proxy attendance. Students mark attendance
 with a rotating classroom QR code from a phone bound to them; teachers,
-Academic Operations and verifiers work in the web app.
+Academic Operations and community managers work in the web app.
 
 - **Build spec (source of truth):** [docs/spec/phase1-build-spec.md](docs/spec/phase1-build-spec.md), amended by the [ADRs](docs/adr/README.md)
 - **Protocol:** [docs/protocol.md](docs/protocol.md)
@@ -32,7 +32,7 @@ pnpm install
 pnpm dev
 ```
 
-Then `pnpm seed:dev` (once) adds test accounts: `admin@`, `acadops@`, `verifier@`, `community@`
+Then `pnpm seed:dev` (once) adds test accounts: `admin@`, `acadops@`, `acadops2@`, `community@`
 and `student@svyasa-sas.edu.in`, and the teacher `dev.teacher@newtonschool.co`
 (teachers sign in with their `firstname.lastname@newtonschool.co` Google account). Pass a roster export to load real
 students locally, e.g. `pnpm seed:dev /path/to/students.json`; only USN, name,

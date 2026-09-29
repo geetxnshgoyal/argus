@@ -18,7 +18,8 @@ import {
 /** Support requests, verifier console, teacher confirmations and corrections (spec §7, §10). */
 export function registerSupportRoutes(app: FastifyInstance, ctx: AppContext): void {
   const student = { preHandler: needAuth('student') };
-  const verifier = { preHandler: needAuth('verifier', 'admin') };
+  // Support requests are decided by Acad Ops (ADR-0028; formerly a separate verifier role).
+  const verifier = { preHandler: needAuth('acadops', 'admin') };
   const teacher = { preHandler: needAuth('teacher') };
   const ops = { preHandler: needAuth('acadops', 'admin') };
   const perUser = (max: number) => ({

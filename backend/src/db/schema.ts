@@ -16,8 +16,9 @@ interface Timestamps {
   updated_at: Timestamp;
 }
 
-export type Role = 'student' | 'teacher' | 'acadops' | 'verifier' | 'admin' | 'community_manager';
-export const ROLES: readonly Role[] = ['student', 'teacher', 'acadops', 'verifier', 'admin', 'community_manager'];
+/** Verifiers were merged into Acad Ops (ADR-0028). */
+export type Role = 'student' | 'teacher' | 'acadops' | 'admin' | 'community_manager';
+export const ROLES: readonly Role[] = ['student', 'teacher', 'acadops', 'admin', 'community_manager'];
 
 export interface UsersTable extends Timestamps {
   id: string;

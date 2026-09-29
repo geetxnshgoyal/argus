@@ -8,14 +8,14 @@ use it**.
 |---|---|---|
 | [Start of term](start-of-term.md) | Acad Ops | Before the first class of a semester |
 | [Phones](phones.md) | Acad Ops | A student has a new, lost or second-hand phone |
-| [Attendance problems](attendance-problems.md) | Acad Ops, verifiers, teachers | "I couldn't scan", wrong records, wrong room |
+| [Attendance problems](attendance-problems.md) | Acad Ops, teachers | "I couldn't scan", wrong records, wrong room |
 | [When something is down](outage.md) | Acad Ops, developer | The site, the network or scanning isn't working |
 | [Suspected proxy attendance](suspected-proxy.md) | Acad Ops, admin | A report or a pattern of cheating |
 | [Backup and restore](backup-and-restore.md) | Developer (monthly), admin | Monthly check, or after data loss |
 
 Who can do what: **Admin** = everything, plus staff accounts, the
 anti-proxy check settings and pilot mode. **Acad Ops** = students, teachers,
-timetable, phones, notices, and final approval of OD requests, student issues
-and corrections (Admin → Requests). **Community manager** = first check of OD
-requests only. **Verifier** = "can't scan" support requests only.
+timetable, phones, notices, "can't scan" support requests (Admin → Support
+requests), and final approval of OD requests, student issues and corrections
+(Admin → Requests). **Community manager** = first check of OD requests only.
 Corrections and OD always need two different people.

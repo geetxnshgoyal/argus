@@ -175,7 +175,7 @@ export async function createSupportRequest(ctx: AppContext, studentId: string, b
     throw err;
   }
   ctx.events.publish({ type: 'record', sessionId: session.id });
-  return { id, status: 'pending' as const, message: 'Support requested. A verifier will check it; your teacher may be asked to confirm you are in the room.' };
+  return { id, status: 'pending' as const, message: 'Support requested. Academic Operations will check it; your teacher may be asked to confirm you are in the room.' };
 }
 
 /** The evidence snapshot a verifier sees (spec §7). Coordinates are never included. */

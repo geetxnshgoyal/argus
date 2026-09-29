@@ -181,7 +181,7 @@ export function AttendancePage({ sessionId }: { sessionId: string }) {
 
       {(questions.data?.items ?? []).length > 0 && (
         <div className="card card-attention">
-          <h3>A verifier is asking you</h3>
+          <h3>Academic Operations is asking you</h3>
           <p className="muted small">These students asked for help marking attendance. Only you can see who is in the room.</p>
           <ul className="student-list">
             {questions.data!.items.map((q) => (

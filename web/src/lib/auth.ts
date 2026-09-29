@@ -50,7 +50,6 @@ export const ROLE_LABELS: Record<Role, string> = {
   student: 'Student',
   teacher: 'Teacher',
   acadops: 'Academic Operations',
-  verifier: 'Verifier',
   admin: 'Administrator',
   community_manager: 'Community manager',
 };
