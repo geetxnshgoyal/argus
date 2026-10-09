@@ -62,6 +62,7 @@ the one you're next to. Surveyed 2026-09-29 to 10-09 (all start with `e0:c2:50:`
 
 | Room | Routers |
 |---|---|
+| Classroom 1 | `e0:c2:50:77:90` |
 | Lab L2 | `e0:c2:50:76:e0` |
 | Classroom 8 | `e0:c2:50:78:0e`, `e0:c2:50:78:3b` |
 | Classroom 9 | `e0:c2:50:77:91`, `e0:c2:50:76:c8` |
