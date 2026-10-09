@@ -4,12 +4,17 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.KeyguardManager
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import android.net.wifi.WifiManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
 import android.security.keystore.KeyGenParameterSpec
@@ -152,7 +157,7 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                 }
                 "androidId" -> result.success(androidId())
                 "locationFix" -> locationFix((call.argument<Int>("timeoutMs") ?: 10000).toLong(), result)
-                "wifiSnapshot" -> result.success(wifiSnapshot())
+                "wifiSnapshot" -> freshWifiSnapshot((call.argument<Int>("waitMs") ?: 0).toLong()) { result.success(it) }
                 "hasPreciseLocation" -> result.success(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
                 "requestLocationPermission" -> withLocationPermission { fine, _ -> result.success(fine) }
                 "integrityToken" -> {
@@ -322,26 +327,55 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
 
     // ── Classroom Wi-Fi (ADR-0030) ──────────────────────────────────────────────
     /**
-     * The access points this phone can see: the connected one and the latest scan
-     * results (Android throttles scans, so a slightly older list is fine). Needs the
-     * precise-location permission the app already has for scanning; without it Android
-     * returns nothing and the server treats Wi-Fi as unknown.
+     * The access points this phone can see: the connected one (with its live signal level)
+     * and the scan results, each with its age. While connected, Android rescans rarely, so the
+     * stored results can describe where the phone was minutes ago. With `waitMs` > 0 this asks
+     * for a fresh scan and waits for it (Android allows about four scans per two minutes; when
+     * throttled, the stored results come back with their ages). Needs precise location; without
+     * it Android returns nothing. Works with Wi-Fi disconnected, and even with Wi-Fi off when
+     * "Wi-Fi scanning" is on in the phone's location settings.
      */
-    @SuppressLint("MissingPermission")
-    private fun wifiSnapshot(): Map<String, Any?> {
+    private fun freshWifiSnapshot(waitMs: Long, done: (Map<String, Any?>) -> Unit) {
         val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        if (!fine) return mapOf("connected" to null, "seen" to emptyList<Any>())
+        if (!fine) return done(mapOf("connected" to null, "seen" to emptyList<Any>()))
         val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val main = Handler(Looper.getMainLooper())
+        var finished = false
+        lateinit var receiver: BroadcastReceiver
+        val finish = {
+            if (!finished) {
+                finished = true
+                try { context.applicationContext.unregisterReceiver(receiver) } catch (_: Exception) {}
+                done(wifiSnapshot(wm))
+            }
+        }
+        receiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context?, i: Intent?) = finish()
+        }
+        if (waitMs <= 0) {
+            @Suppress("DEPRECATION")
+            try { wm.startScan() } catch (_: Exception) {} // best effort, for next time
+            finished = true
+            return done(wifiSnapshot(wm))
+        }
+        ContextCompat.registerReceiver(context.applicationContext, receiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
         @Suppress("DEPRECATION")
-        try { wm.startScan() } catch (_: Exception) {} // best effort; results below may be from the last scan
+        val started = try { wm.startScan() } catch (_: Exception) { false }
+        if (!started) return finish() // throttled: the stored results, with their ages
+        main.postDelayed({ finish() }, waitMs)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun wifiSnapshot(wm: WifiManager): Map<String, Any?> {
         @Suppress("DEPRECATION")
         val info = wm.connectionInfo
         val connected = info?.bssid?.takeIf { it != "02:00:00:00:00:00" && it != "00:00:00:00:00:00" }
-            ?.let { mapOf("bssid" to it, "ssid" to info.ssid?.trim('"')) }
+            ?.let { mapOf("bssid" to it, "ssid" to info.ssid?.trim('"'), "rssi" to info.rssi.coerceIn(-127, 0)) }
+        val nowUs = SystemClock.elapsedRealtime() * 1000
         val seen = try {
             wm.scanResults.sortedByDescending { it.level }.take(30).map {
                 @Suppress("DEPRECATION")
-                mapOf("bssid" to it.BSSID, "ssid" to it.SSID, "rssi" to it.level.coerceIn(-127, 0))
+                mapOf("bssid" to it.BSSID, "ssid" to it.SSID, "rssi" to it.level.coerceIn(-127, 0), "ageMs" to ((nowUs - it.timestamp) / 1000).coerceAtLeast(0))
             }
         } catch (_: SecurityException) {
             emptyList()

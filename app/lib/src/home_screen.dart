@@ -111,11 +111,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _poll = Timer.periodic(const Duration(seconds: 8), (_) {
       unawaited(_loadActive());
       // Notices change rarely: about once a minute is plenty.
-      if (++_ticks % 8 == 0) {
-        unawaited(_loadNotices());
-        // Android lets an app scan Wi-Fi about four times in two minutes: once a minute is safe.
-        unawaited(_loadWifi());
-      }
+      ++_ticks;
+      if (_ticks % 8 == 0) unawaited(_loadNotices());
+      // Android lets an app scan Wi-Fi about four times in two minutes: every ~30 s.
+      if (_ticks % 4 == 0) unawaited(_loadWifi());
     });
   }
 
@@ -164,7 +163,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
       if (reloadRooms || _wifiRooms == null) _wifiRooms = await widget.auth.api.wifiRooms();
       final rooms = _wifiRooms!;
-      final guess = rooms.routers.isEmpty ? null : guessRoom(await widget.security.wifiSnapshot(), rooms);
+      // A fresh scan, not Android's stored list: that can be minutes old while the phone stays
+      // connected to the router it joined in another room.
+      final snap = rooms.routers.isEmpty ? null : await widget.security.wifiSnapshot(wait: const Duration(seconds: 4), maxAge: const Duration(seconds: 45));
+      final guess = rooms.routers.isEmpty ? null : guessRoom(snap, rooms, previous: _wifi?.room);
       if (mounted) {
         setState(() {
           _canReadWifi = true;
@@ -322,6 +324,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 /// "You're in Room 6", from the Wi-Fi routers this phone can hear (Android). When a class
 /// is on in another room, says so, so the student can move before scanning.
 class _WhereCard extends StatelessWidget {
+  static String _signal(WifiGuess g) => g.rssi == null || g.rssi! <= -100 ? '' : ' · signal ${g.rssi} dBm';
+
   const _WhereCard({required this.guess, required this.canRead, required this.classRoom, required this.onAllow});
 
   final WifiGuess? guess;
@@ -342,8 +346,8 @@ class _WhereCard extends StatelessWidget {
       if (g == null) return const SizedBox.shrink();
       row = switch (g.place) {
         WifiPlace.room when classRoom == null || classRoom == g.room =>
-          InfoRow(icon: Icons.wifi, title: 'You\'re in ${g.room}', value: classRoom == null ? 'From the classroom Wi-Fi' : 'Right room for this class'),
-        WifiPlace.room => InfoRow(icon: Icons.wifi, tone: TileTone.warn, title: 'You\'re in ${g.room}', value: 'This class is in $classRoom. Scans from another room are checked.'),
+          InfoRow(icon: Icons.wifi, title: 'You\'re in ${g.room}', value: '${classRoom == null ? 'Nearest classroom Wi-Fi' : 'Right room for this class'}${_signal(g)}'),
+        WifiPlace.room => InfoRow(icon: Icons.wifi, tone: TileTone.warn, title: 'You\'re in ${g.room}', value: 'This class is in $classRoom. Scans from another room are checked.${_signal(g)}'),
         WifiPlace.campus => const InfoRow(icon: Icons.wifi, tone: TileTone.warn, title: 'On college Wi-Fi', value: 'Room not known: this router isn\'t listed for any room yet.'),
         WifiPlace.notCampus => const InfoRow(icon: Icons.wifi_off, tone: TileTone.bad, title: 'Not near college Wi-Fi', value: 'Turn on Wi-Fi, or you may not be in a classroom.'),
       };

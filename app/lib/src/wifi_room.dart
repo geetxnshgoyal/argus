@@ -29,11 +29,14 @@ class WifiRooms {
 enum WifiPlace { room, campus, notCampus }
 
 class WifiGuess {
-  const WifiGuess(this.place, [this.room]);
+  const WifiGuess(this.place, [this.room, this.rssi]);
   final WifiPlace place;
 
   /// The room whose router is heard loudest, when [place] is [WifiPlace.room].
   final String? room;
+
+  /// That router's signal level in dBm (closer to 0 = nearer).
+  final int? rssi;
 
   @override
   bool operator ==(Object other) => other is WifiGuess && other.place == place && other.room == room;
@@ -56,17 +59,21 @@ String? routerId(String? bssid) {
   return parts.take(5).join(':');
 }
 
+/// A neighbouring room must be this much louder (dB) to replace the room shown, so the card
+/// doesn't flicker between two rooms whose routers are about equally loud.
+const roomSwitchMarginDb = 4;
+
 /// The room whose router is loudest in [snapshot] (`{connected, seen: [{bssid, ssid, rssi}]}`
-/// from `SecurityBridge.wifiSnapshot`). Null when there's no Wi-Fi data to go on.
-WifiGuess? guessRoom(Map<String, dynamic>? snapshot, WifiRooms rooms) {
+/// from `SecurityBridge.wifiSnapshot`), whether or not the phone is connected to it. [previous]
+/// is the room shown last time. Null when there's no Wi-Fi data to go on.
+WifiGuess? guessRoom(Map<String, dynamic>? snapshot, WifiRooms rooms, {String? previous}) {
   if (snapshot == null) return null;
   final connected = snapshot['connected'] as Map<String, dynamic>?;
   final seen = ((snapshot['seen'] as List?) ?? const []).cast<Map<String, dynamic>>();
   final aps = [?connected, ...seen];
   if (aps.isEmpty) return null;
 
-  String? best;
-  var bestRssi = -1000;
+  final loudest = <String, int>{}; // room → its loudest router
   var onCampus = false;
   for (final ap in aps) {
     final id = routerId(ap['bssid'] as String?);
@@ -75,13 +82,15 @@ WifiGuess? guessRoom(Map<String, dynamic>? snapshot, WifiRooms rooms) {
     final room = id == null ? null : rooms.routers[id];
     if (room == null) continue;
     onCampus = true;
-    // The connected entry has no signal level; the same router shows up in `seen` with one.
+    // iPhones give the connected router no signal level.
     final rssi = (ap['rssi'] as num?)?.toInt() ?? -100;
-    if (rssi > bestRssi) {
-      bestRssi = rssi;
-      best = room;
-    }
+    if (rssi > (loudest[room] ?? -1000)) loudest[room] = rssi;
   }
-  if (best != null) return WifiGuess(WifiPlace.room, best);
+  if (loudest.isNotEmpty) {
+    final best = loudest.entries.reduce((a, b) => b.value > a.value ? b : a);
+    final kept = previous == null ? null : loudest[previous];
+    if (kept != null && best.value - kept < roomSwitchMarginDb) return WifiGuess(WifiPlace.room, previous, kept);
+    return WifiGuess(WifiPlace.room, best.key, best.value);
+  }
   return WifiGuess(onCampus ? WifiPlace.campus : WifiPlace.notCampus);
 }

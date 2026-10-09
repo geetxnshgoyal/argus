@@ -72,7 +72,7 @@ export const attemptPayload = z.object({
   // Wi-Fi access points the phone sees (ADR-0030): Android all nearby, iPhone the connected one.
   wifi: z
     .object({
-      connected: z.object({ bssid: z.string().max(40), ssid: z.string().max(64).nullable().optional() }).nullable().optional(),
+      connected: z.object({ bssid: z.string().max(40), ssid: z.string().max(64).nullable().optional(), rssi: z.number().int().min(-127).max(0).nullable().optional() }).nullable().optional(),
       seen: z.array(z.object({ bssid: z.string().max(40), ssid: z.string().max(64).nullable().optional(), rssi: z.number().int().min(-127).max(0).nullable().optional() })).max(40).optional(),
     })
     .nullable()
