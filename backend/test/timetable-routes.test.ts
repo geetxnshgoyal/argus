@@ -105,6 +105,23 @@ describe.skipIf(!hasDb)('timetable API (integration)', () => {
       expect(tt.items[0]).toMatchObject({ start: '09:30', end: '11:00', room: 'Classroom 6', status: 'scheduled' });
     });
 
+    it('a student gets the rooms\' Wi-Fi routers for the "near this room" hint; staff don\'t', async () => {
+      await addStudent('s1@college.test', '2102500001', c.b1.id);
+      await db.updateTable('rooms').set({ wifi_routers: ['e0:c2:50:78:3f', 'e0:c2:50:78:4b'] }).where('id', '=', c.room.c6.id).execute();
+      await db.insertInto('app_settings').values({ key: 'campus_wifi_ssid_prefix', value: JSON.stringify('SVYASA') }).onConflict((oc) => oc.column('key').doNothing()).execute();
+      const key = (await import('./helpers/app.ts')).deviceKey();
+      const login = await t.app.inject({
+        method: 'POST',
+        url: '/v1/auth/dev/mobile-login',
+        payload: { email: 's1@college.test', session_public_key: key.spki, signature: key.sign('argus/v1/dev-login|s1@college.test') },
+      });
+      const auth = { authorization: `Bearer ${login.json().access_token}` };
+      const r = (await t.app.inject({ url: '/v1/me/wifi-rooms', headers: auth })).json();
+      expect(r).toEqual({ ssid_prefix: 'SVYASA', rooms: [{ room: 'Classroom 6', routers: ['e0:c2:50:78:3f', 'e0:c2:50:78:4b'] }] });
+      const teacher = await loginAs(t.app, c.tA.email);
+      expect((await t.app.inject({ url: '/v1/me/wifi-rooms', headers: { cookie: teacher.cookie } })).statusCode).toBe(403);
+    });
+
     it('a teacher sees today\'s classes with the expected student count', async () => {
       await addStudent('s1@college.test', '2102500001', c.b1.id);
       await addStudent('s2@college.test', '2102500002', c.b2.id);

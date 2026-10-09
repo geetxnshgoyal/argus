@@ -387,6 +387,8 @@ export interface AttemptSignals {
   campus_network: boolean | null;
   /** Classroom Wi-Fi verdict (ADR-0030); absent on older attempts. */
   wifi?: 'room' | 'campus' | 'other_room' | 'not_campus' | 'unknown';
+  /** The room whose router the phone heard loudest at scan time (a room code, never the scan). */
+  wifi_room?: string | null;
   /** bypass: dev build; not_required: pilot mode without Play Integrity (ADR-0021). */
   attestation: 'ok' | 'unavailable' | 'missing' | 'bypass' | 'not_required' | 'unverified';
   app_version: string;

@@ -148,7 +148,10 @@ function EvidenceCard({ id }: { id: string }) {
                     {a.other_device && <span className="badge badge-bad">other phone</span>}
                   </td>
                   <td>{a.tag_valid ? 'Yes' : 'No'}</td>
-                  <td className="small">{locationText(a.signals ?? undefined)}</td>
+                  <td className="small">
+                    {locationText(a.signals ?? undefined)}
+                    {wifiText(a.signals ?? undefined) && <div className="muted">{wifiText(a.signals ?? undefined)}</div>}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -233,6 +236,17 @@ interface Signals {
   distance_m?: number | null;
   is_mock?: boolean;
   campus_network?: boolean | null;
+  wifi?: 'room' | 'campus' | 'other_room' | 'not_campus' | 'unknown';
+  wifi_room?: string | null;
+}
+
+/** Classroom Wi-Fi at scan time (ADR-0030), naming the room whose router was loudest. */
+function wifiText(s: Signals | undefined): string | null {
+  if (!s?.wifi || s.wifi === 'unknown') return null;
+  if (s.wifi === 'room') return `Wi-Fi: in this room${s.wifi_room ? ` (${s.wifi_room})` : ''}`;
+  if (s.wifi === 'other_room') return `Wi-Fi: near ${s.wifi_room ?? 'another room'}, not this room`;
+  if (s.wifi === 'not_campus') return 'Wi-Fi: no college Wi-Fi';
+  return 'Wi-Fi: college, room unknown';
 }
 
 function locationText(s: Signals | undefined): string {

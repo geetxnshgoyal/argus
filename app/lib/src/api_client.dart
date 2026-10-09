@@ -4,6 +4,8 @@ import 'package:argus_security/argus_security.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import 'wifi_room.dart';
+
 /// Mirrors the `Health` schema in backend/api/openapi.yaml.
 class Health {
   const Health({required this.status, required this.version, required this.db});
@@ -324,6 +326,9 @@ class ApiClient {
     final j = await _send('GET', '/v1/me/timetable${q.isEmpty ? '' : '?$q'}');
     return (j['items'] as List).map((e) => ClassSession.fromJson(e as Map<String, dynamic>)).toList();
   }
+
+  /// Rooms' Wi-Fi routers, for the Home card's "you're in this room" (Android).
+  Future<WifiRooms> wifiRooms() async => WifiRooms.fromJson(await _send('GET', '/v1/me/wifi-rooms'));
 
   // ── Devices (M3) ─────────────────────────────────────────────────────────
   Future<DeviceStatus> devices() async => DeviceStatus.fromJson(await _send('GET', '/v1/devices/me'));

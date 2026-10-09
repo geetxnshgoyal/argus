@@ -56,13 +56,17 @@ Each room can list its Wi-Fi routers (Rooms → edit → **Wi-Fi routers**, one 
 line). Scans that see one count as "in this room"; others are flagged for spot
 checks, never refused. You don't have to survey: after a few classes, Admin →
 **Wi-Fi routers** shows the routers students' phones saw in each room, with an
-**Add** button. Surveyed on 2026-09-29 (all start with `e0:c2:50:`):
+**Add** button. To survey a room yourself, sit next to each router with a Mac
+and run `sh tools/wifi-survey/survey.sh "Room name"`: the strongest router is
+the one you're next to. Surveyed 2026-09-29 to 10-09 (all start with `e0:c2:50:`):
 
 | Room | Routers |
 |---|---|
 | Lab L2 | `e0:c2:50:76:e0` |
 | Classroom 8 | `e0:c2:50:78:0e`, `e0:c2:50:78:3b` |
 | Classroom 9 | `e0:c2:50:77:91`, `e0:c2:50:76:c8` |
+| Room 6 | `e0:c2:50:78:3f`, `e0:c2:50:78:4b` |
+| AR/VR room | `e0:c2:50:76:e8` (second router not confirmed yet) |
 
 ## If something goes wrong
 

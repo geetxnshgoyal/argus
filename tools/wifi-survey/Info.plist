@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>app.argus.wifiscan</string>
+  <key>CFBundleName</key><string>Argus Wi-Fi Survey</string>
+  <key>CFBundleExecutable</key><string>ArgusWiFiScan</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>LSMinimumSystemVersion</key><string>13.0</string>
+  <key>NSLocationUsageDescription</key><string>Argus needs Location to read the college Wi-Fi routers' IDs (macOS hides them otherwise). Nothing is shared.</string>
+  <key>NSLocationWhenInUseUsageDescription</key><string>Argus needs Location to read the college Wi-Fi routers' IDs (macOS hides them otherwise). Nothing is shared.</string>
+</dict></plist>

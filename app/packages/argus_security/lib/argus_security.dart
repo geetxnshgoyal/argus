@@ -139,6 +139,13 @@ class SecurityBridge {
     }
   }
 
+  /// Android: whether precise location is allowed (Android needs it to read Wi-Fi), without asking.
+  Future<bool> hasPreciseLocation() async => Platform.isAndroid && (await _channel.invokeMethod<bool>('hasPreciseLocation') ?? false);
+
+  /// Android: asks for precise location (once; later calls just report it).
+  Future<bool> requestLocationPermission() async =>
+      Platform.isAndroid && (await _channel.invokeMethod<bool>('requestLocationPermission') ?? false);
+
   /// 'none' | 'ok' | 'biometrics_changed' | 'invalidated', without prompting the user.
   Future<String> attemptKeyStatus() async => await _channel.invokeMethod<String>('attemptKeyStatus') ?? 'ok';
 

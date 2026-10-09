@@ -268,6 +268,7 @@ export async function submitAttempt(ctx: AppContext, studentId: string, body: un
     is_mock: loc.is_mock,
     campus_network: await campusNetworkResult(ctx, ip),
     wifi: wifi.result,
+    wifi_room: wifi.room,
     attestation,
     app_version: p.app_version,
   };
@@ -384,14 +385,19 @@ export async function submitAttempt(ctx: AppContext, studentId: string, body: un
   };
 }
 
-/** The class room's routers, every known college router, and the college Wi-Fi name prefix → a verdict. */
-export async function classroomWifi(ctx: AppContext, roomId: string | null, snap: WifiSnapshot | null | undefined): Promise<WifiVerdict> {
-  if (!snap) return { result: 'unknown', strongest: null };
-  const rooms = await ctx.db.selectFrom('rooms').select(['id', 'wifi_routers']).where(sql<boolean>`cardinality(wifi_routers) > 0`).execute();
+/**
+ * The class room's routers, every known college router, and the college Wi-Fi name prefix → a verdict,
+ * plus the room whose router was loudest (shown to staff: "phone was near Classroom 9").
+ */
+export async function classroomWifi(ctx: AppContext, roomId: string | null, snap: WifiSnapshot | null | undefined): Promise<WifiVerdict & { room: string | null }> {
+  if (!snap) return { result: 'unknown', strongest: null, room: null };
+  const rooms = await ctx.db.selectFrom('rooms').select(['id', 'code', 'wifi_routers']).where(sql<boolean>`cardinality(wifi_routers) > 0`).execute();
   const room = new Set(rooms.find((r) => r.id === roomId)?.wifi_routers ?? []);
   const campus = new Set(rooms.flatMap((r) => r.wifi_routers));
   const prefix = await ctx.db.selectFrom('app_settings').select('value').where('key', '=', 'campus_wifi_ssid_prefix').executeTakeFirst();
-  return evaluateWifi(snap, room, campus, typeof prefix?.value === 'string' ? prefix.value : '');
+  const verdict = evaluateWifi(snap, room, campus, typeof prefix?.value === 'string' ? prefix.value : '');
+  const near = verdict.strongest ? rooms.find((r) => r.wifi_routers.includes(verdict.strongest!)) : undefined;
+  return { ...verdict, room: near?.code ?? null };
 }
 
 /** Whether `ip` is on a campus network; null when none are configured (the signal is skipped). */

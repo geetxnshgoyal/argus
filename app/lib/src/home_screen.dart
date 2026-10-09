@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:argus_security/argus_security.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ import 'screens/scan_screen.dart';
 import 'screens/support_sheet.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'wifi_room.dart';
 
 /// Signed-in shell with five tabs: Home (scan + today), Timetable, Attendance,
 /// Requests (OD & issues) and Profile. Home owns the phone registration and the
@@ -27,6 +29,10 @@ class HomeScreen extends StatefulWidget {
 
   /// Injectable for tests; defaults to the phone's date.
   final DateTime? today;
+
+  /// Show "You're in Room 6" from Wi-Fi. Android only: iPhones can't read Wi-Fi
+  /// without a paid Apple developer account.
+  bool get wifiHint => Platform.isAndroid;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -42,6 +48,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<AppNotice> _notices = const [];
   Timer? _poll;
   int _ticks = 0;
+
+  // "Which room am I in" (ADR-0030): rooms' routers from the server, the guess from this phone's scan.
+  WifiRooms? _wifiRooms;
+  WifiGuess? _wifi;
+  bool? _canReadWifi;
 
   PhoneState? _lastPhoneState;
   int _tab = 0;
@@ -89,6 +100,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _startPolling();
       unawaited(_loadActive());
       unawaited(_loadNotices());
+      unawaited(_loadWifi());
     } else if (state == AppLifecycleState.paused) {
       _poll?.cancel();
     }
@@ -99,7 +111,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _poll = Timer.periodic(const Duration(seconds: 8), (_) {
       unawaited(_loadActive());
       // Notices change rarely: about once a minute is plenty.
-      if (++_ticks % 8 == 0) unawaited(_loadNotices());
+      if (++_ticks % 8 == 0) {
+        unawaited(_loadNotices());
+        // Android lets an app scan Wi-Fi about four times in two minutes: once a minute is safe.
+        unawaited(_loadWifi());
+      }
     });
   }
 
@@ -137,10 +153,39 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// Which room this phone is near, worked out on the phone from the Wi-Fi it can see.
+  Future<void> _loadWifi({bool reloadRooms = false}) async {
+    if (!widget.wifiHint) return;
+    try {
+      final allowed = await widget.security.hasPreciseLocation();
+      if (!allowed) {
+        if (mounted) setState(() => _canReadWifi = false);
+        return;
+      }
+      if (reloadRooms || _wifiRooms == null) _wifiRooms = await widget.auth.api.wifiRooms();
+      final rooms = _wifiRooms!;
+      final guess = rooms.routers.isEmpty ? null : guessRoom(await widget.security.wifiSnapshot(), rooms);
+      if (mounted) {
+        setState(() {
+          _canReadWifi = true;
+          _wifi = guess;
+        });
+      }
+    } catch (_) {
+      // Offline or Wi-Fi off: keep the last answer.
+    }
+  }
+
+  Future<void> _allowWifi() async {
+    await widget.security.requestLocationPermission();
+    await _loadWifi();
+  }
+
   void _refresh() {
     setState(() {
       _classes = widget.auth.api.timetable();
     });
+    unawaited(_loadWifi(reloadRooms: true));
     unawaited(_phone.load().then((_) => _loadActive()));
     unawaited(_loadNotices());
   }
@@ -195,6 +240,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   DateTime _now() => widget.today ?? DateTime.now();
 
+  /// The room of the class on now, or starting within 15 minutes.
+  String? _roomNow(List<ClassSession>? classes) {
+    final now = _now();
+    return classes
+        ?.where((c) => !c.cancelled && c.startsAt.subtract(const Duration(minutes: 15)).isBefore(now) && now.isBefore(c.endsAt))
+        .firstOrNull
+        ?.room;
+  }
+
   /// Home tab: greeting, new notices, the class on now, the scan card, and today's classes.
   Widget _homeTab() {
     final me = widget.auth.me!;
@@ -229,7 +283,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ],
             FutureBuilder<List<ClassSession>>(
               future: _classes,
-              builder: (context, snap) => snap.hasData ? _NowNext(classes: snap.data!, now: _now()) : const SizedBox.shrink(),
+              builder: (context, snap) => Column(children: [
+                if (widget.wifiHint) _WhereCard(guess: _wifi, canRead: _canReadWifi, classRoom: _roomNow(snap.data), onAllow: _allowWifi),
+                if (snap.hasData) _NowNext(classes: snap.data!, now: _now()),
+              ]),
             ),
             ListenableBuilder(
               listenable: _phone,
@@ -258,6 +315,42 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// "You're in Room 6", from the Wi-Fi routers this phone can hear (Android). When a class
+/// is on in another room, says so, so the student can move before scanning.
+class _WhereCard extends StatelessWidget {
+  const _WhereCard({required this.guess, required this.canRead, required this.classRoom, required this.onAllow});
+
+  final WifiGuess? guess;
+  final bool? canRead;
+  final String? classRoom;
+  final VoidCallback onAllow;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget row;
+    if (canRead == false) {
+      row = Row(children: [
+        const Expanded(child: InfoRow(icon: Icons.wifi_find, tone: TileTone.warn, title: 'Which room am I in?', value: 'Allow location so Argus can read the classroom Wi-Fi.')),
+        TextButton(onPressed: onAllow, child: const Text('Allow')),
+      ]);
+    } else {
+      final g = guess;
+      if (g == null) return const SizedBox.shrink();
+      row = switch (g.place) {
+        WifiPlace.room when classRoom == null || classRoom == g.room =>
+          InfoRow(icon: Icons.wifi, title: 'You\'re in ${g.room}', value: classRoom == null ? 'From the classroom Wi-Fi' : 'Right room for this class'),
+        WifiPlace.room => InfoRow(icon: Icons.wifi, tone: TileTone.warn, title: 'You\'re in ${g.room}', value: 'This class is in $classRoom. Scans from another room are checked.'),
+        WifiPlace.campus => const InfoRow(icon: Icons.wifi, tone: TileTone.warn, title: 'On college Wi-Fi', value: 'Room not known: this router isn\'t listed for any room yet.'),
+        WifiPlace.notCampus => const InfoRow(icon: Icons.wifi_off, tone: TileTone.bad, title: 'Not near college Wi-Fi', value: 'Turn on Wi-Fi, or you may not be in a classroom.'),
+      };
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Semantics(liveRegion: true, child: Card(child: Padding(padding: const EdgeInsets.all(16), child: row))),
     );
   }
 }

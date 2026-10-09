@@ -4,7 +4,7 @@ import { shadowMode } from '../pilot/service.ts';
 import { appendAudit } from '../audit/audit.ts';
 import type { AppContext } from '../context.ts';
 import type { DbOrTx, Tx } from '../db/index.ts';
-import type { RecordStatus, RoundMode } from '../db/schema.ts';
+import type { AttemptSignals, RecordStatus, RoundMode } from '../db/schema.ts';
 import { ApiError } from '../errors.ts';
 import { b64url } from '../platform/crypto.ts';
 import { uuidv7 } from '../platform/ids.ts';
@@ -329,6 +329,15 @@ export async function displayState(ctx: AppContext, sessionId: string) {
 
 export type StudentState = 'verified' | 'flagged' | 'flagged_high' | 'pending' | 'confirmed' | 'unmarked' | 'absent' | 'late' | 'excused' | 'od';
 
+/** A reason in words; the Wi-Fi one names the room the phone was actually near. */
+function reasonText(code: string, attempts: { reason_codes: string[]; signals: AttemptSignals | null }[]): string {
+  if (code === 'wifi_other_room') {
+    const near = [...attempts].reverse().find((a) => a.reason_codes.includes(code))?.signals?.wifi_room;
+    if (near) return `Phone was near ${near}'s Wi-Fi, not this room's`;
+  }
+  return REASON_TEXT[code] ?? code;
+}
+
 export async function liveView(ctx: AppContext, sessionId: string, teacherId: string) {
   const s = await mySession(ctx.db, sessionId, teacherId);
   const cls = await sessionsView(ctx.db, ctx.config.timeZone).where('cs.id', '=', s.class_session_id).executeTakeFirstOrThrow();
@@ -339,7 +348,7 @@ export async function liveView(ctx: AppContext, sessionId: string, teacherId: st
     ctx.db
       .selectFrom('attendance_attempts as a')
       .leftJoin('attendance_rounds as r', 'r.id', 'a.round_id')
-      .select(['a.id', 'a.student_id', 'a.decision', 'a.reason_codes', 'a.risk_score', 'a.received_at', 'a.offline_queued', 'r.round_no'])
+      .select(['a.id', 'a.student_id', 'a.decision', 'a.reason_codes', 'a.risk_score', 'a.received_at', 'a.offline_queued', 'a.signals', 'r.round_no'])
       .where('a.session_id', '=', sessionId)
       .orderBy('a.received_at')
       .execute(),
@@ -379,7 +388,7 @@ export async function liveView(ctx: AppContext, sessionId: string, teacherId: st
       record: record?.status ?? null,
       late: record?.status === 'late',
       score: latest?.risk_score ?? null,
-      reasons: [...reasons].map((c) => REASON_TEXT[c] ?? c),
+      reasons: [...reasons].map((c) => reasonText(c, accepted)),
       last_rejection: lastRejected && !latest ? { code: lastRejected.reason_codes[0] ?? 'rejected', at: lastRejected.received_at.toISOString() } : null,
       targeted: current?.target_student_ids ? current.target_student_ids.includes(e.id) : true,
       scanned_this_round: Boolean(current && accepted.some((a) => a.round_no === current.round_no)),

@@ -11,3 +11,7 @@
 - **iPhone:** reading Wi-Fi needs Apple's Access Wi-Fi Information entitlement, which free (personal) developer accounts can't use. Until the paid Apple Developer Program is used, iPhones report nothing and get `unknown` (no penalty). The Swift code is in place; add `com.apple.developer.networking.wifi-info` to a `Runner.entitlements` then.
 
 **Consequences.** On Android, a relayed QR scanned from another room or off campus is flagged for spot checks. Surveying rooms is optional: routers are learned from normal use.
+
+**Amendment (2026-10-09): "which room am I in".**
+- The Android app's Home shows the room whose router it hears loudest ("You're in Classroom 6"), and warns when a class is on in a different room. The phone fetches the rooms' router lists (`GET /v1/me/wifi-rooms`; router IDs are no secret, any phone in the room sees them) and compares them with its own scan, about once a minute while the app is open. That scan never leaves the phone. Android needs precise location to read Wi-Fi, so the card offers an **Allow** button if it hasn't been granted yet.
+- At each scan, the attempt also stores `wifi_room`, the room whose router was loudest. Staff see it at scan time only, never live: the teacher's roster says "Phone was near Classroom 8's Wi-Fi, not this room's" and the support evidence shows the room per scan. There is no background tracking (spec §13 consent notice).

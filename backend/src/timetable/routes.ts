@@ -531,6 +531,23 @@ export function registerTimetableRoutes(app: FastifyInstance, ctx: AppContext): 
       .execute();
     return { from, to, items: rows.map(presentSession) };
   });
+
+  // Rooms' Wi-Fi routers, so the Android app can show which room it is near (ADR-0030).
+  // Router IDs are no secret: any phone in the room sees them. The phone's own scan never
+  // leaves the phone for this; it is only sent inside a signed scan, as before.
+  app.get('/v1/me/wifi-rooms', { preHandler: needAuth('student') }, async () => {
+    const rooms = await ctx.db
+      .selectFrom('rooms')
+      .select(['code', 'wifi_routers'])
+      .where(sql<boolean>`cardinality(wifi_routers) > 0`)
+      .orderBy('code')
+      .execute();
+    const prefix = await ctx.db.selectFrom('app_settings').select('value').where('key', '=', 'campus_wifi_ssid_prefix').executeTakeFirst();
+    return {
+      ssid_prefix: typeof prefix?.value === 'string' ? prefix.value : '',
+      rooms: rooms.map((r) => ({ room: r.code, routers: r.wifi_routers })),
+    };
+  });
 }
 
 function rangeOf(req: FastifyRequest, ctx: AppContext): { from: string; to: string } {

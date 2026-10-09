@@ -153,6 +153,8 @@ class ArgusSecurityPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                 "androidId" -> result.success(androidId())
                 "locationFix" -> locationFix((call.argument<Int>("timeoutMs") ?: 10000).toLong(), result)
                 "wifiSnapshot" -> result.success(wifiSnapshot())
+                "hasPreciseLocation" -> result.success(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+                "requestLocationPermission" -> withLocationPermission { fine, _ -> result.success(fine) }
                 "integrityToken" -> {
                     val project = (call.argument<Number>("cloudProjectNumber") ?: 0).toLong()
                     val hash = call.argument<String>("requestHash") ?: return result.error("bad_args", "requestHash missing", null)

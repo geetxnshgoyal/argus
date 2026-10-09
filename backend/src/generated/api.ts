@@ -1138,6 +1138,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/wifi-rooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rooms' Wi-Fi routers, for the app's "you're near this room" hint (Android) */
+        get: operations["myWifiRooms"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/devices/bind/challenge": {
         parameters: {
             query?: never;
@@ -3318,6 +3335,16 @@ export interface components {
         };
         ClassSessionList: {
             items: components["schemas"]["ClassSession"][];
+        };
+        WifiRooms: {
+            /** @description College Wi-Fi names start with this (e.g. SVYASA) */
+            ssid_prefix: string;
+            rooms: {
+                /** @description Room code, as in the timetable */
+                room: string;
+                /** @description Router IDs, the first five BSSID octets */
+                routers: string[];
+            }[];
         };
         ClassSessionRange: {
             /** Format: date */
@@ -7037,6 +7064,28 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    myWifiRooms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WifiRooms"];
+                };
+            };
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
         };

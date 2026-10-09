@@ -426,7 +426,8 @@ describe.skipIf(!hasDb)('attendance (integration, spec §16 adversarial suite)',
     await t.app.inject({ method: 'POST', url: `/v1/admin/sections/${c.section.id}/sync-enrollments`, headers: ops.headers });
     const s3 = await new Phone(t.app, 's3@college.test').signIn();
     await s3.bind();
-    const d = await display(await start());
+    const sessionId = await start();
+    const d = await display(sessionId);
     const wifi = (bssid: string, ssid = 'SVYASA_STUDENTS') => ({ wifi: { connected: null, seen: [{ bssid, ssid, rssi: -45 }] } });
 
     const inRoom = (await s1.scan(displayQr(d, t.clock.now), wifi('e0:c2:50:76:e0:a8'))).json();
@@ -442,5 +443,10 @@ describe.skipIf(!hasDb)('attendance (integration, spec §16 adversarial suite)',
     const stored = await db.selectFrom('attendance_attempts').select('signals').execute();
     expect(JSON.stringify(stored)).not.toContain('e0:c2:50');
     expect(stored.map((a) => (a.signals as { wifi?: string } | null)?.wifi).sort()).toEqual(['not_campus', 'other_room', 'room']);
+    // Staff see the room the phone was near, not the scan.
+    expect(stored.map((a) => (a.signals as { wifi_room?: string | null } | null)?.wifi_room ?? null).sort()).toEqual(['Classroom 6', 'Classroom 8', null]);
+    const live = (await get(`/v1/attendance/sessions/${sessionId}/live`)).json();
+    const s2Row = live.students.find((x: { usn: string }) => x.usn === '2102500002');
+    expect(s2Row.reasons).toContain("Phone was near Classroom 8's Wi-Fi, not this room's");
   });
 });

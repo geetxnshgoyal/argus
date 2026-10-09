@@ -2804,6 +2804,23 @@ paths:
           type: string
           format: date
         description: 'Defaults: today .. today+6; max 31 days'
+  /v1/me/wifi-rooms:
+    get:
+      tags:
+      - student
+      operationId: myWifiRooms
+      summary: Rooms' Wi-Fi routers, for the app's "you're near this room" hint (Android)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WifiRooms'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
   /v1/devices/bind/challenge:
     post:
       tags:
@@ -7493,6 +7510,31 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ClassSession'
+    WifiRooms:
+      type: object
+      required:
+      - ssid_prefix
+      - rooms
+      properties:
+        ssid_prefix:
+          type: string
+          description: College Wi-Fi names start with this (e.g. SVYASA)
+        rooms:
+          type: array
+          items:
+            type: object
+            required:
+            - room
+            - routers
+            properties:
+              room:
+                type: string
+                description: Room code, as in the timetable
+              routers:
+                type: array
+                items:
+                  type: string
+                description: Router IDs, the first five BSSID octets
     ClassSessionRange:
       type: object
       required:
