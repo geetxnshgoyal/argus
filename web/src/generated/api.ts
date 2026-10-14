@@ -292,6 +292,24 @@ export interface paths {
         patch: operations["updateSubject"];
         trace?: never;
     };
+    "/v1/admin/wifi-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The college Wi-Fi name prefix (ADR-0030) */
+        get: operations["getWifiSettings"];
+        /** Set the college Wi-Fi name prefix (audited) */
+        put: operations["putWifiSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/wifi-routers/learned": {
         parameters: {
             query?: never;
@@ -2611,7 +2629,7 @@ export interface components {
             geofence_id?: string | null;
             /** @description Phase 2 hook */
             ble_rssi_threshold?: number | null;
-            /** @description Wi-Fi router ids in this room: first five octets of the BSSID, e.g. e0:c2:50:76:e0 (ADR-0030) */
+            /** @description Wi-Fi router ids in this room: first five octets of the BSSID, e.g. 0a:1b:2c:76:e0 (ADR-0030) */
             wifi_routers?: string[];
         };
         RoomInput: {
@@ -3336,8 +3354,12 @@ export interface components {
         ClassSessionList: {
             items: components["schemas"]["ClassSession"][];
         };
+        WifiSettings: {
+            /** @description College Wi-Fi names start with this (e.g. CAMPUS); empty = only routers listed on rooms count as campus */
+            ssid_prefix: string;
+        };
         WifiRooms: {
-            /** @description College Wi-Fi names start with this (e.g. SVYASA) */
+            /** @description College Wi-Fi names start with this (e.g. CAMPUS) */
             ssid_prefix: string;
             rooms: {
                 /** @description Room code, as in the timetable */
@@ -5087,6 +5109,55 @@ export interface operations {
             409: components["responses"]["Error409"];
         };
     };
+    getWifiSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WifiSettings"];
+                };
+            };
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    putWifiSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WifiSettings"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WifiSettings"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
     learnedWifiRouters: {
         parameters: {
             query?: never;
@@ -6142,6 +6213,8 @@ export interface operations {
                         sso: boolean;
                         dev_login: boolean;
                         domains: string[];
+                        /** @description The institution's name (ARGUS_INSTITUTION_NAME), for the sign-in and legal pages */
+                        institution: string | null;
                     };
                 };
             };

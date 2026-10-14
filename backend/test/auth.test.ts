@@ -420,10 +420,16 @@ describe.skipIf(!hasDb)('auth (integration)', () => {
 });
 
 describe('sign-in methods', () => {
+  it('names the institution from ARGUS_INSTITUTION_NAME for the sign-in and legal pages', async () => {
+    const t = await makeApp({ oidc: null, config: { institutionName: 'Example College' } });
+    expect((await t.app.inject('/v1/auth/methods')).json().institution).toBe('Example College');
+    await t.app.close();
+  });
+
   it('reports SSO off and sends browsers to a friendly page instead of a JSON error', async () => {
     const t = await makeApp({ oidc: null });
     const m = (await t.app.inject('/v1/auth/methods')).json();
-    expect(m).toMatchObject({ sso: false, dev_login: true, domains: ['college.test'] });
+    expect(m).toMatchObject({ sso: false, dev_login: true, domains: ['college.test'], institution: null });
     const web = await t.app.inject('/v1/auth/oidc/login');
     expect(web.statusCode).toBe(302);
     expect(web.headers.location).toBe('/login?error=sso_not_configured');

@@ -148,6 +148,27 @@ export function registerAdminAttendanceRoutes(app: FastifyInstance, ctx: AppCont
     return { items: rows.rows.map((x) => ({ ...x, last_seen_at: new Date(x.last_seen_at).toISOString() })) };
   });
 
+  // The college's Wi-Fi name prefix (e.g. "CAMPUS" for CAMPUS_STUDENTS, CAMPUS_STAFF…): college Wi-Fi from a
+  // router no room lists yet counts as "on campus". Empty = only listed routers count.
+  app.get('/v1/admin/wifi-settings', ops, async () => {
+    const row = await ctx.db.selectFrom('app_settings').select('value').where('key', '=', 'campus_wifi_ssid_prefix').executeTakeFirst();
+    return { ssid_prefix: typeof row?.value === 'string' ? row.value : '' };
+  });
+
+  app.put('/v1/admin/wifi-settings', ops, async (req) => {
+    const b = parse(z.object({ ssid_prefix: z.string().trim().max(32) }), req.body);
+    const u = currentUser(req);
+    await ctx.db.transaction().execute(async (tx) => {
+      await tx
+        .insertInto('app_settings')
+        .values({ key: 'campus_wifi_ssid_prefix', value: JSON.stringify(b.ssid_prefix) })
+        .onConflict((oc) => oc.column('key').doUpdateSet({ value: JSON.stringify(b.ssid_prefix) }))
+        .execute();
+      await appendAudit(tx, { actorId: u.id, action: 'wifi_settings.update', entityType: 'app_settings', entityId: 'campus_wifi_ssid_prefix', after: b, ip: req.ip }, new Date(ctx.now()));
+    });
+    return b;
+  });
+
   app.get('/v1/admin/risk-settings', ops, async () => {
     const rows = await ctx.db
       .selectFrom('risk_settings as r')

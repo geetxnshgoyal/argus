@@ -262,7 +262,7 @@ function ResourceForm(props: { config: ResourceConfig; refs: RefMaps; row: Row |
               <textarea
                 rows={3}
                 value={values[f.key]}
-                placeholder={'e0:c2:50:78:0e\ne0:c2:50:78:3b'}
+                placeholder={'0a:1b:2c:78:0e\n0a:1b:2c:78:3b'}
                 aria-invalid={Boolean(fieldErrors[f.key])}
                 onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
               />

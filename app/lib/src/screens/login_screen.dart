@@ -17,7 +17,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _email = TextEditingController(text: 'student@svyasa-sas.edu.in');
+  final _email = TextEditingController(text: 'student@example.edu');
 
   @override
   void dispose() {

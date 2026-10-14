@@ -199,7 +199,12 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
   app.get('/v1/policy', async () => ({ version: POLICY_VERSION, text: POLICY_TEXT }));
 
   /** Which sign-in methods this server offers, so sign-in pages only show what works. */
-  app.get('/v1/auth/methods', async () => ({ sso: ctx.oidc !== null, dev_login: ctx.config.devLogin, domains: ctx.config.oidc.hostedDomains }));
+  app.get('/v1/auth/methods', async () => ({
+    sso: ctx.oidc !== null,
+    dev_login: ctx.config.devLogin,
+    domains: ctx.config.oidc.hostedDomains,
+    institution: ctx.config.institutionName,
+  }));
 
   app.get('/v1/me', { preHandler: needAuth() }, async (req) => {
     const u = currentUser(req);

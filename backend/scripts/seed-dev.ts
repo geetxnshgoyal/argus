@@ -18,10 +18,10 @@ if (process.env.ARGUS_ENV !== 'dev') {
   process.exit(1);
 }
 const db = createDb(process.env.DATABASE_URL ?? 'postgres://argus@localhost:55432/argus');
-// Students and staff use the college domain; teachers use Newton School's (firstname.lastname@).
-const DOMAINS = (process.env.OIDC_HOSTED_DOMAIN ?? 'svyasa-sas.edu.in,newtonschool.co').split(',').map((d) => d.trim());
-const DOMAIN = DOMAINS[0] ?? 'svyasa-sas.edu.in';
-const TEACHER_DOMAIN = DOMAINS.find((d) => d.includes('newtonschool')) ?? DOMAIN;
+// Students and staff use the first domain; teachers the second when there is one (a partner institution).
+const DOMAINS = (process.env.OIDC_HOSTED_DOMAIN ?? 'example.edu').split(',').map((d) => d.trim());
+const DOMAIN = DOMAINS[0] ?? 'example.edu';
+const TEACHER_DOMAIN = DOMAINS[1] ?? DOMAIN;
 
 async function one<T extends { id: string }>(table: string, where: Record<string, unknown>, values: Record<string, unknown>): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,7 +47,7 @@ const { error } = await migrateToLatest(db);
 if (error) throw error;
 
 const dept = await one('departments', { code: 'CSE' }, { name: 'Computer Science and Engineering' });
-const prog = await one('programs', { code: 'BTECH-CSE' }, { name: 'B.Tech CSE (Newton School of Technology)', department_id: dept });
+const prog = await one('programs', { code: 'BTECH-CSE' }, { name: 'B.Tech CSE', department_id: dept });
 const term = await one('terms', { name: '2026 Odd Semester' }, { start_date: '2026-08-01', end_date: '2026-12-20' });
 const section = await one('sections', { term_id: term, program_id: prog, name: '2nd Year 3rd Sem' }, {});
 const groups: Record<string, string> = {};

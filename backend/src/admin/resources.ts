@@ -18,7 +18,7 @@ const code = z
 const optUuid = uuid.nullable().optional();
 /** Router ids (first five BSSID octets); a full BSSID is accepted and shortened (ADR-0030). */
 const wifiRouters = z
-  .array(z.string().trim().toLowerCase().regex(/^([0-9a-f]{2}[:-]){4}[0-9a-f]{2}([:-][0-9a-f]{2})?$/, 'Router ids look like e0:c2:50:76:e0'))
+  .array(z.string().trim().toLowerCase().regex(/^([0-9a-f]{2}[:-]){4}[0-9a-f]{2}([:-][0-9a-f]{2})?$/, 'Router ids look like 0a:1b:2c:76:e0'))
   .max(20)
   .transform((a) => [...new Set(a.map((s) => s.replace(/-/g, ':').split(':').slice(0, 5).join(':')))]);
 

@@ -107,8 +107,8 @@ describe.skipIf(!hasDb)('timetable API (integration)', () => {
 
     it('a student gets the rooms\' Wi-Fi routers for the "near this room" hint; staff don\'t', async () => {
       await addStudent('s1@college.test', '2102500001', c.b1.id);
-      await db.updateTable('rooms').set({ wifi_routers: ['e0:c2:50:78:3f', 'e0:c2:50:78:4b'] }).where('id', '=', c.room.c6.id).execute();
-      await db.insertInto('app_settings').values({ key: 'campus_wifi_ssid_prefix', value: JSON.stringify('SVYASA') }).onConflict((oc) => oc.column('key').doNothing()).execute();
+      await db.updateTable('rooms').set({ wifi_routers: ['0a:1b:2c:78:3f', '0a:1b:2c:78:4b'] }).where('id', '=', c.room.c6.id).execute();
+      await db.insertInto('app_settings').values({ key: 'campus_wifi_ssid_prefix', value: JSON.stringify('CAMPUS') }).onConflict((oc) => oc.column('key').doNothing()).execute();
       const key = (await import('./helpers/app.ts')).deviceKey();
       const login = await t.app.inject({
         method: 'POST',
@@ -117,9 +117,20 @@ describe.skipIf(!hasDb)('timetable API (integration)', () => {
       });
       const auth = { authorization: `Bearer ${login.json().access_token}` };
       const r = (await t.app.inject({ url: '/v1/me/wifi-rooms', headers: auth })).json();
-      expect(r).toEqual({ ssid_prefix: 'SVYASA', rooms: [{ room: 'Classroom 6', routers: ['e0:c2:50:78:3f', 'e0:c2:50:78:4b'] }] });
+      expect(r).toEqual({ ssid_prefix: 'CAMPUS', rooms: [{ room: 'Classroom 6', routers: ['0a:1b:2c:78:3f', '0a:1b:2c:78:4b'] }] });
       const teacher = await loginAs(t.app, c.tA.email);
       expect((await t.app.inject({ url: '/v1/me/wifi-rooms', headers: { cookie: teacher.cookie } })).statusCode).toBe(403);
+    });
+
+    it('Acad Ops set the college Wi-Fi name; teachers can\'t', async () => {
+      const ops = await loginAs(t.app, 'ops@college.test');
+      const put = await t.app.inject({ method: 'PUT', url: '/v1/admin/wifi-settings', headers: ops.headers, payload: { ssid_prefix: ' EXAMPLE ' } });
+      expect(put.json()).toEqual({ ssid_prefix: 'EXAMPLE' });
+      expect((await t.app.inject({ url: '/v1/admin/wifi-settings', headers: ops.headers })).json()).toEqual({ ssid_prefix: 'EXAMPLE' });
+      const teacher = await loginAs(t.app, c.tA.email);
+      expect((await t.app.inject({ method: 'PUT', url: '/v1/admin/wifi-settings', headers: teacher.headers, payload: { ssid_prefix: 'X' } })).statusCode).toBe(403);
+      const audit = await db.selectFrom('audit_log').select('action').where('action', '=', 'wifi_settings.update').execute();
+      expect(audit).toHaveLength(1);
     });
 
     it('a teacher sees today\'s classes with the expected student count', async () => {

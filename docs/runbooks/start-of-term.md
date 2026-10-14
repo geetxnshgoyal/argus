@@ -11,7 +11,7 @@ Do the steps in order; each one needs the previous.
    the preview (new, updated, problems), then confirm. Only USN, name, college
    email, batch and status are sent to the server.
 4. **Teachers.** People → **Teachers** → add each teacher with their
-   `@svyasa.edu.in` or `@newtonschool.co` Google address.
+   college Google address (any domain listed in `OIDC_HOSTED_DOMAIN`).
 5. **Timetable.** Timetable → **Import timetable** → upload the college's
    timetable sheet (`.xlsx`). The first run is a **preview**: nothing is saved.
    Fix any red problems in the sheet and upload again, then confirm.
@@ -40,16 +40,6 @@ they are worked out from the outline.
 numbers → paste as centre latitude and longitude. Radius: right-click →
 **Measure distance** to the farthest building, then add 50 m.
 
-Current area (Tower C, RV Vidyaniketan, set up 2026-09-29), outline including the
-25 m margin:
-
-```
-12.920914, 77.50065
-12.92143, 77.501498
-12.920158, 77.502312
-12.919643, 77.501465
-```
-
 ## Classroom Wi-Fi routers
 
 Each room can list its Wi-Fi routers (Rooms → edit → **Wi-Fi routers**, one per
@@ -58,16 +48,11 @@ checks, never refused. You don't have to survey: after a few classes, Admin →
 **Wi-Fi routers** shows the routers students' phones saw in each room, with an
 **Add** button. To survey a room yourself, sit next to each router with a Mac
 and run `sh tools/wifi-survey/survey.sh "Room name"`: the strongest router is
-the one you're next to. Surveyed 2026-09-29 to 10-09 (all start with `e0:c2:50:`):
+the one you're next to.
 
-| Room | Routers |
-|---|---|
-| Classroom 1 | `e0:c2:50:77:90` |
-| Lab L2 | `e0:c2:50:76:e0` |
-| Classroom 8 | `e0:c2:50:78:0e`, `e0:c2:50:78:3b` |
-| Classroom 9 | `e0:c2:50:77:91`, `e0:c2:50:76:c8` |
-| Room 6 | `e0:c2:50:78:3f`, `e0:c2:50:78:4b` |
-| AR/VR room | `e0:c2:50:76:e8` (second router not confirmed yet) |
+Also set **College Wi-Fi name** on that page (what the college's networks
+start with, e.g. `CAMPUS` for CAMPUS_STUDENTS), so college Wi-Fi from a router
+no room lists yet still counts as on campus.
 
 ## If something goes wrong
 

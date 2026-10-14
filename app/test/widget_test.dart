@@ -152,7 +152,7 @@ void main() {
 
     await tester.tap(find.text('Sign in as this student'));
     await tester.pumpAndSettle();
-    expect(signed.single, 'argus/v1/dev-login|student@svyasa-sas.edu.in');
+    expect(signed.single, 'argus/v1/dev-login|student@example.edu');
     expect(store.value, 'r1');
     expect(find.text('Before you start'), findsOneWidget);
 

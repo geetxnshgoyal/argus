@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { ErrorNotice, Notice, PageHead } from '../../components/ui.tsx';
 import { apiGet, apiSend } from '../../lib/api.ts';
 import { useAdminList } from '../../lib/refs.ts';
@@ -34,6 +35,7 @@ export function WifiRoutersPage() {
         title="Wi-Fi routers"
         subtitle="Scans that see one of a room's routers count as “in this room”; only other rooms' routers, or no college Wi-Fi, flags the scan for spot checks. Edit a room's routers on the Rooms page."
       />
+      <SsidPrefix />
       <section className="card">
         <h2>Rooms with routers</h2>
         {rooms.isPending ? (
@@ -98,5 +100,44 @@ export function WifiRoutersPage() {
         )}
       </section>
     </>
+  );
+}
+
+/** The college's Wi-Fi name prefix: college Wi-Fi from a router no room lists yet still counts as "on campus". */
+function SsidPrefix() {
+  const qc = useQueryClient();
+  const current = useQuery({ queryKey: ['wifi-settings'], queryFn: () => apiGet<{ ssid_prefix: string }>('/v1/admin/wifi-settings') });
+  // What's typed; until then, the saved value.
+  const [draft, setDraft] = useState<string | null>(null);
+  const value = draft ?? current.data?.ssid_prefix ?? '';
+  const save = useMutation({
+    mutationFn: () => apiSend('PUT', '/v1/admin/wifi-settings', { ssid_prefix: value.trim() }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['wifi-settings'] });
+      setDraft(null);
+    },
+  });
+  return (
+    <section className="card">
+      <h2>College Wi-Fi name</h2>
+      <p className="muted small">
+        What your college's Wi-Fi networks are called at the start, e.g. <code>CAMPUS</code> for CAMPUS_STUDENTS and CAMPUS_STAFF. Leave empty to count only the routers
+        listed on rooms.
+      </p>
+      <form
+        className="btn-row"
+        onSubmit={(e) => {
+          e.preventDefault();
+          save.mutate();
+        }}
+      >
+        <input aria-label="College Wi-Fi name starts with" value={value} onChange={(e) => setDraft(e.target.value)} maxLength={32} placeholder="e.g. CAMPUS" />
+        <button className="btn btn-primary" disabled={save.isPending || !current.isSuccess || value.trim() === current.data.ssid_prefix}>
+          Save
+        </button>
+        {save.isSuccess && <span className="muted small">Saved</span>}
+      </form>
+      <ErrorNotice error={current.error ?? save.error} />
+    </section>
   );
 }

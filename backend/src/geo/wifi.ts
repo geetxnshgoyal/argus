@@ -3,7 +3,7 @@
  * can see (Android: all nearby; iPhone: the one it is connected to) inside the
  * signed attempt. A physical router broadcasts several networks and bands whose
  * BSSIDs differ only in the last octet, so a router is identified by the first
- * five octets ("e0:c2:50:76:e0"). Only the verdict is stored, never the list.
+ * five octets ("0a:1b:2c:76:e0"). Only the verdict is stored, never the list.
  */
 
 export interface WifiAp {
@@ -22,7 +22,7 @@ export type WifiResult = 'room' | 'campus' | 'other_room' | 'not_campus' | 'unkn
 
 const MAC = /^([0-9a-f]{2}[:-]){5}[0-9a-f]{2}$/i;
 
-/** "E0:C2:50:76:E0:A8" → "e0:c2:50:76:e0"; null for anything that isn't a MAC address. */
+/** "0A:1B:2C:76:E0:A8" → "0a:1b:2c:76:e0"; null for anything that isn't a MAC address. */
 export function routerId(bssid: string | null | undefined): string | null {
   if (!bssid || !MAC.test(bssid.trim())) return null;
   const parts = bssid.trim().toLowerCase().replace(/-/g, ':').split(':');

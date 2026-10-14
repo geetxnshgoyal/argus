@@ -1,6 +1,6 @@
 # Argus
 
-College attendance that resists proxy attendance. Students mark attendance
+Attendance for colleges that resists proxy attendance. Students mark attendance
 with a rotating classroom QR code from a phone bound to them; teachers,
 Academic Operations and community managers work in the web app.
 
@@ -65,9 +65,9 @@ pnpm install
 pnpm dev
 ```
 
-Then `pnpm seed:dev` (once) adds test accounts: `admin@`, `acadops@`, `acadops2@`, `community@`
-and `student@svyasa-sas.edu.in`, and the teacher `dev.teacher@newtonschool.co`
-(teachers sign in with their `firstname.lastname@newtonschool.co` Google account). Pass a roster export to load real
+Then `pnpm seed:dev` (once) adds test accounts: `admin@`, `acadops@`, `acadops2@`, `community@`,
+`student@` and `dev.teacher@example.edu`. Set `OIDC_HOSTED_DOMAIN` (e.g. `college.edu` or
+`college.edu,partner.co`, teachers on the second) before seeding to use your college's domains. Pass a roster export to load real
 students locally, e.g. `pnpm seed:dev /path/to/students.json`; only USN, name,
 college email, batch and status are read.
 
@@ -110,4 +110,7 @@ can't read Wi-Fi without a paid account, so the room card is Android-only.
 
 ## Deployment
 
-One Node program plus Postgres. See [deploy/README.md](deploy/README.md).
+One Node program plus Postgres, set up per college: its Google Workspace
+domain(s) (`OIDC_HOSTED_DOMAIN`), name (`ARGUS_INSTITUTION_NAME`), time zone
+(`ARGUS_TIMEZONE`), and, in the admin pages, its campus area, rooms, Wi-Fi
+routers and college Wi-Fi name. See [deploy/README.md](deploy/README.md).

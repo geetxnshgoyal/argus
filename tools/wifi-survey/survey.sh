@@ -1,7 +1,8 @@
 #!/bin/sh
-# Wi-Fi router survey for one room (ADR-0030):  sh tools/wifi-survey/survey.sh "Classroom 8"
+# Wi-Fi router survey for one room (ADR-0030):  sh tools/wifi-survey/survey.sh "Classroom 8" [CAMPUS]
 # Builds the small macOS scanner on first use, scans, saves scans/<room>.tsv and prints
-# the strongest college routers. Allow Location the first time macOS asks.
+# the strongest routers; with a second argument, only networks whose name starts with it
+# (the college's Wi-Fi). Allow Location the first time macOS asks.
 set -e
 cd "$(dirname "$0")"
 ROOM="${1:?Usage: survey.sh \"Room name\"}"
@@ -17,7 +18,7 @@ open "$APP"
 i=0; while [ ! -s build/wifi-scan.tsv ] && [ $i -lt 60 ]; do sleep 2; i=$((i+1)); done
 mkdir -p scans
 cp build/wifi-scan.tsv "scans/$ROOM.tsv"
-python3 - "scans/$ROOM.tsv" <<'PY'
+python3 - "scans/$ROOM.tsv" "${2:-}" <<'PY'
 import sys
 best = {}
 for line in open(sys.argv[1]):
@@ -25,9 +26,9 @@ for line in open(sys.argv[1]):
         p = line.rstrip().split('\t'); print('connected to', p[1], ':'.join(p[2].split(':')[:5]))
     if line.startswith('#'): continue
     p = line.rstrip('\n').split('\t')
-    if len(p) < 3 or not p[0].upper().startswith(('SVYASA', 'INTELLIPAAT')): continue
+    if len(p) < 3 or not p[0].upper().startswith(sys.argv[2].upper()): continue
     rid = ':'.join(p[1].lower().split(':')[:5]); best[rid] = max(best.get(rid, -200), int(p[2].split()[0]))
 for rid, v in sorted(best.items(), key=lambda x: -x[1])[:6]:
     print(f'  {rid}  {v} dBm')
-print('college routers seen:', len(best))
+print('routers seen:', len(best))
 PY

@@ -34,11 +34,13 @@ const envSchema = z.object({
   ARGUS_TRUST_PROXY: bool,
   ARGUS_WEB_DIR: z.string().optional(),
   ARGUS_PUBLIC_URL: z.string().url().optional(),
+  // The institution's name, shown on the sign-in, privacy and terms pages.
+  ARGUS_INSTITUTION_NAME: z.string().trim().max(120).optional(),
   OIDC_ISSUER: z.string().url().default('https://accounts.google.com'),
   OIDC_CLIENT_ID: z.string().optional(),
   OIDC_CLIENT_SECRET: z.string().optional(),
   // Google Workspace domain(s), comma-separated; sign-in is limited to accounts in them when set.
-  // e.g. "svyasa-sas.edu.in,newtonschool.co" (students on the college domain, teachers on Newton's).
+  // e.g. "college.edu,partner.co" (students on the college domain, teachers on a partner's).
   OIDC_HOSTED_DOMAIN: z.string().optional(),
   // Individual addresses allowed to sign in from outside those domains (e.g. a developer's
   // Gmail during the pilot). Comma-separated; must still be verified by Google.
@@ -103,6 +105,8 @@ export interface Config {
   webDir: string | undefined;
   /** Origin users reach Argus at, e.g. https://argus.college.edu (no trailing slash). */
   publicUrl: string;
+  /** Shown on the sign-in, privacy and terms pages; null = "your college". */
+  institutionName: string | null;
   oidc: {
     issuer: string;
     clientId: string | undefined;
@@ -236,6 +240,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     trustProxy: e.ARGUS_TRUST_PROXY,
     webDir: e.ARGUS_WEB_DIR,
     publicUrl: (e.ARGUS_PUBLIC_URL ?? 'http://localhost:5173').replace(/\/+$/, ''),
+    institutionName: e.ARGUS_INSTITUTION_NAME || null,
     oidc: {
       issuer: e.OIDC_ISSUER,
       clientId: e.OIDC_CLIENT_ID,
