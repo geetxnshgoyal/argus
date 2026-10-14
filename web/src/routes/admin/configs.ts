@@ -101,7 +101,7 @@ export const RESOURCE_CONFIGS: Record<string, ResourceConfig> = {
         key: 'wifi_routers',
         label: 'Wi-Fi routers',
         type: 'lines',
-        hint: 'One router per line, e.g. e0:c2:50:78:0e (the first five parts of its Wi-Fi ID). Scans that see one of these count as "in this room". See Wi-Fi routers for ones learned from scans.',
+        hint: 'One router per line, e.g. 0a:1b:2c:78:0e (the first five parts of its Wi-Fi ID). Scans that see one of these count as "in this room". See Wi-Fi routers for ones learned from scans.',
       },
     ],
   },

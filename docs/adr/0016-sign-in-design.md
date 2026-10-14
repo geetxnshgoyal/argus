@@ -1,6 +1,6 @@
 # ADR-0016: Sign-in design (web sessions, mobile code exchange, dev login)
 
-**Context.** Spec §5 asks for OIDC auth code + PKCE, 15-min access / 30-day rotating refresh tokens, device-bound refresh for mobile, and 12 h staff web sessions. The college uses Google Workspace (`svyasa-sas.edu.in`).
+**Context.** Spec §5 asks for OIDC auth code + PKCE, 15-min access / 30-day rotating refresh tokens, device-bound refresh for mobile, and 12 h staff web sessions. Colleges typically use Google Workspace.
 
 **Decision.**
 - **One OIDC client on the server** (`openid-client`), Google by default (`OIDC_ISSUER`), restricted to `OIDC_HOSTED_DOMAIN` via both the `hd` hint and the `hd` + email-domain claims check. PKCE + nonce + single-use state (10 min).
@@ -10,6 +10,6 @@
 - **Dev login** (`ARGUS_DEV_LOGIN`, refused outside `ARGUS_ENV=dev`): email picker for the web and `POST /v1/auth/dev/mobile-login` for the app, so the system can be tried before Google credentials exist. It looks users up by email and never links SSO identities.
 - **Routine mobile API calls** use the 15-minute bearer token; proof-of-possession signatures are required on refresh (here) and on attempts, support requests and rebinds (M3–M6). This amends ADR-0008's "routine requests" wording.
 
-- **Two Workspace domains** (amended M3): students use `svyasa-sas.edu.in`, teachers use `firstname.lastname@newtonschool.co`. `OIDC_HOSTED_DOMAIN` is a comma-separated list; with more than one domain the `hd` hint is `*` (any Workspace account) and the server requires the email's domain to be on the list **and** equal to the `hd` claim. Provisioning and the roster import accept any listed domain.
+- **Two Workspace domains** (amended M3): e.g. students on the college's domain and teachers on a partner institution's (`college.edu,partner.co`). `OIDC_HOSTED_DOMAIN` is a comma-separated list; with more than one domain the `hd` hint is `*` (any Workspace account) and the server requires the email's domain to be on the list **and** equal to the `hd` claim. Provisioning and the roster import accept any listed domain.
 
 **Consequences.** No passwords in Argus. Stolen refresh tokens or intercepted codes don't work without the phone's hardware key. Requires a Google OAuth client (Web application type) with redirect URI `https://<host>/v1/auth/oidc/callback`.

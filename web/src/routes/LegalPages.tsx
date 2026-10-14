@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { BrandMark } from '../components/ui.tsx';
+import { useAuthMethods } from '../lib/auth.ts';
 
 /**
  * Public privacy notice and terms of use, linked from the sign-in page and from
  * Google's sign-in consent screen. Static on purpose: they must load even when the
- * API is down. The student-facing attendance policy (backend/src/policy.ts) says the
+ * API is down (the institution's name then reads "your college"). The student-facing attendance policy (backend/src/policy.ts) says the
  * same about location and retention; keep the two in step.
  */
 
@@ -31,11 +32,17 @@ function LegalPage({ title, children }: { title: string; children: ReactNode }) 
   );
 }
 
+/** ARGUS_INSTITUTION_NAME from the server, or "your college" when it isn't set or can't be loaded. */
+function useInstitution(): string {
+  return useAuthMethods().data?.institution ?? 'your college';
+}
+
 export function PrivacyPage() {
+  const institution = useInstitution();
   return (
     <LegalPage title="Privacy notice">
       <p>
-        Argus is the attendance system of S-VYASA School of Advanced Studies. It is used by the college's students, teachers and staff. This notice explains what Argus
+        Argus is the attendance system of {institution}. It is used by the college's students, teachers and staff. This notice explains what Argus
         stores and why.
       </p>
       <h2>Signing in with Google</h2>
@@ -72,9 +79,10 @@ export function PrivacyPage() {
 }
 
 export function TermsPage() {
+  const institution = useInstitution();
   return (
     <LegalPage title="Terms of use">
-      <p>Argus is provided by S-VYASA School of Advanced Studies for taking attendance. By using it you agree to the following.</p>
+      <p>Argus is provided by {institution} for taking attendance. By using it you agree to the following.</p>
       <ul>
         <li>Argus is only for the college's students, teachers and staff, using their own college account.</li>
         <li>Mark attendance only for yourself, only when you are in the class, on the phone registered to you.</li>

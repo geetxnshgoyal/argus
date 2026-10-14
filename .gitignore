@@ -25,3 +25,6 @@ app/android/key.properties
 *.jks
 *.keystore
 backups/
+
+# Deployment-specific notes (not committed)
+local/

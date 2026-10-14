@@ -50,7 +50,7 @@ class WifiGuess {
 
 final _mac = RegExp(r'^([0-9a-f]{2}[:-]){5}[0-9a-f]{2}$', caseSensitive: false);
 
-/// "E0:C2:50:76:E0:A8" → "e0:c2:50:76:e0"; null for placeholders and junk.
+/// "0A:1B:2C:76:E0:A8" → "0a:1b:2c:76:e0"; null for placeholders and junk.
 String? routerId(String? bssid) {
   if (bssid == null || !_mac.hasMatch(bssid.trim())) return null;
   final parts = bssid.trim().toLowerCase().replaceAll('-', ':').split(':');

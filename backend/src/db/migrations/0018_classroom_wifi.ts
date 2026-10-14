@@ -15,7 +15,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
       last_seen_at timestamptz not null default now(),
       primary key (room_id, router_id)
     );
-    insert into app_settings (key, value) values ('campus_wifi_ssid_prefix', '"SVYASA"') on conflict do nothing;
+    insert into app_settings (key, value) values ('campus_wifi_ssid_prefix', '""') on conflict do nothing;
     insert into risk_settings (key, kind, value, description) values
       ('wifi_other_room', 'scorer', 15, 'The phone saw only other classrooms'' Wi-Fi routers, not this room''s.'),
       ('wifi_not_campus', 'scorer', 25, 'The phone saw no college Wi-Fi at all.')

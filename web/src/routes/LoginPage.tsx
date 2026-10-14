@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { BrandMark, IconTile, Notice } from '../components/ui.tsx';
 import { apiGet, apiSend } from '../lib/api.ts';
-import { loginUrl, ROLE_LABELS, type Role } from '../lib/auth.ts';
+import { loginUrl, ROLE_LABELS, useAuthMethods, type Role } from '../lib/auth.ts';
 
 const ERRORS: Record<string, string> = {
-  wrong_domain: 'Please sign in with your college Google account (students: @svyasa-sas.edu.in, teachers: @newtonschool.co).',
+  wrong_domain: 'Please sign in with your college Google account.',
   sso_not_configured: 'College Google sign-in is not set up on this server yet. Academic Operations: see deploy/README.md.',
   not_provisioned: 'Your account is not set up in Argus yet. Please contact Academic Operations.',
   account_disabled: 'Your Argus account is disabled. Please contact Academic Operations.',
@@ -19,7 +19,7 @@ export function LoginPage() {
   const error = params.get('error');
   const next = params.get('next') ?? undefined;
   const [devError, setDevError] = useState<string | null>(null);
-  const methods = useQuery({ queryKey: ['auth-methods'], queryFn: () => apiGet<{ sso: boolean; dev_login: boolean; domains: string[] }>('/v1/auth/methods') });
+  const methods = useAuthMethods();
   const ssoOff = methods.data?.sso === false;
   // The dev picker appears only when the server has dev login enabled (never in production).
   const devUsers = useQuery({
@@ -51,7 +51,12 @@ export function LoginPage() {
             <div style={{ flex: 1 }}>
               <h2>Sign in</h2>
               <p className="muted">Teachers, Academic Operations and community managers sign in with their college Google account.</p>
-              {error && <Notice tone="bad">{ERRORS[error] ?? 'Sign-in failed. Please try again.'}</Notice>}
+              {error && (
+                <Notice tone="bad">
+                  {ERRORS[error] ?? 'Sign-in failed. Please try again.'}
+                  {error === 'wrong_domain' && methods.data && methods.data.domains.length > 0 && ` Use an ${methods.data.domains.map((d) => `@${d}`).join(' or ')} address.`}
+                </Notice>
+              )}
               {ssoOff && !error && <Notice tone="warn">{ERRORS.sso_not_configured}</Notice>}
               {ssoOff ? (
                 <button className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled>

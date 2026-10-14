@@ -25,6 +25,16 @@ export function useMe() {
   });
 }
 
+/** Sign-in methods and the institution's name (public; cached for the session). */
+export function useAuthMethods() {
+  return useQuery({
+    queryKey: ['auth-methods'],
+    queryFn: () => apiGet<{ sso: boolean; dev_login: boolean; domains: string[]; institution: string | null }>('/v1/auth/methods'),
+    staleTime: Infinity,
+    retry: false,
+  });
+}
+
 export function loginUrl(next?: string, reauth = false): string {
   const p = new URLSearchParams();
   if (next) p.set('next', next);

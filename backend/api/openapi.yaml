@@ -815,6 +815,47 @@ paths:
         '409':
           $ref: '#/components/responses/Error409'
       summary: Delete subject
+  /v1/admin/wifi-settings:
+    get:
+      tags:
+      - admin
+      operationId: getWifiSettings
+      summary: The college Wi-Fi name prefix (ADR-0030)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WifiSettings"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+    put:
+      tags:
+      - admin
+      operationId: putWifiSettings
+      summary: Set the college Wi-Fi name prefix (audited)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WifiSettings"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WifiSettings"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
   /v1/admin/wifi-routers/learned:
     get:
       tags:
@@ -1796,6 +1837,7 @@ paths:
                 - sso
                 - dev_login
                 - domains
+                - institution
                 properties:
                   sso:
                     type: boolean
@@ -1806,6 +1848,11 @@ paths:
                     type: array
                     items:
                       type: string
+                  institution:
+                    type:
+                    - string
+                    - 'null'
+                    description: The institution's name (ARGUS_INSTITUTION_NAME), for the sign-in and legal pages
   /v1/me:
     get:
       tags:
@@ -5699,7 +5746,7 @@ components:
             type: array
             items:
               type: string
-            description: "Wi-Fi router ids in this room: first five octets of the BSSID, e.g. e0:c2:50:76:e0 (ADR-0030)"
+            description: "Wi-Fi router ids in this room: first five octets of the BSSID, e.g. 0a:1b:2c:76:e0 (ADR-0030)"
     RoomInput:
       type: object
       required:
@@ -7510,6 +7557,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ClassSession'
+    WifiSettings:
+      type: object
+      required:
+      - ssid_prefix
+      properties:
+        ssid_prefix:
+          type: string
+          maxLength: 32
+          description: College Wi-Fi names start with this (e.g. CAMPUS); empty = only routers listed on rooms count as campus
     WifiRooms:
       type: object
       required:
@@ -7518,7 +7574,7 @@ components:
       properties:
         ssid_prefix:
           type: string
-          description: College Wi-Fi names start with this (e.g. SVYASA)
+          description: College Wi-Fi names start with this (e.g. CAMPUS)
         rooms:
           type: array
           items:
