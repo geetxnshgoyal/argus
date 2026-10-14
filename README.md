@@ -4,7 +4,7 @@ College attendance that resists proxy attendance. Students mark attendance
 with a rotating classroom QR code from a phone bound to them; teachers,
 Academic Operations and community managers work in the web app.
 
-- **Live:** https://nst-argus.vercel.app (Vercel + Neon Postgres)
+- **Live:** https://argus-attendance.vercel.app (Vercel + Neon Postgres)
 - **Android app:** [latest APK](https://github.com/geetxnshgoyal/argus/releases/latest/download/argus.apk) ([all releases](https://github.com/geetxnshgoyal/argus/releases))
 - **iPhone:** built from source for now (see [below](#flutter-app)); App Store/TestFlight needs a paid Apple developer account
 
@@ -100,7 +100,7 @@ your machine at `10.0.2.2:8080`; the iOS simulator uses `localhost:8080`.
 Official builds point at the live server and have no developer sign-in:
 
 ```bash
-flutter build ios --release --dart-define=ARGUS_API=https://nst-argus.vercel.app --dart-define=ARGUS_APP_VERSION=0.0.8 --build-name=0.0.8 --build-number=8
+flutter build ios --release --dart-define=ARGUS_API=https://argus-attendance.vercel.app --dart-define=ARGUS_APP_VERSION=0.0.8 --build-name=0.0.8 --build-number=8
 ```
 
 Install on a connected iPhone with `xcrun devicectl device install app --device <id> build/ios/iphoneos/Runner.app`
