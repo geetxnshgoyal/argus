@@ -111,6 +111,16 @@ describe.skipIf(!hasDb)('demo deployment (ARGUS_DEMO)', () => {
     expect(r.json().students).toBe(52);
   });
 
+  it('late in the evening the class runs until midnight', async () => {
+    await resetDemo(t.ctx);
+    t.clock.now = Date.UTC(2026, 8, 23, 17, 40, 0); // Wednesday 23:10 India
+    const teacher = await demoLogin('teacher');
+    const res = await t.app.inject({ method: 'POST', url: '/v1/demo/class-now', headers: teacher.headers });
+    expect(res.statusCode).toBe(200);
+    const cls = (await t.app.inject({ url: `/v1/teacher/class-sessions/${res.json().class_session_id}`, headers: teacher.headers })).json();
+    expect(cls).toMatchObject({ start: '23:10', end: '23:59' });
+  });
+
   it('never wipes a database with real accounts', async () => {
     await createUser(db, 'admin', 'principal@real-college.edu');
     await expect(resetDemo(t.ctx)).rejects.toThrow(/non-demo accounts/);
