@@ -815,6 +815,54 @@ paths:
         '409':
           $ref: '#/components/responses/Error409'
       summary: Delete subject
+  /v1/admin/policy-penalties:
+    get:
+      tags:
+      - admin
+      operationId: getPolicyPenalties
+      summary: The college's penalties for proxy attendance, shown in the student policy (admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyPenalties"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+    put:
+      tags:
+      - admin
+      operationId: putPolicyPenalties
+      summary: Set the penalties; students accept the policy again (admin, audited)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [penalties]
+              properties:
+                penalties:
+                  type:
+                  - string
+                  - 'null'
+                  maxLength: 2000
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyPenalties"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
   /v1/admin/wifi-settings:
     get:
       tags:
@@ -7557,6 +7605,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ClassSession'
+    PolicyPenalties:
+      type: object
+      required: [penalties, default_penalties, version]
+      properties:
+        penalties:
+          type:
+          - string
+          - 'null'
+          description: The college's wording; null = the default
+        default_penalties:
+          type: string
+        version:
+          type: string
+          description: The policy version students accept now (changes with the penalties)
     WifiSettings:
       type: object
       required:

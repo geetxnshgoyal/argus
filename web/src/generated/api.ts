@@ -292,6 +292,24 @@ export interface paths {
         patch: operations["updateSubject"];
         trace?: never;
     };
+    "/v1/admin/policy-penalties": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The college's penalties for proxy attendance, shown in the student policy (admin) */
+        get: operations["getPolicyPenalties"];
+        /** Set the penalties; students accept the policy again (admin, audited) */
+        put: operations["putPolicyPenalties"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/wifi-settings": {
         parameters: {
             query?: never;
@@ -3354,6 +3372,13 @@ export interface components {
         ClassSessionList: {
             items: components["schemas"]["ClassSession"][];
         };
+        PolicyPenalties: {
+            /** @description The college's wording; null = the default */
+            penalties: string | null;
+            default_penalties: string;
+            /** @description The policy version students accept now (changes with the penalties) */
+            version: string;
+        };
         WifiSettings: {
             /** @description College Wi-Fi names start with this (e.g. CAMPUS); empty = only routers listed on rooms count as campus */
             ssid_prefix: string;
@@ -5107,6 +5132,57 @@ export interface operations {
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];
             409: components["responses"]["Error409"];
+        };
+    };
+    getPolicyPenalties: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyPenalties"];
+                };
+            };
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+        };
+    };
+    putPolicyPenalties: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    penalties: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyPenalties"];
+                };
+            };
+            400: components["responses"]["Error400"];
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
         };
     };
     getWifiSettings: {

@@ -6,7 +6,7 @@ import type { AppContext } from '../context.ts';
 import type { Role } from '../db/schema.ts';
 import { ApiError } from '../errors.ts';
 import { sha256Hex } from '../platform/crypto.ts';
-import { POLICY_TEXT, POLICY_VERSION } from '../policy.ts';
+import { currentPolicy } from '../policy.ts';
 import { b64url, parse } from '../validation.ts';
 import { verifyP256, parseP256Spki } from './device-sig.ts';
 import { currentUser, needAuth } from './guard.ts';
@@ -196,7 +196,10 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
   });
 
   // ── Me + policy ────────────────────────────────────────────────────────────
-  app.get('/v1/policy', async () => ({ version: POLICY_VERSION, text: POLICY_TEXT }));
+  app.get('/v1/policy', async () => {
+    const p = await currentPolicy(ctx.db);
+    return { version: p.version, text: p.text };
+  });
 
   /** Which sign-in methods this server offers, so sign-in pages only show what works. */
   app.get('/v1/auth/methods', async () => ({
@@ -208,11 +211,12 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
 
   app.get('/v1/me', { preHandler: needAuth() }, async (req) => {
     const u = currentUser(req);
+    const policy = await currentPolicy(ctx.db);
     const accepted = await ctx.db
       .selectFrom('policy_acceptances')
       .select('accepted_at')
       .where('user_id', '=', u.id)
-      .where('policy_version', '=', POLICY_VERSION)
+      .where('policy_version', '=', policy.version)
       .executeTakeFirst();
     let student = null;
     if (u.role === 'student') {
@@ -230,7 +234,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
       user: { id: u.id, role: u.role, name: u.name, email: u.email },
       home: roleHome(u.role),
       csrf_token: u.session?.csrfToken ?? null,
-      policy: { version: POLICY_VERSION, accepted: Boolean(accepted) },
+      policy: { version: policy.version, accepted: Boolean(accepted) },
       student,
     };
   });
@@ -238,21 +242,22 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
   app.post('/v1/me/policy-acceptance', { preHandler: needAuth() }, async (req) => {
     const u = currentUser(req);
     const b = parse(z.object({ version: z.string() }), req.body);
-    if (b.version !== POLICY_VERSION) {
+    const { version } = await currentPolicy(ctx.db);
+    if (b.version !== version) {
       throw new ApiError(409, 'policy_outdated', 'A newer policy is available. Please read it again.');
     }
     await ctx.db.transaction().execute(async (tx) => {
       const inserted = await tx
         .insertInto('policy_acceptances')
-        .values({ user_id: u.id, policy_version: POLICY_VERSION })
+        .values({ user_id: u.id, policy_version: version })
         .onConflict((oc) => oc.doNothing())
         .returning('user_id')
         .executeTakeFirst();
       if (inserted) {
-        await appendAudit(tx, { actorId: u.id, action: 'policy.accept', entityType: 'user', entityId: u.id, after: { version: POLICY_VERSION }, ip: req.ip }, new Date(ctx.now()));
+        await appendAudit(tx, { actorId: u.id, action: 'policy.accept', entityType: 'user', entityId: u.id, after: { version }, ip: req.ip }, new Date(ctx.now()));
       }
     });
-    return { ok: true, version: POLICY_VERSION };
+    return { ok: true, version };
   });
 
   // ── Dev-only sign-in (ARGUS_DEV_LOGIN=true, refused outside ARGUS_ENV=dev) ──

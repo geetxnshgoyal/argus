@@ -57,7 +57,43 @@ export function RiskSettingsPage() {
           </section>
         );
       })}
+      {canEdit && <Penalties />}
     </>
+  );
+}
+
+/** The college's own words on penalties, in the policy every student accepts. Saving asks students to accept again. */
+function Penalties() {
+  const qc = useQueryClient();
+  const current = useQuery({
+    queryKey: ['policy-penalties'],
+    queryFn: () => apiGet<{ penalties: string | null; default_penalties: string; version: string }>('/v1/admin/policy-penalties'),
+  });
+  const [draft, setDraft] = useState<string | null>(null);
+  const value = draft ?? current.data?.penalties ?? '';
+  const save = useMutation({
+    mutationFn: () => apiSend('PUT', '/v1/admin/policy-penalties', { penalties: value.trim() || null }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['policy-penalties'] });
+      setDraft(null);
+    },
+  });
+  return (
+    <section className="card" style={{ marginTop: '1.5rem' }}>
+      <h2>Penalties for proxy attendance</h2>
+      <p className="muted small">
+        Shown to students in the attendance policy they accept in the app. When you change it, every student is asked to accept the policy again. Leave empty to use:
+        “{current.data?.default_penalties}”
+      </p>
+      <textarea aria-label="Penalties for proxy attendance" rows={4} maxLength={2000} value={value} onChange={(e) => setDraft(e.target.value)} style={{ width: '100%' }} />
+      <div className="btn-row" style={{ marginTop: '0.5rem' }}>
+        <button className="btn btn-primary" disabled={save.isPending || !current.isSuccess || value.trim() === (current.data.penalties ?? '')} onClick={() => save.mutate()}>
+          Save
+        </button>
+        {save.isSuccess && <span className="muted small">Saved. Students will be asked to accept the updated policy.</span>}
+      </div>
+      <ErrorNotice error={current.error ?? save.error} />
+    </section>
   );
 }
 

@@ -4,7 +4,7 @@ import { safeNextPath } from '../src/auth/routes.ts';
 import { OidcService } from '../src/auth/oidc.ts';
 import { TokenService } from '../src/auth/tokens.ts';
 import type { Db } from '../src/db/index.ts';
-import { POLICY_VERSION } from '../src/policy.ts';
+import { DEFAULT_PENALTIES, POLICY_VERSION } from '../src/policy.ts';
 import { cookieFrom, createUser, deviceKey, loginAs, makeApp, type TestApp } from './helpers/app.ts';
 import { closeTestDb, hasDb, resetDb, testDb } from './helpers/db.ts';
 import { FakeIdp } from './helpers/fake-idp.ts';
@@ -124,6 +124,27 @@ describe.skipIf(!hasDb)('auth (integration)', () => {
       expect((await t.app.inject({ url: '/v1/me', headers: s.headers })).json().policy.accepted).toBe(true);
       const audits = await db.selectFrom('audit_log').select('action').where('action', '=', 'policy.accept').execute();
       expect(audits).toHaveLength(1);
+    });
+
+    it("the college's penalties go into the policy, and changing them asks everyone to accept again", async () => {
+      await createUser(db, 'admin', 'a@college.test');
+      await createUser(db, 'teacher', 't@college.test');
+      const admin = await loginAs(t.app, 'a@college.test');
+      const s = await loginAs(t.app, 't@college.test');
+      expect((await t.app.inject('/v1/policy')).json().text).toContain(DEFAULT_PENALTIES);
+      await t.app.inject({ method: 'POST', url: '/v1/me/policy-acceptance', headers: s.headers, payload: { version: POLICY_VERSION } });
+
+      const put = await t.app.inject({ method: 'PUT', url: '/v1/admin/policy-penalties', headers: admin.headers, payload: { penalties: 'Two warnings, then suspension.' } });
+      expect(put.statusCode).toBe(200);
+      const policy = (await t.app.inject('/v1/policy')).json();
+      expect(policy.text).toContain('Two warnings, then suspension.');
+      expect(policy.text).not.toContain('[');
+      expect(policy.version).not.toBe(POLICY_VERSION);
+      expect((await t.app.inject({ url: '/v1/me', headers: s.headers })).json().policy).toEqual({ version: policy.version, accepted: false });
+      expect((await t.app.inject({ method: 'PUT', url: '/v1/admin/policy-penalties', headers: s.headers, payload: { penalties: null } })).statusCode).toBe(403);
+      // Back to the default: the original version, which the teacher already accepted.
+      await t.app.inject({ method: 'PUT', url: '/v1/admin/policy-penalties', headers: admin.headers, payload: { penalties: null } });
+      expect((await t.app.inject({ url: '/v1/me', headers: s.headers })).json().policy).toEqual({ version: POLICY_VERSION, accepted: true });
     });
   });
 
