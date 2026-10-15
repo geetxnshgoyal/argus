@@ -87,7 +87,8 @@ export function LoginPage() {
               </div>
             </div>
           )}
-          {!methods.data?.demo && (
+          {methods.isPending && <p className="muted">Loading…</p>}
+          {!methods.isPending && !methods.data?.demo && (
           <div className="card-row">
             <IconTile name="shield" />
             <div style={{ flex: 1 }}>

@@ -474,9 +474,13 @@ export async function demoClassNow(ctx: AppContext, teacherId: string): Promise<
   if (!off || !room) throw new ApiError(409, 'demo_not_ready', 'The demo data is being reset. Try again in a minute.');
   const tz = ctx.config.timeZone;
   const hhmm = (ms: number) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(ms);
+  // 50 minutes, or until midnight (a class can't span two days); refused only in the last few minutes.
   const start = hhmm(now.getTime());
-  const end = hhmm(now.getTime() + 50 * 60_000);
-  if (end <= start) throw new ApiError(409, 'too_late', 'Demo classes can be added until 11 pm. Try again tomorrow morning.');
+  const later = hhmm(now.getTime() + 50 * 60_000);
+  const end = later > start ? later : '23:59';
+  if (end <= start || Number(end.slice(3)) - Number(start.slice(3)) + 60 * (Number(end.slice(0, 2)) - Number(start.slice(0, 2))) < 4) {
+    throw new ApiError(409, 'too_late', "It's just before midnight here. Try again in a few minutes.");
+  }
   const date = localDate(now.getTime(), tz);
   await ctx.db.transaction().execute(async (tx) => {
     // Clear Section B's earlier demo classes today so the new one fits.
