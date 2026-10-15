@@ -12,6 +12,8 @@ info:
 servers:
 - url: /
 tags:
+- name: demo
+  description: Demo deployments only (ARGUS_DEMO); not registered on real ones
 - name: support
 - name: verifier
   description: Support-request console, used by Academic Operations (ADR-0028)
@@ -1886,7 +1888,11 @@ paths:
                 - dev_login
                 - domains
                 - institution
+                - demo
                 properties:
+                  demo:
+                    type: boolean
+                    description: A demo deployment (ARGUS_DEMO) with one-click sign-in per role
                   sso:
                     type: boolean
                     description: College Google sign-in is configured
@@ -1901,6 +1907,99 @@ paths:
                     - string
                     - 'null'
                     description: The institution's name (ARGUS_INSTITUTION_NAME), for the sign-in and legal pages
+  /v1/auth/demo/login:
+    post:
+      tags:
+      - auth
+      operationId: demoLogin
+      summary: "Demo deployments only (ARGUS_DEMO): sign in as the demo account for a staff role"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [teacher, acadops, admin, community_manager]
+      responses:
+        "200":
+          description: Signed in; the session cookie is set
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, home]
+                properties:
+                  ok:
+                    type: boolean
+                  home:
+                    type: string
+        "400":
+          $ref: "#/components/responses/Error400"
+        "503":
+          description: The demo data is still being created
+  /v1/demo/class-now:
+    post:
+      tags:
+      - demo
+      operationId: demoClassNow
+      summary: "Demo only: the teacher's class on now, or a new 50-minute class starting now"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [class_session_id]
+                properties:
+                  class_session_id:
+                    type: string
+                    format: uuid
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "409":
+          $ref: "#/components/responses/Error409"
+  /v1/demo/attendance-sessions/{id}/simulate:
+    post:
+      tags:
+      - demo
+      operationId: demoSimulateScans
+      summary: "Demo only: sample students scan (most on the first press, the rest on the next)"
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [added, remaining]
+                properties:
+                  added:
+                    type: integer
+                  remaining:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
   /v1/me:
     get:
       tags:

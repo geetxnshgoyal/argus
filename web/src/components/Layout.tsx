@@ -1,6 +1,6 @@
 import { Link, Navigate, Outlet, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { ROLE_LABELS, useLogout, useMe, type Role } from '../lib/auth.ts';
+import { ROLE_LABELS, useAuthMethods, useLogout, useMe, type Role } from '../lib/auth.ts';
 import { HealthBadge } from './HealthBadge.tsx';
 import { BrandMark } from './ui.tsx';
 
@@ -43,8 +43,14 @@ export function RequireRole({ roles, children }: { roles: Role[]; children: Reac
 }
 
 export function AppFrame() {
+  const demo = useAuthMethods().data?.demo;
   return (
     <>
+      {demo && (
+        <div className="demo-banner" role="note">
+          Demo: a sample college with made-up people. It resets every night.
+        </div>
+      )}
       <TopBar />
       <Outlet />
     </>

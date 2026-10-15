@@ -698,6 +698,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/demo/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demo deployments only (ARGUS_DEMO): sign in as the demo account for a staff role */
+        post: operations["demoLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/demo/class-now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demo only: the teacher's class on now, or a new 50-minute class starting now */
+        post: operations["demoClassNow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/demo/attendance-sessions/{id}/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demo only: sample students scan (most on the first press, the rest on the next) */
+        post: operations["demoSimulateScans"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me": {
         parameters: {
             query?: never;
@@ -6285,6 +6336,8 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @description A demo deployment (ARGUS_DEMO) with one-click sign-in per role */
+                        demo: boolean;
                         /** @description College Google sign-in is configured */
                         sso: boolean;
                         dev_login: boolean;
@@ -6294,6 +6347,99 @@ export interface operations {
                     };
                 };
             };
+        };
+    };
+    demoLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    role: "teacher" | "acadops" | "admin" | "community_manager";
+                };
+            };
+        };
+        responses: {
+            /** @description Signed in; the session cookie is set */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        home: string;
+                    };
+                };
+            };
+            400: components["responses"]["Error400"];
+            /** @description The demo data is still being created */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    demoClassNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        class_session_id: string;
+                    };
+                };
+            };
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+        };
+    };
+    demoSimulateScans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        added: number;
+                        remaining: number;
+                    };
+                };
+            };
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
         };
     };
     getMe: {

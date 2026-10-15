@@ -7,6 +7,7 @@ import type { Role } from '../db/schema.ts';
 import { ApiError } from '../errors.ts';
 import { sha256Hex } from '../platform/crypto.ts';
 import { currentPolicy } from '../policy.ts';
+import { DEMO_ACCOUNTS } from '../demo/seed.ts';
 import { b64url, parse } from '../validation.ts';
 import { verifyP256, parseP256Spki } from './device-sig.ts';
 import { currentUser, needAuth } from './guard.ts';
@@ -207,6 +208,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     dev_login: ctx.config.devLogin,
     domains: ctx.config.oidc.hostedDomains,
     institution: ctx.config.institutionName,
+    demo: ctx.config.demo,
   }));
 
   app.get('/v1/me', { preHandler: needAuth() }, async (req) => {
@@ -259,6 +261,22 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     });
     return { ok: true, version };
   });
+
+  // ── Demo sign-in (ARGUS_DEMO): one click per role, demo accounts only ──
+  if (ctx.config.demo) {
+    app.post('/v1/auth/demo/login', rateLimit, async (req, reply) => {
+      const b = parse(z.object({ role: z.enum(['teacher', 'acadops', 'admin', 'community_manager']) }), req.body);
+      const u = await ctx.db
+        .selectFrom('users')
+        .select(['id', 'role', 'name', 'email', 'status'])
+        .where('email', '=', DEMO_ACCOUNTS[b.role].email)
+        .executeTakeFirst();
+      if (!u || u.status !== 'active') throw new ApiError(503, 'demo_not_ready', 'The demo is being set up. Try again in a minute.');
+      await startWebSession(reply, req, u, new Date(ctx.now()));
+      await audit(req, u.id, 'auth.login', { client: 'web', demo: true });
+      return { ok: true, home: roleHome(u.role) };
+    });
+  }
 
   // ── Dev-only sign-in (ARGUS_DEV_LOGIN=true, refused outside ARGUS_ENV=dev) ──
   if (ctx.config.devLogin) {

@@ -36,6 +36,9 @@ const envSchema = z.object({
   ARGUS_PUBLIC_URL: z.string().url().optional(),
   // The institution's name, shown on the sign-in, privacy and terms pages.
   ARGUS_INSTITUTION_NAME: z.string().trim().max(120).optional(),
+  // Public demo for prospective colleges: sample data that resets nightly and one-click
+  // sign-in as each role. Never on a real deployment (refused together with Google sign-in).
+  ARGUS_DEMO: bool,
   OIDC_ISSUER: z.string().url().default('https://accounts.google.com'),
   OIDC_CLIENT_ID: z.string().optional(),
   OIDC_CLIENT_SECRET: z.string().optional(),
@@ -107,6 +110,8 @@ export interface Config {
   publicUrl: string;
   /** Shown on the sign-in, privacy and terms pages; null = "your college". */
   institutionName: string | null;
+  /** Demo deployment: sample data, nightly reset, one-click role sign-in (src/demo/). */
+  demo: boolean;
   oidc: {
     issuer: string;
     clientId: string | undefined;
@@ -212,6 +217,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   for (const d of hostedDomains) {
     if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d)) problems.push('OIDC_HOSTED_DOMAIN must be comma-separated domains like college.edu,partner.co');
   }
+  if (e.ARGUS_DEMO && (e.OIDC_CLIENT_ID || e.OIDC_CLIENT_SECRET)) {
+    problems.push('ARGUS_DEMO is for a separate demo deployment; it cannot be combined with Google sign-in (OIDC_CLIENT_ID)');
+  }
   if (Boolean(e.APPLE_DEVICECHECK_KEY_ID) !== Boolean(e.APPLE_DEVICECHECK_KEY)) {
     problems.push('APPLE_DEVICECHECK_KEY_ID and APPLE_DEVICECHECK_KEY must be set together');
   }
@@ -241,6 +249,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     webDir: e.ARGUS_WEB_DIR,
     publicUrl: (e.ARGUS_PUBLIC_URL ?? 'http://localhost:5173').replace(/\/+$/, ''),
     institutionName: e.ARGUS_INSTITUTION_NAME || null,
+    demo: e.ARGUS_DEMO,
     oidc: {
       issuer: e.OIDC_ISSUER,
       clientId: e.OIDC_CLIENT_ID,

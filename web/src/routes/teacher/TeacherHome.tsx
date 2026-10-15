@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { NoticesCard } from '../../components/NoticesCard.tsx';
 import { ErrorNotice, IconTile, Notice, PageHead } from '../../components/ui.tsx';
 import { apiGet, apiSend, type Schemas } from '../../lib/api.ts';
+import { useAuthMethods } from '../../lib/auth.ts';
 import { formatDate } from '../../lib/refs.ts';
 import { useNow } from '../../lib/useNow.ts';
 
@@ -34,6 +35,7 @@ export function TeacherHome() {
   const next = items.find((s) => s.status !== 'cancelled' && Date.parse(s.starts_at) > now);
   const focus = running ?? current ?? next;
   const upcoming = (week.data?.items ?? []).filter((s) => s.date !== today.data?.date);
+  const demo = useAuthMethods().data?.demo;
 
   return (
     <div className="content">
@@ -45,6 +47,7 @@ export function TeacherHome() {
           <a href={`/teacher/session/${questions.data!.items[0]!.attendance_session_id}`}>Answer now</a>
         </Notice>
       )}
+      <DemoClassNow show={Boolean(demo) && !running} />
       <NoticesCard />
       <StudentIssues />
       {today.isSuccess && items.length === 0 && <Notice>No classes today.</Notice>}
@@ -230,5 +233,31 @@ function TopicEditor({ session: s }: { session: Session }) {
       {save.isSuccess && !changed && <span className="muted small">Saved</span>}
       <ErrorNotice error={save.error} />
     </form>
+  );
+}
+
+/** Demo only: a class to try attendance on right now, then straight into it. */
+function DemoClassNow({ show }: { show: boolean }) {
+  const navigate = useNavigate();
+  const start = useMutation({
+    mutationFn: async () => {
+      const { class_session_id } = await apiSend<{ class_session_id: string }>('POST', '/v1/demo/class-now');
+      return apiSend<Schemas['AttendanceStarted']>('POST', `/v1/teacher/class-sessions/${class_session_id}/attendance/start`);
+    },
+    onSuccess: (r) => void navigate({ to: '/teacher/session/$sessionId', params: { sessionId: r.attendance_session_id } }),
+  });
+  if (!show) return null;
+  return (
+    <div className="card card-row">
+      <IconTile name="shield" />
+      <div style={{ flex: 1 }}>
+        <h3>Try it now</h3>
+        <p className="muted small">Starts attendance for a class happening now. On the next page, simulate students scanning the code to see the live view fill up.</p>
+        <button className="btn btn-primary" style={{ marginTop: '0.5rem' }} disabled={start.isPending} onClick={() => start.mutate()}>
+          {start.isPending ? 'Starting…' : 'Start a demo class now'}
+        </button>
+        <ErrorNotice error={start.error} />
+      </div>
+    </div>
   );
 }
