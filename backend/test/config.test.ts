@@ -62,6 +62,13 @@ describe('loadConfig', () => {
     );
   });
 
+  it('a demo deployment runs in production without Google sign-in, and refuses it if given', () => {
+    const demo = { ...base, ARGUS_ENV: 'production', ARGUS_MASTER_KEY: KEY, ARGUS_PUBLIC_URL: 'https://demo.example', ARGUS_DEMO: 'true' };
+    expect(loadConfig(demo).demo).toBe(true);
+    expect(() => loadConfig({ ...demo, OIDC_CLIENT_ID: 'x', OIDC_CLIENT_SECRET: 'y' })).toThrow(/ARGUS_DEMO/);
+    expect(() => loadConfig({ ...demo, ARGUS_DEMO: 'false' })).toThrow(/OIDC_CLIENT_ID/);
+  });
+
   it.each(['staging', 'production'])('requires a master key in %s', (env) => {
     expect(problemsOf({ ...base, ARGUS_ENV: env }).join()).toMatch(/ARGUS_MASTER_KEY is required/);
   });
