@@ -101,6 +101,16 @@ describe.skipIf(!hasDb)('demo deployment (ARGUS_DEMO)', () => {
     expect((await db.selectFrom('attendance_sessions').select('id').execute()).length).toBeGreaterThan(40);
   });
 
+  it("the demo's admin can reset it on the spot; a teacher can't", async () => {
+    await resetDemo(t.ctx);
+    const teacher = await demoLogin('teacher');
+    expect((await t.app.inject({ method: 'POST', url: '/v1/demo/reset', headers: teacher.headers })).statusCode).toBe(403);
+    const admin = await demoLogin('admin');
+    const r = await t.app.inject({ method: 'POST', url: '/v1/demo/reset', headers: admin.headers });
+    expect(r.statusCode).toBe(200);
+    expect(r.json().students).toBe(52);
+  });
+
   it('never wipes a database with real accounts', async () => {
     await createUser(db, 'admin', 'principal@real-college.edu');
     await expect(resetDemo(t.ctx)).rejects.toThrow(/non-demo accounts/);
