@@ -49,6 +49,7 @@ a:hover { text-decoration: underline; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; }
 
 /* ── Chrome ─────────────────────────────────────────────────────────────── */
+.demo-banner { background: var(--warn-tile); color: var(--warn); text-align: center; padding: 0.4rem 1rem; font-size: 0.85rem; }
 .topbar { display: flex; align-items: center; gap: 1.5rem; padding: 0.9rem 1.5rem; border-bottom: 1px solid var(--line); background: var(--bg); position: sticky; top: 0; z-index: 10; }
 .brand { display: flex; align-items: center; gap: 0.6rem; font-weight: 800; font-size: 1.2rem; letter-spacing: 0.12em; color: var(--fg); text-transform: uppercase; }
 .brand:hover { text-decoration: none; }

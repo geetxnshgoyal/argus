@@ -3,6 +3,7 @@ import type { AppContext } from './context.ts';
 import { housekeeping } from './attendance/service.ts';
 import { promoteDueDevices } from './devices/service.ts';
 import { runRetention } from './retention.ts';
+import { hasDemoData, resetDemo } from './demo/seed.ts';
 import { expireSupportRequests } from './support/service.ts';
 import { localDate } from './timetable/dates.ts';
 import { materializeAll } from './timetable/service.ts';
@@ -22,6 +23,8 @@ import { materializeAll } from './timetable/service.ts';
  *                of class sessions generated (ADR-0019).
  *  retention     once per college day (from 02:30 local): clears old attempt
  *                signals and sign-in leftovers (spec §13, src/retention.ts).
+ *  demo_reset    demo deployments only (ARGUS_DEMO): fills an empty database at once,
+ *                then refreshes the sample college every day from 03:00 local.
  */
 
 export const HOUSEKEEPING_EVERY_MS = 55_000;
@@ -100,7 +103,32 @@ export async function runDueJobs(ctx: AppContext): Promise<{ ran: string[] }> {
       await finish(ctx, 'retention', null, err);
     }
   }
+  if (ctx.config.demo && (await claimDemoReset(ctx))) {
+    ran.push('demo_reset');
+    try {
+      const r = await resetDemo(ctx);
+      ctx.logger.info(r, 'demo reset');
+      await finish(ctx, 'demo_reset', r, null);
+    } catch (err) {
+      ctx.logger.error({ err }, 'demo reset failed');
+      await finish(ctx, 'demo_reset', null, err);
+    }
+  }
   return { ran };
+}
+
+/** Empty demo database: now (unless another instance started within 5 minutes); otherwise daily. */
+async function claimDemoReset(ctx: AppContext): Promise<boolean> {
+  await ctx.db.insertInto('job_runs').values({ name: 'demo_reset', last_run_at: new Date(0) }).onConflict((oc) => oc.column('name').doNothing()).execute();
+  if (await hasDemoData(ctx)) return claimDaily(ctx, 'demo_reset', '03:00');
+  const r = await ctx.db
+    .updateTable('job_runs')
+    .set({ last_run_at: new Date(ctx.now()) })
+    .where('name', '=', 'demo_reset')
+    .where('last_run_at', '<', new Date(ctx.now() - 5 * 60_000))
+    .returning('name')
+    .executeTakeFirst();
+  return Boolean(r);
 }
 
 /** Long-running server: check every 30 s (and once at startup). */

@@ -29,7 +29,7 @@ export function useMe() {
 export function useAuthMethods() {
   return useQuery({
     queryKey: ['auth-methods'],
-    queryFn: () => apiGet<{ sso: boolean; dev_login: boolean; domains: string[]; institution: string | null }>('/v1/auth/methods'),
+    queryFn: () => apiGet<{ sso: boolean; dev_login: boolean; domains: string[]; institution: string | null; demo: boolean }>('/v1/auth/methods'),
     staleTime: Infinity,
     retry: false,
   });

@@ -18,8 +18,8 @@ function specRoutes(): string[] {
 
 describe('OpenAPI spec', () => {
   it('lists exactly the /v1 routes the server registers', async () => {
-    // devLogin on so dev-only routes are registered and must be documented too.
-    const { app, apiRoutes } = await makeApp({ config: { devLogin: true } });
+    // devLogin and demo on so dev-only and demo-only routes are registered and must be documented too.
+    const { app, apiRoutes } = await makeApp({ config: { devLogin: true, demo: true } });
     await app.close();
     expect([...apiRoutes].sort()).toEqual(specRoutes());
   });

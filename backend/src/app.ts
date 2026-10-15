@@ -21,6 +21,7 @@ import { registerDeviceRoutes } from './devices/routes.ts';
 import { registerAdminAttendanceRoutes } from './admin/attendance-routes.ts';
 import { registerPilotRoutes } from './pilot/routes.ts';
 import { registerOdRoutes } from './od/routes.ts';
+import { registerDemoRoutes } from './demo/routes.ts';
 import { registerSupportRoutes } from './support/routes.ts';
 import { registerNoticeRoutes } from './notices/routes.ts';
 import { registerTimetableRoutes } from './timetable/routes.ts';
@@ -149,6 +150,7 @@ export async function buildApp(ctx: AppContext, opts: AppOptions = {}): Promise<
   registerAdminAttendanceRoutes(app, ctx);
   registerPilotRoutes(app, ctx);
   registerOdRoutes(app, ctx);
+  registerDemoRoutes(app, ctx);
 
   await app.ready();
   return { app, apiRoutes };

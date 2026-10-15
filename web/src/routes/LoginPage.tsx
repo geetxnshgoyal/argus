@@ -4,6 +4,13 @@ import { BrandMark, IconTile, Notice } from '../components/ui.tsx';
 import { apiGet, apiSend } from '../lib/api.ts';
 import { loginUrl, ROLE_LABELS, useAuthMethods, type Role } from '../lib/auth.ts';
 
+const DEMO_ROLES: { role: Exclude<Role, 'student'>; text: string }[] = [
+  { role: 'teacher', text: 'Take attendance in a class, see flagged scans' },
+  { role: 'acadops', text: 'Timetable, students, phones, OD and corrections' },
+  { role: 'admin', text: 'Everything, plus anti-proxy settings and audit log' },
+  { role: 'community_manager', text: 'First check of on-duty (OD) requests' },
+];
+
 const ERRORS: Record<string, string> = {
   wrong_domain: 'Please sign in with your college Google account.',
   sso_not_configured: 'College Google sign-in is not set up on this server yet. Academic Operations: see deploy/README.md.',
@@ -28,6 +35,16 @@ export function LoginPage() {
     retry: false,
   });
 
+  async function demoLogin(role: Exclude<Role, 'student'>) {
+    setDevError(null);
+    try {
+      const r = await apiSend<{ home: string }>('POST', '/v1/auth/demo/login', { role });
+      window.location.assign(r.home);
+    } catch (e) {
+      setDevError(e instanceof Error ? e.message : 'Sign-in failed');
+    }
+  }
+
   async function devLogin(email: string) {
     setDevError(null);
     try {
@@ -46,6 +63,31 @@ export function LoginPage() {
           <span>Argus</span>
         </div>
         <div className="card">
+          {methods.data?.demo && (
+            <div className="card-row">
+              <IconTile name="shield" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2>Try the demo</h2>
+                <p className="muted">
+                  A sample college with two weeks of attendance, flagged scans and OD requests. Pick a role to look around; nothing you do affects a real college, and the
+                  sample data resets every night.
+                </p>
+                {devError && <Notice tone="bad">{devError}</Notice>}
+                <div className="dev-users">
+                  {DEMO_ROLES.map((r) => (
+                    <button key={r.role} onClick={() => void demoLogin(r.role)}>
+                      <span>{ROLE_LABELS[r.role]}</span>
+                      <span className="muted small">{r.text}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="muted small" style={{ marginTop: '0.75rem' }}>
+                  Students use the Argus phone app, which isn't part of this web demo.
+                </p>
+              </div>
+            </div>
+          )}
+          {!methods.data?.demo && (
           <div className="card-row">
             <IconTile name="shield" />
             <div style={{ flex: 1 }}>
@@ -72,6 +114,7 @@ export function LoginPage() {
               </p>
             </div>
           </div>
+          )}
           {devUsers.data && (
             <div className="card-row">
               <IconTile name="alert" tone="warn" />

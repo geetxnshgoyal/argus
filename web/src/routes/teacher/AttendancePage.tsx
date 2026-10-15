@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { CorrectionDialog } from '../../components/CorrectionDialog.tsx';
 import { Dialog, ErrorNotice, Field, IconTile, Notice } from '../../components/ui.tsx';
 import { apiGet, apiSend, type Schemas } from '../../lib/api.ts';
+import { useAuthMethods } from '../../lib/auth.ts';
 
 type Live = Schemas['AttendanceLive'];
 type Student = Schemas['LiveStudent'];
@@ -118,6 +119,7 @@ export function AttendancePage({ sessionId }: { sessionId: string }) {
           {active && v.round && <span className="badge">{roundLabel}</span>}
         </div>
       </div>
+      {active && <SimulateScans sessionId={sessionId} />}
 
       <div className="stat-row">
         <div className="stat stat-main">
@@ -442,5 +444,26 @@ function SpotRow({ sessionId, spot, student, onSaved }: { sessionId: string; spo
         </button>
       </span>
     </li>
+  );
+}
+
+/** Demo only: sample students scan the code, so the live view can be tried without a class of phones. */
+function SimulateScans({ sessionId }: { sessionId: string }) {
+  const qc = useQueryClient();
+  const demo = useAuthMethods().data?.demo;
+  const sim = useMutation({
+    mutationFn: () => apiSend<{ added: number; remaining: number }>('POST', `/v1/demo/attendance-sessions/${sessionId}/simulate`),
+    onSuccess: () => void qc.invalidateQueries(),
+  });
+  if (!demo) return null;
+  return (
+    <Notice>
+      Demo: there are no real phones here.{' '}
+      <button className="btn" disabled={sim.isPending || sim.data?.remaining === 0} onClick={() => sim.mutate()}>
+        {sim.data ? (sim.data.remaining > 0 ? 'Latecomers scan' : 'Everyone who came has scanned') : 'Simulate students scanning'}
+      </button>
+      {sim.data && sim.data.added > 0 && <span className="muted small"> {sim.data.added} students scanned.</span>}
+      <ErrorNotice error={sim.error} />
+    </Notice>
   );
 }
