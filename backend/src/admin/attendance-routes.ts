@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { sql } from 'kysely';
 import { z } from 'zod';
 import { appendAudit } from '../audit/audit.ts';
+import { currentPolicy, DEFAULT_PENALTIES } from '../policy.ts';
 import { currentUser, needAuth } from '../auth/guard.ts';
 import type { AppContext } from '../context.ts';
 import { expectedStudents } from '../attendance/service.ts';
@@ -167,6 +168,24 @@ export function registerAdminAttendanceRoutes(app: FastifyInstance, ctx: AppCont
       await appendAudit(tx, { actorId: u.id, action: 'wifi_settings.update', entityType: 'app_settings', entityId: 'campus_wifi_ssid_prefix', after: b, ip: req.ip }, new Date(ctx.now()));
     });
     return b;
+  });
+
+  // The college's penalties for proxy attendance, in the policy students accept (changing them asks again).
+  app.get('/v1/admin/policy-penalties', adminOnly, async () => {
+    const p = await currentPolicy(ctx.db);
+    return { penalties: p.penalties, default_penalties: DEFAULT_PENALTIES, version: p.version };
+  });
+
+  app.put('/v1/admin/policy-penalties', adminOnly, async (req) => {
+    const b = parse(z.object({ penalties: z.string().trim().max(2000).nullable() }), req.body);
+    const u = currentUser(req);
+    await ctx.db.transaction().execute(async (tx) => {
+      const value = JSON.stringify(b.penalties ?? '');
+      await tx.insertInto('app_settings').values({ key: 'policy_penalties', value }).onConflict((oc) => oc.column('key').doUpdateSet({ value })).execute();
+      await appendAudit(tx, { actorId: u.id, action: 'policy.penalties_update', entityType: 'app_settings', entityId: 'policy_penalties', after: b, ip: req.ip }, new Date(ctx.now()));
+    });
+    const p = await currentPolicy(ctx.db);
+    return { penalties: p.penalties, default_penalties: DEFAULT_PENALTIES, version: p.version };
   });
 
   app.get('/v1/admin/risk-settings', ops, async () => {
