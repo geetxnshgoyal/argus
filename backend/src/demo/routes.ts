@@ -4,7 +4,7 @@ import type { AppContext } from '../context.ts';
 import { ApiError } from '../errors.ts';
 import { expectedStudents, loadClass } from '../attendance/service.ts';
 import { idParams, parse } from '../validation.ts';
-import { addScans, demoClassNow, demoDevices } from './seed.ts';
+import { addScans, demoClassNow, demoDevices, resetDemo } from './seed.ts';
 
 /**
  * Demo-only helpers (ARGUS_DEMO): a class to try right now, and students "scanning" it,
@@ -12,6 +12,9 @@ import { addScans, demoClassNow, demoDevices } from './seed.ts';
  */
 export function registerDemoRoutes(app: FastifyInstance, ctx: AppContext): void {
   if (!ctx.config.demo) return;
+
+  // A fresh sample college now, instead of waiting for the nightly reset. Signs everyone out.
+  app.post('/v1/demo/reset', { preHandler: needAuth('admin') }, async () => resetDemo(ctx));
 
   app.post('/v1/demo/class-now', { preHandler: needAuth('teacher') }, async (req) => {
     return { class_session_id: await demoClassNow(ctx, currentUser(req).id) };

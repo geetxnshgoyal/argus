@@ -715,6 +715,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/demo/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demo only: replace all data with a fresh sample college now (admin; signs everyone out) */
+        post: operations["demoReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/demo/class-now": {
         parameters: {
             query?: never;
@@ -6385,6 +6402,32 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    demoReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        students: number;
+                        classes: number;
+                        attendanceTaken: number;
+                    };
+                };
+            };
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
         };
     };
     demoClassNow: {
