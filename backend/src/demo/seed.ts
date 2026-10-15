@@ -103,8 +103,9 @@ async function assertDemoDatabase(ctx: AppContext): Promise<void> {
   if (other) throw new Error('Refusing to reset: this database has non-demo accounts.');
 }
 
+/** Filled completely: the history is written last, so a fill cut short (e.g. a timeout) is redone. */
 export async function hasDemoData(ctx: AppContext): Promise<boolean> {
-  return Boolean(await ctx.db.selectFrom('users').select('id').limit(1).executeTakeFirst());
+  return Boolean(await ctx.db.selectFrom('attendance_sessions').select('id').limit(1).executeTakeFirst());
 }
 
 /** Wipes the demo database (keeping settings) and fills it with a fresh sample college. */

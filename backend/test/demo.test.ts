@@ -90,6 +90,17 @@ describe.skipIf(!hasDb)('demo deployment (ARGUS_DEMO)', () => {
     expect(cls.expected).toBe(16);
   });
 
+  it('redoes a fill that was cut short (accounts made, no history yet)', async () => {
+    await resetDemo(t.ctx);
+    await db.deleteFrom('attendance_records').execute();
+    await db.deleteFrom('risk_flags').execute();
+    await db.deleteFrom('attendance_attempts').execute();
+    await db.deleteFrom('attendance_rounds').execute();
+    await db.deleteFrom('attendance_sessions').execute();
+    expect((await runDueJobs(t.ctx)).ran).toContain('demo_reset');
+    expect((await db.selectFrom('attendance_sessions').select('id').execute()).length).toBeGreaterThan(40);
+  });
+
   it('never wipes a database with real accounts', async () => {
     await createUser(db, 'admin', 'principal@real-college.edu');
     await expect(resetDemo(t.ctx)).rejects.toThrow(/non-demo accounts/);
