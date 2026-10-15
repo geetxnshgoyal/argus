@@ -199,7 +199,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (strict) {
     if (!e.ARGUS_PUBLIC_URL) problems.push('ARGUS_PUBLIC_URL is required in staging and production');
     else if (!e.ARGUS_PUBLIC_URL.startsWith('https://')) problems.push('ARGUS_PUBLIC_URL must use https in staging and production');
-    if (!e.OIDC_CLIENT_ID || !e.OIDC_CLIENT_SECRET) {
+    // A demo deployment signs in with one click per role instead (and refuses Google sign-in, below).
+    if (!e.ARGUS_DEMO && (!e.OIDC_CLIENT_ID || !e.OIDC_CLIENT_SECRET)) {
       problems.push('OIDC_CLIENT_ID and OIDC_CLIENT_SECRET are required in staging and production');
     }
   }
