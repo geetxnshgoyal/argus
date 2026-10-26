@@ -20,7 +20,7 @@ const pilot = (over: Partial<Config> = {}): Partial<Config> => ({
   env: 'production',
   attestationBypass: false,
   attestation: {
-    android: { packageName: 'app.argus.argus', signingCertDigests: ['ab'.repeat(32)], playIntegrityCredentialsPath: undefined, playIntegrityMode: 'off' },
+    android: { packageName: 'app.argus', signingCertDigests: ['ab'.repeat(32)], playIntegrityCredentialsPath: undefined, playIntegrityMode: 'off' },
     ios: { appId: undefined, environment: 'development', attestMode: 'off', deviceCheckKeyId: undefined, deviceCheckKeyPath: undefined },
   },
   ...over,
@@ -102,7 +102,7 @@ describe.skipIf(!hasDb)('scripted attacker clients (pilot settings)', () => {
 
   it('with iPhone pilot mode off, unverified iPhones are refused outright', async () => {
     await t.app.close();
-    t = await makeApp({ db, now: T0, config: pilot({ attestation: { ...pilot().attestation!, ios: { ...pilot().attestation!.ios, attestMode: 'required', appId: 'TEAM123456.app.argus.argus' } } }) });
+    t = await makeApp({ db, now: T0, config: pilot({ attestation: { ...pilot().attestation!, ios: { ...pilot().attestation!.ios, attestMode: 'required', appId: 'TEAM123456.app.argus' } } }) });
     const bot = await new Phone(t.app, 'bot@college.test').signIn();
     const res = await bot.bind({ platform: 'ios', evidence: { kind: 'ios_unattested' } });
     expect(res.statusCode).toBe(422);

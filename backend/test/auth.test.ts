@@ -396,7 +396,7 @@ describe.skipIf(!hasDb)('auth (integration)', () => {
       const challenge = createHash('sha256').update(verifier).digest('base64url');
       const { callback } = await signIn(s.app, { sub: 's1', email: 'stu@college.test', hd: 'college.test' }, `?client=mobile&app_challenge=${challenge}`);
       const redirect = new URL(String(callback.headers.location));
-      expect(redirect.protocol).toBe('app.argus.argus:');
+      expect(redirect.protocol).toBe('app.argus:');
       const code = redirect.searchParams.get('code') as string;
       const key = deviceKey();
       const exchange = (v: string) =>
@@ -416,7 +416,7 @@ describe.skipIf(!hasDb)('auth (integration)', () => {
       const s = await ssoApp();
       const challenge = createHash('sha256').update(randomBytes(32).toString('base64url')).digest('base64url');
       const { callback } = await signIn(s.app, { sub: 'x', email: 'nobody@college.test', hd: 'college.test' }, `?client=mobile&app_challenge=${challenge}`);
-      expect(callback.headers.location).toBe('app.argus.argus:/auth/callback?error=not_provisioned');
+      expect(callback.headers.location).toBe('app.argus:/auth/callback?error=not_provisioned');
       await s.app.close();
     });
 
@@ -455,7 +455,7 @@ describe('sign-in methods', () => {
     expect(web.statusCode).toBe(302);
     expect(web.headers.location).toBe('/login?error=sso_not_configured');
     const mobile = await t.app.inject(`/v1/auth/oidc/login?client=mobile&app_challenge=${'a'.repeat(43)}`);
-    expect(mobile.headers.location).toBe('app.argus.argus:/auth/callback?error=sso_not_configured');
+    expect(mobile.headers.location).toBe('app.argus:/auth/callback?error=sso_not_configured');
     await t.app.close();
   });
 });

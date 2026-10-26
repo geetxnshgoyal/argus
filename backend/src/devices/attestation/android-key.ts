@@ -54,7 +54,8 @@ const BOOT_VERIFIED = 0;
 const SECURITY_LEVEL = ['software', 'tee', 'strongbox'] as const;
 
 export interface AndroidKeyPolicy {
-  packageName: string;
+  /** Accepted application ids (the Play app, and APKs installed before it). */
+  packageNames: string[];
   /** Lowercase hex SHA-256 of accepted signing certificates. Empty = not checked (dev/test only). */
   signingCertDigests: string[];
   /** The key must require device unlock / biometric before use (the attempt key). */
@@ -195,7 +196,7 @@ function checkApplicationId(der: Buffer, policy: AndroidKeyPolicy): void {
   const [packages, digests] = asSequence(parseDer(der));
   if (!packages || !digests) fail('application id is malformed');
   const names = asSet(packages).map((p) => asOctets(asSequence(p)[0] as DerNode).toString('utf8'));
-  if (!names.includes(policy.packageName)) fail(`key belongs to another app (${names.join(', ') || 'none'})`);
+  if (!names.some((n) => policy.packageNames.includes(n))) fail(`key belongs to another app (${names.join(', ') || 'none'})`);
   if (policy.signingCertDigests.length > 0) {
     const certDigests = asSet(digests).map((d) => asOctets(d).toString('hex'));
     if (certDigests.length === 0 || !certDigests.every((d) => policy.signingCertDigests.includes(d))) {

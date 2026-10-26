@@ -82,12 +82,12 @@ release has only the APK.
 Once the Apple Developer Program membership shows **Active**:
 
 1. [developer.apple.com](https://developer.apple.com/account) → Identifiers → new
-   App ID `app.argus.argus` with **App Attest** and **Access Wi-Fi Information**
+   App ID `app.argus` with **App Attest** and **Access Wi-Fi Information**
    (and **Push Notifications** for notices later). Note the 10-character Team ID.
 2. In Xcode: Runner → Signing & Capabilities → choose the paid team, bundle id
-   `app.argus.argus`, add *App Attest* and *Access WiFi Information*. (A developer
-   then removes the personal-team bundle id `app.argus.argus.geetansh`.)
-3. Server: `IOS_APP_ID=<TEAMID>.app.argus.argus`, `IOS_APP_ATTEST_ENV=production`
+   `app.argus`, add *App Attest* and *Access WiFi Information*. (A developer
+   then removes the personal-team bundle id `app.argus.geetansh`.)
+3. Server: `IOS_APP_ID=<TEAMID>.app.argus`, `IOS_APP_ATTEST_ENV=production`
    for TestFlight and App Store builds, and `IOS_ATTESTATION_MODE=required` (turns
    off the unverified-iPhone pilot mode, ADR-0024).
 4. [App Store Connect](https://appstoreconnect.apple.com) → My Apps → **+** → new
