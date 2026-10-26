@@ -117,7 +117,7 @@ export interface KeyDescriptionOptions {
 
 export function keyDescription(o: KeyDescriptionOptions): Buffer {
   const level = o.securityLevel ?? 1;
-  const appId = der.seq(der.set(der.seq(der.octets(o.packageName ?? 'app.argus.argus'), der.int(1))), der.set(der.octets(o.certDigest ?? Buffer.alloc(32, 0xab))));
+  const appId = der.seq(der.set(der.seq(der.octets(o.packageName ?? 'app.argus'), der.int(1))), der.set(der.octets(o.certDigest ?? Buffer.alloc(32, 0xab))));
   const sw = der.seq(der.explicit(709, der.octets(appId)));
   const hw = der.seq(
     der.explicit(1, der.set(der.int(o.purposeSign === false ? 3 : 2))),

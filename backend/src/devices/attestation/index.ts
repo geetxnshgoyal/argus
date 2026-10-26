@@ -142,7 +142,7 @@ export class AttestationService {
         chain: evidence.attempt_key_chain,
         challenge: input.challenge,
         publicKeySpki: input.attemptKeySpki,
-        policy: { packageName: this.config.attestation.android.packageName, signingCertDigests: this.config.attestation.android.signingCertDigests, requireUserAuth: true },
+        policy: { packageNames: this.config.attestation.android.packageNames ?? [this.config.attestation.android.packageName], signingCertDigests: this.config.attestation.android.signingCertDigests, requireUserAuth: true },
         rootKeys: this.androidRootKeys,
         now: new Date(this.now()),
         revokedSerials: await this.revoked(),

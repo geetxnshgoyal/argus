@@ -48,9 +48,11 @@ const envSchema = z.object({
   // Individual addresses allowed to sign in from outside those domains (e.g. a developer's
   // Gmail during the pilot). Comma-separated; must still be verified by Google.
   OIDC_ALLOWED_EMAILS: z.string().optional(),
-  ARGUS_MOBILE_REDIRECT_URI: z.string().default('app.argus.argus:/auth/callback'),
+  ARGUS_MOBILE_REDIRECT_URI: z.string().default('app.argus:/auth/callback'),
   // ── Device attestation (M3). A platform that is not configured cannot bind phones outside dev/test.
-  ANDROID_PACKAGE_NAME: z.string().default('app.argus.argus'),
+  // Accepted Android application ids, comma-separated; the first is the Google Play app (Play
+  // Integrity tokens are decoded for it). app.argus.argus: APKs installed before the Play release.
+  ANDROID_PACKAGE_NAME: z.string().default('app.argus,app.argus.argus'),
   // SHA-256 of the app signing certificate(s), hex (colons allowed), comma-separated.
   ANDROID_SIGNING_CERT_SHA256: z.string().optional(),
   // Path to the Google Cloud service-account JSON allowed to decode Play Integrity tokens.
@@ -125,7 +127,10 @@ export interface Config {
   timeZone: string;
   attestation: {
     android: {
+      /** The Google Play application id (Play Integrity tokens are decoded for it). */
       packageName: string;
+      /** Every accepted application id, packageName first. */
+      packageNames?: string[];
       /** Lowercase hex SHA-256 digests of accepted signing certificates. */
       signingCertDigests: string[];
       playIntegrityCredentialsPath: string | undefined;
@@ -211,6 +216,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     if (hex) signingCertDigests.push(hex);
     else problems.push('ANDROID_SIGNING_CERT_SHA256 must be comma-separated SHA-256 digests (64 hex characters each)');
   }
+  const androidPackages = e.ANDROID_PACKAGE_NAME.split(',').map((p) => p.trim()).filter((p) => p !== '');
+  for (const p of androidPackages) {
+    if (!/^[a-zA-Z]\w*(\.[a-zA-Z]\w*)+$/.test(p)) problems.push('ANDROID_PACKAGE_NAME must be comma-separated application ids like app.argus');
+  }
   const hostedDomains = (e.OIDC_HOSTED_DOMAIN ?? '')
     .split(',')
     .map((d) => d.trim().toLowerCase())
@@ -262,7 +271,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     timeZone: e.ARGUS_TIMEZONE,
     attestation: {
       android: {
-        packageName: e.ANDROID_PACKAGE_NAME,
+        packageName: androidPackages[0] ?? 'app.argus',
+        packageNames: androidPackages,
         signingCertDigests,
         playIntegrityCredentialsPath: e.PLAY_INTEGRITY_CREDENTIALS,
         playIntegrityMode: e.PLAY_INTEGRITY_MODE,
