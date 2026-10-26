@@ -27,7 +27,7 @@ class AuthController extends ChangeNotifier {
 
   final ApiClient api;
   final BrowserAuth _browserAuth;
-  static const callbackScheme = 'app.argus.argus';
+  static const callbackScheme = 'app.argus';
 
   AuthStatus status = AuthStatus.loading;
   Me? me;

@@ -28,10 +28,10 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     institutionName: null,
     demo: false,
     oidc: { issuer: 'http://idp.test', clientId: undefined, clientSecret: undefined, hostedDomains: ['college.test'], allowedEmails: [] },
-    mobileRedirectUri: 'app.argus.argus:/auth/callback',
+    mobileRedirectUri: 'app.argus:/auth/callback',
     timeZone: 'Asia/Kolkata',
     attestation: {
-      android: { packageName: 'app.argus.argus', signingCertDigests: [], playIntegrityCredentialsPath: undefined, playIntegrityMode: 'required' },
+      android: { packageName: 'app.argus', signingCertDigests: [], playIntegrityCredentialsPath: undefined, playIntegrityMode: 'required' },
       ios: { appId: undefined, environment: 'production', attestMode: 'required', deviceCheckKeyId: undefined, deviceCheckKeyPath: undefined },
     },
     devices: { rebindCooldownMs: 48 * 3600_000, maxRebindsPerTerm: 2 },

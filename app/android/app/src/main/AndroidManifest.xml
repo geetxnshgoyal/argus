@@ -37,7 +37,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- College sign-in returns here (app.argus.argus:/auth/callback). Protected by PKCE and
+        <!-- College sign-in returns here (app.argus:/auth/callback). Protected by PKCE and
              the device session key, so a hijacked callback cannot be redeemed elsewhere. -->
         <activity
             android:name="com.linusu.flutter_web_auth_2.CallbackActivity"
@@ -46,7 +46,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="app.argus.argus" />
+                <data android:scheme="app.argus" />
             </intent-filter>
         </activity>
     </application>

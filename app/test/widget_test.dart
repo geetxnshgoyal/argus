@@ -131,7 +131,7 @@ void main() {
   (ArgusApp, AuthController, MemoryTokenStore) build(FakeServer server) {
     final store = MemoryTokenStore();
     final api = ApiClient(baseUrl: 'http://test', security: SecurityBridge(), store: store, client: server.client());
-    final auth = AuthController(api, browserAuth: (url, scheme) async => 'app.argus.argus:/auth/callback?error=not_provisioned');
+    final auth = AuthController(api, browserAuth: (url, scheme) async => 'app.argus:/auth/callback?error=not_provisioned');
     return (ArgusApp(auth: auth, security: SecurityBridge()), auth, store);
   }
 

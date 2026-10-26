@@ -13,7 +13,7 @@ import { androidChain, der, ecKey, makeCert, type KeyDescriptionOptions, type Te
 describe('Android key attestation (spec §16 #7)', () => {
   const now = new Date('2026-09-21T04:00:00Z');
   const digest = Buffer.alloc(32, 0xab);
-  const policy = { packageName: 'app.argus.argus', signingCertDigests: [digest.toString('hex')], requireUserAuth: true };
+  const policy = { packageName: 'app.argus', signingCertDigests: [digest.toString('hex')], requireUserAuth: true };
 
   function attest(over: Partial<KeyDescriptionOptions> & { leafSerial?: Buffer } = {}, input: Partial<AndroidKeyInput> = {}) {
     const leafKey = ecKey();
@@ -77,10 +77,10 @@ describe('Android key attestation (spec §16 #7)', () => {
 describe('Play Integrity verdict (spec §16 #7)', () => {
   const nowMs = Date.parse('2026-09-21T04:00:00Z');
   const certDigest = Buffer.alloc(32, 0xab);
-  const expectOk = { packageName: 'app.argus.argus', requestHash: 'h', signingCertDigests: [certDigest.toString('hex')], nowMs };
+  const expectOk = { packageName: 'app.argus', requestHash: 'h', signingCertDigests: [certDigest.toString('hex')], nowMs };
   const verdict = (over: Partial<PlayVerdict> = {}): PlayVerdict => ({
-    requestDetails: { requestPackageName: 'app.argus.argus', requestHash: 'h', timestampMillis: String(nowMs - 1000) },
-    appIntegrity: { appRecognitionVerdict: 'PLAY_RECOGNIZED', packageName: 'app.argus.argus', certificateSha256Digest: [certDigest.toString('base64url')] },
+    requestDetails: { requestPackageName: 'app.argus', requestHash: 'h', timestampMillis: String(nowMs - 1000) },
+    appIntegrity: { appRecognitionVerdict: 'PLAY_RECOGNIZED', packageName: 'app.argus', certificateSha256Digest: [certDigest.toString('base64url')] },
     deviceIntegrity: { deviceRecognitionVerdict: ['MEETS_DEVICE_INTEGRITY'] },
     ...over,
   });
@@ -95,8 +95,8 @@ describe('Play Integrity verdict (spec §16 #7)', () => {
   });
 
   it('refuses a sideloaded or re-signed app', () => {
-    expect(() => checkPlayVerdict(verdict({ appIntegrity: { appRecognitionVerdict: 'UNRECOGNIZED_VERSION', packageName: 'app.argus.argus' } }), expectOk)).toThrow(/not recognized/);
-    const resigned = verdict({ appIntegrity: { appRecognitionVerdict: 'PLAY_RECOGNIZED', packageName: 'app.argus.argus', certificateSha256Digest: [Buffer.alloc(32, 1).toString('base64url')] } });
+    expect(() => checkPlayVerdict(verdict({ appIntegrity: { appRecognitionVerdict: 'UNRECOGNIZED_VERSION', packageName: 'app.argus' } }), expectOk)).toThrow(/not recognized/);
+    const resigned = verdict({ appIntegrity: { appRecognitionVerdict: 'PLAY_RECOGNIZED', packageName: 'app.argus', certificateSha256Digest: [Buffer.alloc(32, 1).toString('base64url')] } });
     expect(() => checkPlayVerdict(resigned, expectOk)).toThrow(/release key/);
   });
 
@@ -127,7 +127,7 @@ const point = (k: TestKey) => {
 
 describe('Apple App Attest (spec §16 #7)', () => {
   const now = new Date('2026-09-21T04:00:00Z');
-  const appId = 'TEAMID1234.app.argus.argus';
+  const appId = 'TEAMID1234.app.argus';
   const day = 86_400_000;
 
   function attestation(o: { appId?: string; aaguid?: Buffer; counter?: number; clientDataHash: Buffer; nonceFor?: Buffer }) {

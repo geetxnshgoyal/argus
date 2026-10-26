@@ -48,9 +48,9 @@ const envSchema = z.object({
   // Individual addresses allowed to sign in from outside those domains (e.g. a developer's
   // Gmail during the pilot). Comma-separated; must still be verified by Google.
   OIDC_ALLOWED_EMAILS: z.string().optional(),
-  ARGUS_MOBILE_REDIRECT_URI: z.string().default('app.argus.argus:/auth/callback'),
+  ARGUS_MOBILE_REDIRECT_URI: z.string().default('app.argus:/auth/callback'),
   // ── Device attestation (M3). A platform that is not configured cannot bind phones outside dev/test.
-  ANDROID_PACKAGE_NAME: z.string().default('app.argus.argus'),
+  ANDROID_PACKAGE_NAME: z.string().default('app.argus'),
   // SHA-256 of the app signing certificate(s), hex (colons allowed), comma-separated.
   ANDROID_SIGNING_CERT_SHA256: z.string().optional(),
   // Path to the Google Cloud service-account JSON allowed to decode Play Integrity tokens.

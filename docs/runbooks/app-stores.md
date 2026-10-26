@@ -8,6 +8,18 @@ Every release (`pnpm release <version>`) builds `argus.apk` (install directly) a
 
 ### Once: create the app
 
+The app id (package name / bundle id) is **`app.argus`** on Android and iPhone.
+Google Play fixes it with the first uploaded bundle, so never change it after that.
+It replaced `app.argus.argus` (0.0.10 and earlier), so:
+
+- Phones with an older APK see the new build as a separate app: uninstall the old
+  one, install the new one, register again.
+- Firebase: add an Android app with package `app.argus`, download its
+  `google-services.json`, and update the `GOOGLE_SERVICES_JSON_B64` secret.
+- Server: if `ANDROID_PACKAGE_NAME` or `ARGUS_MOBILE_REDIRECT_URI` are set on
+  Vercel, change them to `app.argus` and `app.argus:/auth/callback` (or remove
+  them to use those defaults), then redeploy.
+
 1. [Play Console](https://play.google.com/console) → **Create app**. Name
    *Argus*, default language English, **App**, **Free**. Accept the
    declarations.
@@ -82,12 +94,12 @@ release has only the APK.
 Once the Apple Developer Program membership shows **Active**:
 
 1. [developer.apple.com](https://developer.apple.com/account) → Identifiers → new
-   App ID `app.argus.argus` with **App Attest** and **Access Wi-Fi Information**
+   App ID `app.argus` with **App Attest** and **Access Wi-Fi Information**
    (and **Push Notifications** for notices later). Note the 10-character Team ID.
 2. In Xcode: Runner → Signing & Capabilities → choose the paid team, bundle id
-   `app.argus.argus`, add *App Attest* and *Access WiFi Information*. (A developer
-   then removes the personal-team bundle id `app.argus.argus.geetansh`.)
-3. Server: `IOS_APP_ID=<TEAMID>.app.argus.argus`, `IOS_APP_ATTEST_ENV=production`
+   `app.argus`, add *App Attest* and *Access WiFi Information*. (A developer
+   then removes the personal-team bundle id `app.argus.geetansh`.)
+3. Server: `IOS_APP_ID=<TEAMID>.app.argus`, `IOS_APP_ATTEST_ENV=production`
    for TestFlight and App Store builds, and `IOS_ATTESTATION_MODE=required` (turns
    off the unverified-iPhone pilot mode, ADR-0024).
 4. [App Store Connect](https://appstoreconnect.apple.com) → My Apps → **+** → new

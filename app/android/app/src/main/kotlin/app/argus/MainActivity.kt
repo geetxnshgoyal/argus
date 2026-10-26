@@ -1,4 +1,4 @@
-package app.argus.argus
+package app.argus
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

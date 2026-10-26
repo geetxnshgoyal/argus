@@ -9,7 +9,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const PACKAGE = 'app.argus.argus';
+const PACKAGE = 'app.argus';
 const [servicesFile, keyFile] = process.argv.slice(2);
 if (!servicesFile) {
   console.error('Usage: node scripts/set-firebase.mjs <google-services.json> [<firebase-adminsdk key .json>]');

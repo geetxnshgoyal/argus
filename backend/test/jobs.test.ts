@@ -69,7 +69,7 @@ describe.skipIf(!hasDb)('background jobs without a daemon (ADR-0020)', () => {
 describe('Android pilot mode (ADR-0021)', () => {
   const device = { platform: 'android' as const, attestation_level: 'tee', app_attest_public_key: null, app_attest_counter: 0 };
   const svc = (over: Parameters<typeof testConfig>[0]) => new AttestationService(testConfig(over), logSink().logger, { play: null, revokedSerials: async () => new Set() });
-  const android = (mode: 'required' | 'off', digests: string[]) => ({ packageName: 'app.argus.argus', signingCertDigests: digests, playIntegrityCredentialsPath: undefined, playIntegrityMode: mode });
+  const android = (mode: 'required' | 'off', digests: string[]) => ({ packageName: 'app.argus', signingCertDigests: digests, playIntegrityCredentialsPath: undefined, playIntegrityMode: mode });
   const ios = { appId: undefined, environment: 'production' as const, attestMode: 'required' as const, deviceCheckKeyId: undefined, deviceCheckKeyPath: undefined };
 
   it('production refuses Android registration without Play Integrity unless pilot mode is on', () => {
@@ -88,7 +88,7 @@ describe('Android pilot mode (ADR-0021)', () => {
 });
 
 describe('iPhone pilot mode (ADR-0024)', () => {
-  const android = { packageName: 'app.argus.argus', signingCertDigests: ['ab'.repeat(32)], playIntegrityCredentialsPath: undefined, playIntegrityMode: 'off' as const };
+  const android = { packageName: 'app.argus', signingCertDigests: ['ab'.repeat(32)], playIntegrityCredentialsPath: undefined, playIntegrityMode: 'off' as const };
   const ios = (attestMode: 'required' | 'off') => ({ appId: undefined, environment: 'development' as const, attestMode, deviceCheckKeyId: undefined, deviceCheckKeyPath: undefined });
   const svc = (attestMode: 'required' | 'off') =>
     new AttestationService(testConfig({ env: 'production', attestation: { android, ios: ios(attestMode) } }), logSink().logger, { play: null, revokedSerials: async () => new Set() });
