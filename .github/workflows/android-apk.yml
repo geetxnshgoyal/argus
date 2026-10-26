@@ -6,7 +6,10 @@ name: Android APK
 #  - Run manually (Actions tab)        -> pre-release "pilot" (replaced each time),
 #                                         app version <pubspec version>-pilot.<run>
 # Needs repository secrets ANDROID_KEYSTORE_B64, ANDROID_KEYSTORE_PASSWORD,
-# ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD and the variable ARGUS_PUBLIC_URL. Phone notifications
+# ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD and the variable ARGUS_PUBLIC_URL. The Play bundle is
+# signed with the Google Play upload key instead (Play accepts only RSA keys; the APK key is EC):
+# ANDROID_UPLOAD_KEYSTORE_B64, ANDROID_UPLOAD_KEYSTORE_PASSWORD, ANDROID_UPLOAD_KEY_ALIAS,
+# ANDROID_UPLOAD_KEY_PASSWORD; without them no bundle is built. Phone notifications
 # also need GOOGLE_SERVICES_JSON_B64 (base64 of Firebase's google-services.json).
 on:
   workflow_dispatch:
@@ -61,17 +64,28 @@ jobs:
           echo "App version $V"
           echo "name=$V" >> "$GITHUB_OUTPUT"
       - run: flutter build apk --release --dart-define=ARGUS_API=${{ vars.ARGUS_PUBLIC_URL }} --dart-define=ARGUS_APP_VERSION=${{ steps.version.outputs.name }} --build-name=${{ steps.version.outputs.name }} --build-number=${{ github.run_number }}
-      - name: App bundle for Google Play (same version and signing key)
-        run: flutter build appbundle --release --dart-define=ARGUS_API=${{ vars.ARGUS_PUBLIC_URL }} --dart-define=ARGUS_APP_VERSION=${{ steps.version.outputs.name }} --build-name=${{ steps.version.outputs.name }} --build-number=${{ github.run_number }}
+      - name: App bundle for Google Play (same version, signed with the upload key)
+        id: bundle
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then echo "::warning::No ANDROID_UPLOAD_* secrets: no Google Play bundle in this release"; exit 0; fi
+          echo "$KEYSTORE_B64" | base64 -d > android/argus-upload.jks
+          printf 'storeFile=argus-upload.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
+          flutter build appbundle --release --dart-define=ARGUS_API=${{ vars.ARGUS_PUBLIC_URL }} --dart-define=ARGUS_APP_VERSION=${{ steps.version.outputs.name }} --build-name=${{ steps.version.outputs.name }} --build-number=${{ github.run_number }}
       - name: Name the APK and show its signing certificate
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk argus.apk
-          cp build/app/outputs/bundle/release/app-release.aab argus.aab
+          if [ -f build/app/outputs/bundle/release/app-release.aab ]; then cp build/app/outputs/bundle/release/app-release.aab argus.aab; fi
           echo "Server setting ANDROID_SIGNING_CERT_SHA256 must be:"
           "$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner" verify --print-certs argus.apk | grep 'SHA-256 digest' | head -1
       - uses: actions/upload-artifact@v4
         with:
           name: argus-apk
+          if-no-files-found: ignore
           path: |
             app/argus.apk
             app/argus.aab
@@ -79,9 +93,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          FILES="argus.apk"; [ -f argus.aab ] && FILES="$FILES argus.aab"
           if [ "${{ github.ref_type }}" = "tag" ]; then
-            gh release create "${{ github.ref_name }}" argus.apk argus.aab --title "Argus ${{ github.ref_name }}" --notes "Android app for ${{ vars.ARGUS_PUBLIC_URL }}. Install on your own phone; register it once."
+            gh release create "${{ github.ref_name }}" $FILES --title "Argus ${{ github.ref_name }}" --notes "Android app for ${{ vars.ARGUS_PUBLIC_URL }}. Install on your own phone; register it once."
           else
             gh release delete pilot --yes --cleanup-tag || true
-            gh release create pilot argus.apk argus.aab --prerelease --target "${{ github.sha }}" --title "Argus pilot build ${{ github.run_number }}" --notes "Pilot build of ${{ github.sha }} for ${{ vars.ARGUS_PUBLIC_URL }}."
+            gh release create pilot $FILES --prerelease --target "${{ github.sha }}" --title "Argus pilot build ${{ github.run_number }}" --notes "Pilot build of ${{ github.sha }} for ${{ vars.ARGUS_PUBLIC_URL }}."
           fi

@@ -11,21 +11,20 @@ Every release (`pnpm release <version>`) builds `argus.apk` (install directly) a
 1. [Play Console](https://play.google.com/console) → **Create app**. Name
    *Argus*, default language English, **App**, **Free**. Accept the
    declarations.
-2. **App signing: keep the existing key.** Test and release → App integrity →
-   **App signing** → *Use a different key* → **Export and upload a key from Java
-   keystore**. Follow the steps shown: download `pepk.jar` and the encryption key,
-   then on the Mac that holds `~/.argus-release-signing/`:
-
-   ```bash
-   java -jar pepk.jar --keystore=$HOME/.argus-release-signing/argus-release.jks --alias=<keyAlias from key.properties> --output=argus-signing.zip --include-cert --rsa-aes-encryption --encryption-key-path=encryption_public_key.pem
-   ```
-
-   Upload `argus-signing.zip`. Why: Google then signs the app with the same key
-   as the APKs, so (a) phones that installed the APK update from Play without
-   re-registering, and (b) the server's `ANDROID_SIGNING_CERT_SHA256` stays right.
-   If Google generates a new key instead, add its SHA-256 (App signing page) to
-   `ANDROID_SIGNING_CERT_SHA256` with a comma, and APK users must uninstall and
-   register their phone again.
+2. **App signing: let Google create the key.** Google Play accepts only RSA
+   keys, and the APK key (`~/.argus-release-signing/argus-release.jks`) is EC, so
+   Play bundles are signed with a separate RSA **upload key**
+   (`argus-upload.jks` in the same folder, password in `upload.properties`).
+   Google re-signs the app with its own key. Afterwards:
+   - App integrity → **App signing** → copy the *App signing key certificate*
+     SHA-256 and add it to the server's `ANDROID_SIGNING_CERT_SHA256`, after a
+     comma (keep the APK one too), then redeploy. Without it, phones that install
+     from Play are refused when they register.
+   - A phone that installed the APK must uninstall it before installing from
+     Play (different signatures), then register again; Acad Ops can approve the
+     change at once with **Activate now**.
+   - Lost upload key: Google can reset it (App signing → Request upload key
+     reset); the app signing key stays with Google.
 3. **Store listing:** short description ("Proxy-resistant attendance for your
    college"), full description, app icon (`brand/argus-icon-1024.png`, resized to
    512×512), two or more phone screenshots, category *Education*.
@@ -67,7 +66,9 @@ before a new personal account can publish to everyone.
 ### Each release
 
 Upload the new `argus.aab` (Test and release → your track → Create new release).
-The version code goes up automatically with each build.
+The version code goes up automatically with each build. CI signs it with the
+upload key from the `ANDROID_UPLOAD_*` repository secrets; without them a
+release has only the APK.
 
 ### After the first Play release
 
