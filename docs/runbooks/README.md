@@ -12,6 +12,7 @@ use it**.
 | [When something is down](outage.md) | Acad Ops, developer | The site, the network or scanning isn't working |
 | [Suspected proxy attendance](suspected-proxy.md) | Acad Ops, admin | A report or a pattern of cheating |
 | [Backup and restore](backup-and-restore.md) | Developer (monthly), admin | Monthly check, or after data loss |
+| [App stores](app-stores.md) | Developer | Publishing the student app on Google Play and the App Store |
 
 Who can do what: **Admin** = everything, plus staff accounts, the
 anti-proxy check settings and pilot mode. **Acad Ops** = students, teachers,

@@ -1,6 +1,7 @@
 name: Android APK
 
-# Builds the release APK for the hosted server and attaches it to a GitHub Release.
+# Builds the release APK (to install directly) and app bundle (to upload to Google Play) for the
+# hosted server and attaches both to a GitHub Release.
 #  - Push a tag like v0.0.2            -> release "v0.0.2" (app version 0.0.2)
 #  - Run manually (Actions tab)        -> pre-release "pilot" (replaced each time),
 #                                         app version <pubspec version>-pilot.<run>
@@ -60,22 +61,27 @@ jobs:
           echo "App version $V"
           echo "name=$V" >> "$GITHUB_OUTPUT"
       - run: flutter build apk --release --dart-define=ARGUS_API=${{ vars.ARGUS_PUBLIC_URL }} --dart-define=ARGUS_APP_VERSION=${{ steps.version.outputs.name }} --build-name=${{ steps.version.outputs.name }} --build-number=${{ github.run_number }}
+      - name: App bundle for Google Play (same version and signing key)
+        run: flutter build appbundle --release --dart-define=ARGUS_API=${{ vars.ARGUS_PUBLIC_URL }} --dart-define=ARGUS_APP_VERSION=${{ steps.version.outputs.name }} --build-name=${{ steps.version.outputs.name }} --build-number=${{ github.run_number }}
       - name: Name the APK and show its signing certificate
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk argus.apk
+          cp build/app/outputs/bundle/release/app-release.aab argus.aab
           echo "Server setting ANDROID_SIGNING_CERT_SHA256 must be:"
           "$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner" verify --print-certs argus.apk | grep 'SHA-256 digest' | head -1
       - uses: actions/upload-artifact@v4
         with:
           name: argus-apk
-          path: app/argus.apk
+          path: |
+            app/argus.apk
+            app/argus.aab
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ github.ref_type }}" = "tag" ]; then
-            gh release create "${{ github.ref_name }}" argus.apk --title "Argus ${{ github.ref_name }}" --notes "Android app for ${{ vars.ARGUS_PUBLIC_URL }}. Install on your own phone; register it once."
+            gh release create "${{ github.ref_name }}" argus.apk argus.aab --title "Argus ${{ github.ref_name }}" --notes "Android app for ${{ vars.ARGUS_PUBLIC_URL }}. Install on your own phone; register it once."
           else
             gh release delete pilot --yes --cleanup-tag || true
-            gh release create pilot argus.apk --prerelease --target "${{ github.sha }}" --title "Argus pilot build ${{ github.run_number }}" --notes "Pilot build of ${{ github.sha }} for ${{ vars.ARGUS_PUBLIC_URL }}."
+            gh release create pilot argus.apk argus.aab --prerelease --target "${{ github.sha }}" --title "Argus pilot build ${{ github.run_number }}" --notes "Pilot build of ${{ github.sha }} for ${{ vars.ARGUS_PUBLIC_URL }}."
           fi
