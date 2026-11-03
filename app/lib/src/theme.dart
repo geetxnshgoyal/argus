@@ -63,7 +63,7 @@ ThemeData argusTheme() {
         backgroundColor: ArgusColors.accent,
         foregroundColor: ArgusColors.accentInk,
         minimumSize: const Size.fromHeight(52),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        textStyle: text.labelLarge?.copyWith(fontSize: 16, fontWeight: FontWeight.w700),
         shape: RoundedRectangleBorder(borderRadius: radius),
       ),
     ),
