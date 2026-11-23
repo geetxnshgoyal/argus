@@ -114,3 +114,14 @@ One Node program plus Postgres, set up per college: its Google Workspace
 domain(s) (`OIDC_HOSTED_DOMAIN`), name (`ARGUS_INSTITUTION_NAME`), time zone
 (`ARGUS_TIMEZONE`), and, in the admin pages, its campus area, rooms, Wi-Fi
 routers and college Wi-Fi name. See [deploy/README.md](deploy/README.md).
+
+## About the commit history
+
+The history before 27 September 2026 was recreated. The project was first
+committed as a few large milestone snapshots (M0 to M6, dated 24 and 25
+September 2026). On 27 September those were split into about 400 smaller
+commits, and their dates were spread back to May 2026; 104 of them change no
+files. Those dates are not a record of when each piece was written, so read
+that part of the history as a walk through the code rather than a timeline.
+Commits from 27 September 2026 on are as they were made, except that in
+November 2026 five commit messages were edited (the code didn't change).
