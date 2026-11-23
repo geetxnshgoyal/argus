@@ -19,6 +19,7 @@ import * as m0016 from './migrations/0016_biometric_keys.ts';
 import * as m0017 from './migrations/0017_class_topic.ts';
 import * as m0018 from './migrations/0018_classroom_wifi.ts';
 import * as m0019 from './migrations/0019_od_attachments.ts';
+import * as m0020 from './migrations/0020_wifi_other_room_weight.ts';
 
 /**
  * Migrations are listed statically (not read from disk) so they are bundled
@@ -45,6 +46,7 @@ const MIGRATIONS: Record<string, Migration> = {
   '0017_class_topic': m0017,
   '0018_classroom_wifi': m0018,
   '0019_od_attachments': m0019,
+  '0020_wifi_other_room_weight': m0020,
 };
 
 const provider: MigrationProvider = {

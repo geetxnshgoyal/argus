@@ -136,6 +136,9 @@ describe('risk scoring (spec §6 soft signals, ADR-0010, ADR-0014)', () => {
     expect(r.score).toBe(15 + 10 + 30);
     expect(r.decision).toBe('flagged');
   });
+  it("only other classrooms' Wi-Fi alone → flagged (a QR relayed from another room)", () => {
+    expect(assess({ ...base, wifi: 'other_room' }, new Map())).toMatchObject({ score: 30, decision: 'flagged' });
+  });
   it('a disabled scorer is skipped (kill switch without redeploy)', () => {
     const settings = new Map([['location_mock', { value: 70, enabled: false }]]);
     expect(assess({ ...base, location: { ...base.location, is_mock: true } }, settings).decision).toBe('verified');
