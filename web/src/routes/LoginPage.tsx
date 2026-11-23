@@ -32,6 +32,7 @@ export function LoginPage() {
   const devUsers = useQuery({
     queryKey: ['dev-users'],
     queryFn: () => apiGet<{ users: { email: string; name: string; role: Role }[] }>('/v1/auth/dev/users'),
+    enabled: methods.data?.dev_login === true,
     retry: false,
   });
 
@@ -91,7 +92,7 @@ export function LoginPage() {
           {!methods.isPending && !methods.data?.demo && (
           <div className="card-row">
             <IconTile name="shield" />
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <h2>Sign in</h2>
               <p className="muted">Teachers, Academic Operations and community managers sign in with their college Google account.</p>
               {error && (
